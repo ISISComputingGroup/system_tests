@@ -26,10 +26,17 @@ import shutil
 import xmlrunner
 import argparse
 
+
 SCRIPT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 DEFAULT_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, 'test-reports')
 CONFIGS_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, 'configs')
-SETTINGS_CONFIG = os.path.join(os.environ["ICPCONFIGROOT"], "configurations")
+
+# default icp config path
+default_configs_path = os.path.join("C:\\", "Instrument", "Settings", "config",
+                                    os.environ.get("COMPUTERNAME", "NAME"), "configurations")
+# path to ICP CONFIG ROOT
+PATH_TO_ICPCONFIGROOT = os.environ.get("ICPCONFIGROOT", default_configs_path)
+SETTINGS_CONFIG = os.path.join(PATH_TO_ICPCONFIGROOT, "configurations")
 
 if __name__ == '__main__':
     # get output directory from command line arguments
