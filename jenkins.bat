@@ -2,7 +2,7 @@ setlocal
 
 @echo off
 
-call %~dp0get_builds.bat
+call ""%~dp0get_builds.bat"
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 REM Run config_env
@@ -17,7 +17,7 @@ call "C:\Instrument\Apps\EPICS\start_ibex_server.bat"
 REM Sleep for 120 s while start ups finalise
 sleep 120
 
-cd %~dp0
+cd "%~dp0"
 C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
 
 call "C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
