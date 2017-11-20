@@ -2,7 +2,7 @@ setlocal
 
 @echo off
 
-call ""%~dp0get_builds.bat"
+call "%~dp0get_builds.bat"
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 REM Run config_env
