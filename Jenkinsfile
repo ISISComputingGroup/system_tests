@@ -25,7 +25,7 @@ pipeline {
     stage("Build") {
       steps {
         bat """
-            jenkis.bat
+            jenkins.bat
             C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
             """
       }
