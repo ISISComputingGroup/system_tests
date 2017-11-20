@@ -5,7 +5,7 @@ pipeline {
   // agent defines where the pipeline will run.
   agent {  
     label {
-      label "genie_python system tests"
+      label "genie_python_system_tests"
     }
   }
   
