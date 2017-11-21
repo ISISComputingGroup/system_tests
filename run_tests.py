@@ -54,7 +54,10 @@ if __name__ == '__main__':
     for config_dir in config_dirs:
         dest = os.path.join(SETTINGS_CONFIG, config_dir)
         src = os.path.join(CONFIGS_DIRECTORY, config_dir)
-        shutil.rmtree(dest)
+        try:
+            shutil.rmtree(dest)
+        except OSError:
+            pass
         shutil.copytree(src, dest)
 
     print("\n\n------ BEGINNING genie_python SYSTEM TESTS ------")
