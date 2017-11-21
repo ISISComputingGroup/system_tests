@@ -16,10 +16,9 @@
 """
 Run system tests for genie_python. Copies across needed configs before running the tests.
 """
-# Add root path for access to server_commons
+
 import os
 import sys
-# Standard imports
 import unittest
 
 import shutil
@@ -41,7 +40,7 @@ SETTINGS_CONFIG = os.path.join(PATH_TO_ICPCONFIGROOT, "configurations")
 if __name__ == '__main__':
     # get output directory from command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output_dir', nargs=1, type=str, default=[DEFAULT_DIRECTORY],
+    parser.add_argument('-o', '--output_dir', default=[DEFAULT_DIRECTORY],
                         help='The directory to save the test reports')
     args = parser.parse_args()
     xml_dir = args.output_dir[0]
