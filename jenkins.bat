@@ -17,8 +17,10 @@ call "C:\Instrument\Apps\EPICS\start_ibex_server.bat"
 REM Sleep for 120 s while start ups finalise
 sleep 120
 
+@echo on
 cd "%~dp0"
 C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
+@echo off
 
 call "C:\Instrument\Apps\EPICS\stop_ibex_server.bat"
 @taskkill /f /im javaw.exe /t
