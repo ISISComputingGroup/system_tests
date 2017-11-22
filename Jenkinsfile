@@ -21,20 +21,23 @@ pipeline {
         checkout scm
       }
     }
-    
-    stage("Build") {
+
+    stage("Install latest IBEX") {
       steps {
         bat """
-            jenkins.bat
-            C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
+            echo "Done in the job Install client, server and genie_python"
             """
       }
     }
-   stage("Unit Test Results") {
-    steps {
+    
+    stage("Unit Test Results") {
+      steps {
+        bat """
+            C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
+            """
         junit "test-reports/**/*.xml"
+      }
     }
-   }
   }
   
   post {
