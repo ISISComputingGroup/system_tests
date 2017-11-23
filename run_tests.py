@@ -40,10 +40,10 @@ SETTINGS_CONFIG = os.path.join(PATH_TO_ICPCONFIGROOT, "configurations")
 if __name__ == '__main__':
     # get output directory from command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--output_dir', default=[DEFAULT_DIRECTORY],
+    parser.add_argument('-o', '--output_dir', default=DEFAULT_DIRECTORY,
                         help='The directory to save the test reports')
     args = parser.parse_args()
-    xml_dir = args.output_dir[0]
+    xml_dir = args.output_dir
 
     # Load tests from test suites
     test_suite = unittest.TestLoader().discover(SCRIPT_DIRECTORY, pattern="test_*.py")
