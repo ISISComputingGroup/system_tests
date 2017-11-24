@@ -33,7 +33,8 @@ pipeline {
     stage("Unit Test Results") {
       steps {
         bat """
-            C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
+            call C:/Instrument/Apps/EPICS/config_env.bat
+            call C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
             """
         junit "test-reports/**/*.xml"
       }
