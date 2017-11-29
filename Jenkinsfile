@@ -33,9 +33,10 @@ pipeline {
     stage("Unit Test Results") {
       steps {
         bat """
+            start /wait cmd /c "C:/Instrument/Apps/EPICS/start_ibex_server.bat"
             call C:/Instrument/Apps/EPICS/config_env.bat
-            call C:/Instrument/Apps/EPICS/start_ibex_server.bat
             call C:/Instrument/Apps/Python/python.exe run_tests.py || echo "running tests failed."
+            start /wait cmd /c "C:/Instrument/Apps/EPICS/stop_ibex_server.bat"
             """
         junit "test-reports/**/*.xml"
       }
