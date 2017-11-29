@@ -18,6 +18,10 @@ try:
 except ImportError:
     from genie_python.utilities import dehex_and_decompress, compress_and_hex
 
+WAIT_FOR_SERVER_TIMEOUT = 60
+"""Number of seconds to wait for a pv to become available in the config server e.g. when it starts or 
+when it changed config"""
+
 
 def load_config_if_not_already_loaded(config_name):
     """
@@ -37,7 +41,7 @@ def load_config_if_not_already_loaded(config_name):
 
     g.set_pv("CS:BLOCKSERVER:LOAD_CONFIG", value=compress_and_hex(config_name), is_local=True)
     status_was_busy = False
-    for i in range(60):
+    for i in range(WAIT_FOR_SERVER_TIMEOUT):
         status = get_server_status()
         if status_was_busy and status == "":
             break
@@ -53,16 +57,24 @@ def load_config_if_not_already_loaded(config_name):
 
 def _get_config_name():
     """
-
+    Returns the current config name after waiting for up to WAIT_FOR_SERVER_TIMEOUT seconds for it to be readable
     Returns: the current configs name
     Raises: AssertionError if the cv can not be read
 
     """
-    current_config_pv = g.get_pv("CS:BLOCKSERVER:GET_CURR_CONFIG_DETAILS", is_local=True)
-    if current_config_pv is None:
-        raise AssertionError("Current config is none, is the server running?")
-    current_config = json.loads(dehex_and_decompress(current_config_pv))
-    return current_config["name"]
+    final_exception = None
+    for i in range(WAIT_FOR_SERVER_TIMEOUT):
+        try:
+            current_config_pv = g.get_pv("CS:BLOCKSERVER:GET_CURR_CONFIG_DETAILS", is_local=True)
+            if current_config_pv is None:
+                raise AssertionError("Current config is none, is the server running?")
+            current_config = json.loads(dehex_and_decompress(current_config_pv))
+            return current_config["name"]
+        except Exception as final_exception:
+            sleep(1)
+            print("Waiting for config pv: count {}".format(i))
+
+    raise final_exception
 
 
 def get_server_status():
