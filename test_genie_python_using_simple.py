@@ -19,7 +19,7 @@ class TestBlockUtils(unittest.TestCase):
 
         for expected_val in ["CHEERFUL", "HAPPY"]:
             g.cset(mbbi_block_name, expected_val)
-            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=1)
+            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=30)
             assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
 
     def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(self):
@@ -28,7 +28,7 @@ class TestBlockUtils(unittest.TestCase):
 
         for expected_val in ["NO", "YES"]:
             g.cset(mbbi_block_name, expected_val)
-            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=1)
+            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=30)
             assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
 
     def test_GIVE_config_with_mbbi_pv_WHEN_set_and_get_pv_value_THEN_value_is_set_and_read(self):
