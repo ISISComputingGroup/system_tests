@@ -92,5 +92,5 @@ def get_server_status():
         as_json = json.loads(dehex_and_decompress(status_as_pv))
         return as_json["status"]
 
-    except ValueError:
+    except Exception:
         return None
