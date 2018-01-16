@@ -40,6 +40,7 @@ pipeline {
             start /wait cmd /c "C:/Instrument/Apps/EPICS/stop_ibex_server.bat"
             """
         junit "test-reports/**/*.xml"
+        junit "C:/Instrument/Apps/EPICS/ISIS/JournalParser/master/test/*.xml"
       }
     }
   }
