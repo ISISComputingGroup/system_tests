@@ -1,10 +1,37 @@
+import functools
 
 from hamcrest import *
 import unittest
 
 from utilities.utilities import load_config_if_not_already_loaded, g
 
+TIMEOUT = 30
 SIMPLE_CONFIG_NAME = "rcptt_simple"
+
+
+def retry_on_failure(max_times):
+    """
+    Decorator that will retry running a test if it failed.
+    :param max_times: Maximum number of times to retry running the test
+    :return: the decorator
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            err = None
+            for attempt in range(max_times):
+                try:
+                    func(*args, **kwargs)
+                    return
+                except unittest.SkipTest:
+                    raise
+                except Exception as e:
+                    print("\nTest failed (attempt {} of {}). Retrying...".format(attempt+1, max_times))
+                    err = e
+            if err is not None:
+                raise err
+        return wrapper
+    return decorator
 
 
 class TestBlockUtils(unittest.TestCase):
@@ -13,24 +40,27 @@ class TestBlockUtils(unittest.TestCase):
         g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
 
+    @retry_on_failure(3)
     def test_GIVE_config_with_mbbi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(self):
         mbbi_block_name = "MBBI_BLOCK"
         assert_that(mbbi_block_name, is_in(g.get_blocks()))
 
         for expected_val in ["CHEERFUL", "HAPPY"]:
             g.cset(mbbi_block_name, expected_val)
-            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=30)
+            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=TIMEOUT)
             assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
 
+    @retry_on_failure(3)
     def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(self):
-        mbbi_block_name = "BI_BLOCK"
-        assert_that(mbbi_block_name, is_in(g.get_blocks()))
+        bi_block_name = "BI_BLOCK"
+        assert_that(bi_block_name, is_in(g.get_blocks()))
 
         for expected_val in ["NO", "YES"]:
-            g.cset(mbbi_block_name, expected_val)
-            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=30)
-            assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
+            g.cset(bi_block_name, expected_val)
+            g.waitfor_block(bi_block_name, value=expected_val, maxwait=TIMEOUT)
+            assert_that(g.cget(bi_block_name)["value"], is_(expected_val))
 
+    @retry_on_failure(3)
     def test_GIVE_config_with_mbbi_pv_WHEN_set_and_get_pv_value_THEN_value_is_set_and_read(self):
         mbbi_pv_name = "SIMPLE:MBBI"
 
@@ -38,6 +68,7 @@ class TestBlockUtils(unittest.TestCase):
             g.set_pv(mbbi_pv_name, expected_val, is_local=True, wait=True)
             assert_that(g.get_pv(mbbi_pv_name, is_local=True), is_(expected_val))
 
+    @retry_on_failure(3)
     def test_GIVE_config_with_bi_pv_WHEN_set_and_get_pv_value_THEN_value_is_set_and_read(self):
         bi_pv_name = "SIMPLE:BI"
 
