@@ -35,8 +35,7 @@ pipeline {
         bat """
             run_tests.bat
             """
-        junit "test-reports/**/TEST*.xml"
-        junit "C:/Instrument/Apps/EPICS/ISIS/JournalParser/master/test/TEST*.xml"
+        junit "test-reports/**/*.xml"
       }
     }
   }
