@@ -1,9 +1,13 @@
-import os
 import unittest
 import types
 import pkgutil
+import warnings
+import importlib
 
-import sys
+
+IGNORED_MODULES = {
+    "curses",  # Not supported on windows
+}
 
 
 class TestGeniePythonImports(unittest.TestCase):
@@ -16,17 +20,27 @@ class TestGeniePythonImports(unittest.TestCase):
         :param module_name: the module name to import
         :return: None if no error on import, String describing error if there was an error.
         """
-        try:
-            mod = __import__(module_name)
-            self.assertIsInstance(mod, types.ModuleType)
+
+        if module_name in IGNORED_MODULES:
             return None
+
+        try:
+            mod = importlib.import_module(module_name)
+            self.assertIsInstance(mod, types.ModuleType)
+            del mod
         except Exception as e:
             return "Could not import module '{}'. Exception was: {}: {}.".format(module_name, e.__class__.__name__, e)
+        else:
+            return None
 
     def test_WHEN_importing_all_installed_packages_THEN_no_error(self):
         """
         This tests that all of the modules we've installed are importable as modules.
         """
+
+        # Ignore warnings. We get lots of these from various modules and it's too noisy for this test suite.
+        warnings.filterwarnings("ignore")
+
         failures = []
         for _, pkg, is_package in pkgutil.iter_modules():
             if is_package:
