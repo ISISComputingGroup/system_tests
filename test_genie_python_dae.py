@@ -9,6 +9,7 @@ class TestDae(unittest.TestCase):
     Tests to test the DAE commands.
     """
 
+    TIMEOUT = 60
     def setUp(self):
         g.set_instrument(None)
 
@@ -22,7 +23,7 @@ class TestDae(unittest.TestCase):
 
     def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(self):
         g.begin()
-        for _ in range(10):
+        for _ in range(self.TIMEOUT):
             if g.get_runstate() == "RUNNING":
                 break
         else:
@@ -42,7 +43,7 @@ class TestDae(unittest.TestCase):
         self._wait_for_and_assert_dae_simulation_mode(True)
 
     def _wait_for_and_assert_dae_simulation_mode(self, mode):
-        for _ in range(10):
+        for _ in range(self.TIMEOUT):
             if g.get_dae_simulation_mode() == mode:
                 return
             sleep(1)
