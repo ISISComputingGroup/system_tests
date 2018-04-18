@@ -9,7 +9,7 @@ class TestDae(unittest.TestCase):
     Tests to test the DAE commands.
     """
 
-    TIMEOUT = 60
+    TIMEOUT = 300
     def setUp(self):
         g.set_instrument(None)
 
