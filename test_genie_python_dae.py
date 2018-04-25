@@ -21,6 +21,13 @@ class TestDae(unittest.TestCase):
             g.set_dae_simulation_mode(True)
             self._wait_for_and_assert_dae_simulation_mode(True)
 
+            table_path_template = "C:\Instrument\Settings\config\NDWRENO\configuraions\tables\RCPTT_{}128.dat"
+            g.change_tables(
+                wiring=table_path_template.format("wiring"),
+                detector=table_path_template.format("detector"),
+                spectra=table_path_template.format("spectra"))
+            g.change_tcb(0, 10000, 100)
+
     def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(self):
         g.begin()
         for _ in range(self.TIMEOUT):
