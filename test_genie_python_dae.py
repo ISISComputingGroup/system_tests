@@ -1,6 +1,8 @@
 import unittest
 from time import sleep
 
+import os
+
 from utilities.utilities import g
 
 
@@ -10,6 +12,7 @@ class TestDae(unittest.TestCase):
     """
 
     TIMEOUT = 300
+
     def setUp(self):
         g.set_instrument(None)
 
@@ -21,12 +24,15 @@ class TestDae(unittest.TestCase):
             g.set_dae_simulation_mode(True)
             self._wait_for_and_assert_dae_simulation_mode(True)
 
-            table_path_template = "C:\Instrument\Settings\config\NDWRENO\configuraions\tables\RCPTT_{}128.dat"
-            g.change_tables(
-                wiring=table_path_template.format("wiring"),
-                detector=table_path_template.format("detector"),
-                spectra=table_path_template.format("spectra"))
-            g.change_tcb(0, 10000, 100)
+        table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
+
+        g.change_start()
+        g.change_tables(
+            wiring=table_path_template.format("wiring"),
+            detector=table_path_template.format("detector"),
+            spectra=table_path_template.format("spectra"))
+        g.change_tcb(0, 10000, 100)
+        g.change_finish()
 
     def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(self):
         g.begin()
