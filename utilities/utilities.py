@@ -8,9 +8,11 @@ from time import sleep
 
 # import genie either from the local project in pycharm or from virtual env
 try:
+    from source import genie_api_setup
     from source import genie as g
 except ImportError:
     from genie_python import genie as g
+    from genie_python import genie_api_setup
 
 # import genie utilities either from the local project in pycharm or from virtual env
 try:
@@ -94,3 +96,15 @@ def get_server_status():
 
     except Exception:
         return None
+
+
+def set_genie_python_raises_exceptions(does_throw):
+    """
+    Set that genie python api raises exceptions instead of just logging a message
+    Args:
+        does_throw: True if it should raise, False otherwise
+
+    Returns:
+
+    """
+    genie_api_setup._exceptions_raised = does_throw
