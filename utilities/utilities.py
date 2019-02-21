@@ -3,6 +3,7 @@ Utilities for genie python system tests.
 """
 
 import json
+import os
 
 from time import sleep
 
@@ -23,6 +24,9 @@ except ImportError:
 WAIT_FOR_SERVER_TIMEOUT = 60
 """Number of seconds to wait for a pv to become available in the config server e.g. when it starts or 
 when it changed config"""
+
+# Number of seconds to wait for the DAE settings to update
+DAE_MODE_TIMEOUT = 300
 
 
 def load_config_if_not_already_loaded(config_name):
@@ -108,3 +112,54 @@ def set_genie_python_raises_exceptions(does_throw):
 
     """
     genie_api_setup._exceptions_raised = does_throw
+
+
+def setup_simulated_wiring_tables():
+    """
+    Configures the DAE's wiring tables and sets the DAE to simulation mode
+
+    Returns:
+        None
+
+    """
+    if g.get_runstate() != "SETUP":
+        g.abort()
+        g.waitfor_runstate("SETUP")
+
+    if not g.get_dae_simulation_mode():
+        g.set_dae_simulation_mode(True)
+        _wait_for_and_assert_dae_simulation_mode(True)
+
+    table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
+
+    g.change_start()
+    g.change_tables(
+        wiring=table_path_template.format("wiring"),
+        detector=table_path_template.format("detector"),
+        spectra=table_path_template.format("spectra"))
+    g.change_tcb(0, 10000, 100)
+    g.change_finish()
+    set_genie_python_raises_exceptions(False)
+
+
+def _wait_for_and_assert_dae_simulation_mode(mode):
+    """
+    Writes the DAE simulation mode to the DAE
+
+    Args:
+        mode: Boolean, True if the DAE is in simulation mode
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError if the simulation mode cannot be written
+
+    """
+    for _ in range(DAE_MODE_TIMEOUT):
+        if g.get_dae_simulation_mode() == mode:
+            return
+        sleep(1)
+    else:
+        if g.get_dae_simulation_mode() != mode:
+            raise AssertionError("Could not set DAE simulation mode to {}".format(mode))

@@ -1,0 +1,103 @@
+<?xml version="1.0" ?>
+<iocs xmlns="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:ioc="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<ioc autostart="true" name="COUETTE_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="AMINT2L_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="GALIL_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="GALIL_02" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="GALIL_03" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="EUROTHRM_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="KHLY2400_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="EUROTHRM_02" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="EUROTHRM_03" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="GALIL_04" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="DFKPS_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="DFKPS_02" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="TPG300_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="TPG26X_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="LKSH218_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="ITC503_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="MCLEN_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="HLG_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="PIMOT_01" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc autostart="true" name="TPG300_02" restart="true" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+</iocs>

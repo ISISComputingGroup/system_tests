@@ -1,9 +1,7 @@
 import unittest
 from time import sleep
 
-import os
-
-from utilities.utilities import g, set_genie_python_raises_exceptions
+from utilities.utilities import g, set_genie_python_raises_exceptions, setup_simulated_wiring_tables
 
 
 class TestDae(unittest.TestCase):
@@ -16,24 +14,7 @@ class TestDae(unittest.TestCase):
     def setUp(self):
         g.set_instrument(None)
 
-        if g.get_runstate() != "SETUP":
-            g.abort()
-            g.waitfor_runstate("SETUP")
-
-        if not g.get_dae_simulation_mode():
-            g.set_dae_simulation_mode(True)
-            self._wait_for_and_assert_dae_simulation_mode(True)
-
-        table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
-
-        g.change_start()
-        g.change_tables(
-            wiring=table_path_template.format("wiring"),
-            detector=table_path_template.format("detector"),
-            spectra=table_path_template.format("spectra"))
-        g.change_tcb(0, 10000, 100)
-        g.change_finish()
-        set_genie_python_raises_exceptions(False)
+        setup_simulated_wiring_tables()
 
     def tearDown(self):
         set_genie_python_raises_exceptions(False)
