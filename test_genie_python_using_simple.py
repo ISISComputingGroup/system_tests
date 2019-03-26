@@ -51,12 +51,32 @@ class TestBlockUtils(unittest.TestCase):
             assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
 
     @retry_on_failure(3)
+    def test_GIVE_config_with_mbbi_block_WHEN_set_and_get_block_value_using_kwarg_syntax_THEN_value_is_set_and_read(self):
+        mbbi_block_name = "MBBI_BLOCK"
+        assert_that(mbbi_block_name, is_in(g.get_blocks()))
+
+        for expected_val in ["CHEERFUL", "HAPPY"]:
+            g.cset(**{mbbi_block_name: expected_val})
+            g.waitfor_block(mbbi_block_name, value=expected_val, maxwait=TIMEOUT)
+            assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
+
+    @retry_on_failure(3)
     def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(self):
         bi_block_name = "BI_BLOCK"
         assert_that(bi_block_name, is_in(g.get_blocks()))
 
         for expected_val in ["NO", "YES"]:
             g.cset(bi_block_name, expected_val)
+            g.waitfor_block(bi_block_name, value=expected_val, maxwait=TIMEOUT)
+            assert_that(g.cget(bi_block_name)["value"], is_(expected_val))
+
+    @retry_on_failure(3)
+    def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_using_kwarg_syntax_THEN_value_is_set_and_read(self):
+        bi_block_name = "BI_BLOCK"
+        assert_that(bi_block_name, is_in(g.get_blocks()))
+
+        for expected_val in ["NO", "YES"]:
+            g.cset(**{bi_block_name: expected_val})
             g.waitfor_block(bi_block_name, value=expected_val, maxwait=TIMEOUT)
             assert_that(g.cget(bi_block_name)["value"], is_(expected_val))
 
