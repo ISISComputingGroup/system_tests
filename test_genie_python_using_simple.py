@@ -1,4 +1,6 @@
 import functools
+import os
+import subprocess
 
 from hamcrest import *
 import unittest
@@ -75,3 +77,29 @@ class TestBlockUtils(unittest.TestCase):
         for expected_val in ["NO", "YES"]:
             g.set_pv(bi_pv_name, expected_val, is_local=True, wait=True)
             assert_that(g.get_pv(bi_pv_name, is_local=True), is_(expected_val))
+
+    def test_GIVEN_multithreaded_cget_THEN_works(self):
+        # Spawns 100 threads which concurrently do cgets.
+        # In some versions of IBEX, this has crashed with a segmentation fault.
+        multithreaded_cget = """
+import threading
+from genie_python import genie as g
+from genie_python.genie_startup import *
+g.set_instrument(None)
+    
+threads = [threading.Thread(target=g.cget, args=("abc",)) for _ in range(100)]
+for thread in threads:
+    thread.start()
+for thread in threads:
+    thread.join()
+        """
+
+        filename = "temp_test_multithreaded_cget.py"
+        try:
+            with open(filename, "w") as f:
+                f.write(multithreaded_cget)
+
+            return_code = subprocess.call("python {}".format(filename))
+            self.assertEqual(return_code, 0)
+        finally:
+            os.remove(filename)
