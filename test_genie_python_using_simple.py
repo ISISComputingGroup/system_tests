@@ -2,6 +2,7 @@ import functools
 import os
 import subprocess
 
+import sys
 from hamcrest import *
 import unittest
 
@@ -99,7 +100,7 @@ for thread in threads:
             with open(filename, "w") as f:
                 f.write(multithreaded_cget)
 
-            return_code = subprocess.call("python {}".format(filename))
+            return_code = subprocess.call("{} {}".format(sys.executable, filename))
             self.assertEqual(return_code, 0)
         finally:
             os.remove(filename)
