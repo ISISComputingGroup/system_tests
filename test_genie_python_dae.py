@@ -1,4 +1,7 @@
 import unittest
+import h5py
+import random
+import os
 from time import sleep
 
 from utilities.utilities import g, set_genie_python_raises_exceptions, setup_simulated_wiring_tables
@@ -41,6 +44,44 @@ class TestDae(unittest.TestCase):
         g.set_dae_simulation_mode(True)
         self._wait_for_and_assert_dae_simulation_mode(True)
 
+    def test_GIVEN_running_instrument_WHEN_pars_changed_THEN_pars_saved_in_file(self):
+        if g.get_runstate() != "SETUP":
+            self.fail("Should be in SETUP")
+        set_genie_python_raises_exceptions(True)
+        g.begin()
+        title = "title{}".format(random.randint(1,1000))
+        geometry = "geometry{}".format(random.randint(1,1000))
+        width = float(random.randint(1,1000))
+        height = float(random.randint(1,1000))
+        l1 = float(random.randint(1,1000))
+        beamstop = random.choice(['OUT','IN'])
+        filename = "c:/windows/temp/test{}.nxs".format(random.randint(1,1000))
+        g.change_title(title)
+        g.change_sample_par("width", width)
+        g.change_sample_par("height", height)
+        g.change_sample_par("geometry", geometry)
+        g.change_beamline_par("l1", l1)
+        g.change_beamline_par("beamstop:pos", beamstop)
+        sleep(5)
+        g.snapshot_crpt(filename)
+        with h5py.File(filename,  "r") as f:
+            saved_title = f['/raw_data_1/title'][0]
+            saved_width = f['/raw_data_1/sample/width'][0]
+            saved_height = f['/raw_data_1/sample/height'][0]
+            saved_geometry = f['/raw_data_1/sample/shape'][0]
+            saved_l1 = -f['/raw_data_1/instrument/moderator/distance'][0]
+            saved_beamstop = f['/raw_data_1/isis_vms_compat/IVPB'][30]
+        os.remove(filename)
+        self.assertEqual(title, saved_title)
+        self.assertEqual(width, saved_width)
+        self.assertEqual(height, saved_height)
+        self.assertEqual(geometry, saved_geometry)
+        self.assertEqual(l1, saved_l1)
+        if beamstop == 'OUT':
+            self.assertEqual(1, saved_beamstop)
+        else:
+            self.assertEqual(0, saved_beamstop)
+
     def _wait_for_and_assert_dae_simulation_mode(self, mode):
         for _ in range(self.TIMEOUT):
             if g.get_dae_simulation_mode() == mode:
@@ -48,3 +89,4 @@ class TestDae(unittest.TestCase):
             sleep(1)
         else:
             self.assertEqual(g.get_dae_simulation_mode(), mode)
+
