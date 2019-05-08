@@ -131,6 +131,7 @@ def setup_simulated_wiring_tables():
         _wait_for_and_assert_dae_simulation_mode(True)
 
     table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
+    set_wait_for_complete_callback_dae_settings(True)
 
     g.change_start()
     g.change_tables(
@@ -163,3 +164,12 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
     else:
         if g.get_dae_simulation_mode() != mode:
             raise AssertionError("Could not set DAE simulation mode to {}".format(mode))
+
+
+def set_wait_for_complete_callback_dae_settings(wait):
+    """ Sets the wait for completion callback attribute of the DAE
+
+    @param wait: Boolean value, True if you want the DAE to wait for the operation 
+    to complete before returning
+    """
+    genie_api_setup.__api.dae._wait_for_completion_callback_dae_settings = wait

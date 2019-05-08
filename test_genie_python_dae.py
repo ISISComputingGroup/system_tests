@@ -4,7 +4,7 @@ import random
 import os
 from time import sleep
 
-from utilities.utilities import g, set_genie_python_raises_exceptions, setup_simulated_wiring_tables
+from utilities.utilities import g, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, set_wait_for_complete_callback_dae_settings
 
 
 class TestDae(unittest.TestCase):
@@ -81,6 +81,26 @@ class TestDae(unittest.TestCase):
             self.assertEqual(1, saved_beamstop)
         else:
             self.assertEqual(0, saved_beamstop)
+
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
+
+        set_wait_for_complete_callback_dae_settings(False)
+
+        table_path_template = r"{}\tables\{}".format(os.environ["ICPCONFIGROOT"], "{}")
+        wiring = table_path_template.format("f_wiring_doors_all_event_process_5.dat")
+        detector = table_path_template.format("det_corr_184_process_5.dat")
+        spectra = table_path_template.format("f_spectra_doors_all_process_2to1_5.dat")
+        self.assertRaises(ValueError, g.change_tables(wiring, detector, spectra))
+
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(self):
+
+        set_wait_for_complete_callback_dae_settings(True)
+
+        table_path_template = r"{}\tables\{}".format(os.environ["ICPCONFIGROOT"], "{}")
+        wiring = table_path_template.format("f_wiring_doors_all_event_process_5.dat")
+        detector = table_path_template.format("det_corr_184_process_5.dat")
+        spectra = table_path_template.format("f_spectra_doors_all_process_2to1_5.dat")
+        g.change_tables(wiring, detector, spectra)
 
     def _wait_for_and_assert_dae_simulation_mode(self, mode):
         for _ in range(self.TIMEOUT):
