@@ -95,12 +95,27 @@ class TestDae(unittest.TestCase):
     def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(self):
 
         set_wait_for_complete_callback_dae_settings(True)
+        g.change_tcb(0, 10000, 100, regime=2)
 
         table_path_template = r"{}\tables\{}".format(os.environ["ICPCONFIGROOT"], "{}")
         wiring = table_path_template.format("f_wiring_doors_all_event_process_5.dat")
         detector = table_path_template.format("det_corr_184_process_5.dat")
         spectra = table_path_template.format("f_spectra_doors_all_process_2to1_5.dat")
         g.change_tables(wiring, detector, spectra)
+
+    def test_GIVEN_valid_tables_to_change_tables_THEN_get_table_returns_correct_file_path(self):
+
+        set_wait_for_complete_callback_dae_settings(True)
+        g.change_tcb(0, 10000, 100, regime=2)
+        spectra = r"{}/tables/RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "Spectra")
+
+        g.change_tables(
+            spectra=spectra
+        )
+
+        self.assertEqual(g.get_spectra_table(), spectra)
+
+
 
     def _wait_for_and_assert_dae_simulation_mode(self, mode):
         for _ in range(self.TIMEOUT):
