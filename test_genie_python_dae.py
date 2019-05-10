@@ -4,7 +4,8 @@ import random
 import os
 from time import sleep
 
-from utilities.utilities import g, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, set_wait_for_complete_callback_dae_settings
+from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
+                            set_wait_for_complete_callback_dae_settings, temporarily_kill_icp
 
 
 class TestDae(unittest.TestCase):
@@ -103,7 +104,7 @@ class TestDae(unittest.TestCase):
         spectra = table_path_template.format("f_spectra_doors_all_process_2to1_5.dat")
         g.change_tables(wiring, detector, spectra)
 
-    def test_GIVEN_valid_tables_to_change_tables_THEN_get_table_returns_correct_file_path(self):
+    def test_GIVEN_valid_spectra_table_to_change_tables_THEN_get_spectra_table_returns_correct_file_path(self):
 
         set_wait_for_complete_callback_dae_settings(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -115,6 +116,46 @@ class TestDae(unittest.TestCase):
 
         self.assertEqual(g.get_spectra_table(), spectra)
 
+    def test_GIVEN_valid_wiring_table_to_change_tables_THEN_get_wiring_table_returns_correct_file_path(self):
+
+        set_wait_for_complete_callback_dae_settings(True)
+        g.change_tcb(0, 10000, 100, regime=2)
+        wiring = r"{}/tables/RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "Wiring")
+
+        g.change_tables(
+            wiring=wiring
+        )
+
+        self.assertEqual(g.get_wiring_table(), wiring)
+
+    def test_GIVEN_valid_detector_table_to_change_tables_THEN_get_detector_table_returns_correct_file_path(self):
+
+        set_wait_for_complete_callback_dae_settings(True)
+        g.change_tcb(0, 10000, 100, regime=2)
+        detector = r"{}/tables/RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "Detector")
+
+        g.change_tables(
+            detector=detector
+        )
+        self.assertEqual(g.get_detector_table(), detector)
+
+
+    def test_GIVEN_valid_tables_to_change_tables_but_ISISDAE_killed_THEN_get_tables_raises_exception(self):
+
+        set_wait_for_complete_callback_dae_settings(True)
+
+        g.change_tcb(0, 10000, 100, regime=2)
+
+        table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
+        g.change_tables(
+            wiring=table_path_template.format("wiring"),
+            detector=table_path_template.format("detector"),
+            spectra=table_path_template.format("spectra"))
+
+        with temporarily_kill_icp():
+            self.assertRaises(Exception, g.get_detector_table())
+            self.assertRaises(Exception, g.get_spectra_table())
+            self.assertRaises(Exception, g.get_wiring_table())
 
 
     def _wait_for_and_assert_dae_simulation_mode(self, mode):

@@ -11,8 +11,10 @@ from time import sleep
 try:
     from source import genie_api_setup
     from source import genie as g
+    from source import genie_dae
 except ImportError:
     from genie_python import genie as g
+    from genie_python import genie_dae
     from genie_python import genie_api_setup
 
 # import genie utilities either from the local project in pycharm or from virtual env
@@ -173,3 +175,9 @@ def set_wait_for_complete_callback_dae_settings(wait):
     to complete before returning
     """
     genie_api_setup.__api.dae._wait_for_completion_callback_dae_settings = wait
+
+
+def temporarily_kill_icp():
+    # Temporarily kills the ISIS ICP (ISIS DAE)
+
+    return genie_api_setup.__api.dae._temporarily_kill_icp()
