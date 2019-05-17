@@ -1,69 +1,76 @@
-import os
 import unittest
+
+from hamcrest import *
+
 from utilities.utilities import g
 from six.moves import range
-import requests
-import time
+
+from utils import as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop
 
 
-class TestPlotting(unittest.TestCase):
+class TestProcControl(unittest.TestCase):
     """
-    It is very hard to write "comprehensive" unit tests for our integration layer with matplotlib
 
-    Instead, we write a handful of "smoke tests" to check that it isn't throwing any hugely obvious exceptions
     """
-    PYPLOT = None
-
-    @classmethod
-    def setUpClass(cls):
-        """
-        This is all a hack to get around the following:
-        - unittest can't import modules by name
-        - matplotlib imports modules by name as soon as you call either matplotlib.use(...) or import pyplot
-        - once the backend has been imported in matplotlib it can't re-import a different one
-
-        Our approach here is:
-        - Set a matplotlib configuration variable to tell it where to find our backend
-        - replace the __import__ special function in matplotlib.backends with a version that always returns our backend
-        - then import pyplot
-
-        THE ORDER OF THESE ITEMS IS IMPORTANT!
-        """
-        g.set_instrument(os.getenv("MYPVPREFIX"))
-        import matplotlib
-        matplotlib.rcParams['backend'] = "module://genie_python.matplotlib_backends/ibex_web_backend"
-        import matplotlib.backends
-        import genie_python.matplotlib_backend.ibex_web_backend
-        matplotlib.backends.__import__ = lambda *a, **kw: genie_python.matplotlib_backend.ibex_web_backend
-        import matplotlib.pyplot as pyplot
-        TestPlotting.PYPLOT = pyplot
 
     def setUp(self):
-        TestPlotting.PYPLOT.close('all')
+        g.set_instrument(None)
 
-    def assert_webserver_up(self):
-        web_response = requests.get("http://127.0.0.1:8988/")
-        self.assertEqual(web_response.status_code, 200)
+    def test_GIVEN_ioc_is_running_WHEN_call_stop_multiple_times_quickly_THEN_ioc_is_stopped(self):
+        # This test is repeated 10 time to ensure a consistent failure before the code update
+        for i in range(10):
+            start_ioc(ioc_name="SIMPLE")
 
-    def test_GIVEN_spectra_plot_THEN_no_exceptions_thrown(self):
-        g.begin()
-        try:
-            g.plot_spectrum(1)
-            self.assert_webserver_up()
-        finally:
-            g.end()
+            for _ in range(5):
+                g.set_pv("CS:PS:SIMPLE:STOP", 1, is_local=True, wait=False)
 
-    def test_GIVEN_spectra_plot_WHEN_adding_more_traces_THEN_no_exceptions_thrown(self):
-        g.begin()
-        try:
-            p = g.plot_spectrum(1)
-            p.add_spectrum(2)
-            p.add_spectrum(3, period=2)
-            self.assert_webserver_up()
-        finally:
-            g.end()
+            g.waitfor_time(seconds=5)  # wait just in case it is starting
+            wait_for_ioc_start_stop(timeout=5, is_start=False, ioc_name="SIMPLE")
 
-    def test_GIVEN_when_plot_exists_WHEN_connect_to_matplotlib_server_THEN_response_is_http_200_ok(self):
-        TestPlotting.PYPLOT.plot(range(5))
-        TestPlotting.PYPLOT.show()
-        self.assert_webserver_up()
+    def test_GIVEN_ioc_is_stopped_WHEN_call_stop_multiple_times_quickly_THEN_ioc_is_stopped(self):
+        stop_ioc(ioc_name="SIMPLE")
+
+        for _ in range(20):
+            g.set_pv("CS:PS:SIMPLE:STOP", 1, is_local=True, wait=False)
+
+        g.waitfor_time(seconds=5)  # wait just in case it is starting
+        wait_for_ioc_start_stop(timeout=30, is_start=False, ioc_name="SIMPLE")
+
+    def test_GIVEN_ioc_is_running_WHEN_call_start_multiple_times_quickly_THEN_ioc_is_started(self):
+        start_ioc(ioc_name="SIMPLE")
+
+        for _ in range(20):
+            g.set_pv("CS:PS:SIMPLE:START", 1, is_local=True, wait=True)
+
+        g.waitfor_time(seconds=5)  # wait just in case it is starting
+        wait_for_ioc_start_stop(timeout=30, is_start=True, ioc_name="SIMPLE")
+
+    def test_GIVEN_ioc_is_stopped_WHEN_call_start_multiple_times_quickly_THEN_ioc_is_started(self):
+        stop_ioc(ioc_name="SIMPLE")
+
+        for _ in range(20):
+            g.set_pv("CS:PS:SIMPLE:START", 1, is_local=True, wait=True)
+
+        g.waitfor_time(seconds=5)  # wait just in case it is starting
+        wait_for_ioc_start_stop(timeout=30, is_start=True, ioc_name="SIMPLE")
+
+    def test_GIVEN_ioc_is_running_WHEN_call_restart_multiple_times_quickly_THEN_ioc_is_restarted(self):
+        time_to_restart_and_read_uptime = 10
+        start_ioc(ioc_name="SIMPLE")
+        while as_seconds(g.get_pv("CS:IOC:SIMPLE:DEVIOS:UPTIME", is_local=True)) < time_to_restart_and_read_uptime:
+            g.waitfor_time(seconds=1)
+        for _ in range(20):
+            g.set_pv("CS:PS:SIMPLE:RESTART", 1, is_local=True, wait=False)
+
+        wait_for_ioc_start_stop(timeout=30, is_start=True, ioc_name="SIMPLE")
+        assert_that(as_seconds(g.get_pv("CS:IOC:SIMPLE:DEVIOS:UPTIME", is_local=True)), less_than(time_to_restart_and_read_uptime), "Uptime")
+
+    def test_GIVEN_ioc_is_off_WHEN_call_restart_multiple_times_quickly_THEN_ioc_is_still_stopped(self):
+
+        stop_ioc(ioc_name="SIMPLE")
+
+        for _ in range(20):
+            g.set_pv("CS:PS:SIMPLE:RESTART", 1, is_local=True, wait=False)
+
+        wait_for_ioc_start_stop(timeout=30, is_start=False, ioc_name="SIMPLE")
+
