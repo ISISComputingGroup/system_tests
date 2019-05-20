@@ -174,10 +174,10 @@ def set_wait_for_complete_callback_dae_settings(wait):
     @param wait: Boolean value, True if you want the DAE to wait for the operation 
     to complete before returning
     """
-    genie_api_setup.__api.dae._wait_for_completion_callback_dae_settings = wait
+    genie_api_setup.__api.dae.wait_for_completion_callback_dae_settings = wait
 
 
 def temporarily_kill_icp():
     # Temporarily kills the ISIS ICP (ISIS DAE)
 
-    return genie_api_setup.__api.dae._temporarily_kill_icp()
+    return genie_api_setup.__api.dae.temporarily_kill_icp()
