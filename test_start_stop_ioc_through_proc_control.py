@@ -2,10 +2,8 @@ import unittest
 
 from hamcrest import *
 
-from utilities.utilities import g
+from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop
 from six.moves import range
-
-from utils import as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop
 
 
 class TestProcControl(unittest.TestCase):
