@@ -56,6 +56,7 @@ class TestDae(unittest.TestCase):
         l1 = float(random.randint(1,1000))
         beamstop = random.choice(['OUT','IN'])
         filename = "c:/windows/temp/test{}.nxs".format(random.randint(1,1000))
+        _wait_for_sample_pars()
         g.change_title(title)
         g.change_sample_par("width", width)
         g.change_sample_par("height", height)
@@ -64,6 +65,7 @@ class TestDae(unittest.TestCase):
         g.change_beamline_par("beamstop:pos", beamstop)
         sleep(5)
         g.snapshot_crpt(filename)
+        sleep(5)
         with h5py.File(filename,  "r") as f:
             saved_title = f['/raw_data_1/title'][0]
             saved_width = f['/raw_data_1/sample/width'][0]
@@ -90,3 +92,11 @@ class TestDae(unittest.TestCase):
         else:
             self.assertEqual(g.get_dae_simulation_mode(), mode)
 
+    def _wait_for_sample_pars(self):
+        for _ in range(self.TIMEOUT):
+            try:
+                g.get_sample_pars()
+                return
+            except:
+                sleep(1)
+        self.assertEqual(0, 1)
