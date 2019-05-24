@@ -1,5 +1,4 @@
 import functools
-from threading import Thread
 
 from hamcrest import *
 
@@ -120,6 +119,7 @@ class TestBlockUtils(unittest.TestCase):
 class TestWaitforPV(unittest.TestCase):
 
     def setUp(self):
+        g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
 
     def test_GIVEN_pv_does_not_exist_WHEN_waiting_for_pv_THEN_error_is_returned(self):
