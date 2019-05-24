@@ -56,7 +56,7 @@ class TestDae(unittest.TestCase):
         l1 = float(random.randint(1,1000))
         beamstop = random.choice(['OUT','IN'])
         filename = "c:/windows/temp/test{}.nxs".format(random.randint(1,1000))
-        _wait_for_sample_pars()
+        self._wait_for_sample_pars()
         g.change_title(title)
         g.change_sample_par("width", width)
         g.change_sample_par("height", height)
