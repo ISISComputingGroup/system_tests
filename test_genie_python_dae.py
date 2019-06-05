@@ -34,7 +34,7 @@ class TestDae(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             g.set_dae_simulation_mode(False)
-    """
+    
     def test_GIVEN_run_state_is_setup_WHEN_attempt_to_change_simulation_mode_THEN_simulation_mode_changes(self):
         if g.get_runstate() != "SETUP":
             self.fail("Should be in SETUP")
@@ -44,7 +44,7 @@ class TestDae(unittest.TestCase):
 
         g.set_dae_simulation_mode(True)
         self._wait_for_and_assert_dae_simulation_mode(True)
-    """
+
     def test_GIVEN_running_instrument_WHEN_pars_changed_THEN_pars_saved_in_file(self):
         if g.get_runstate() != "SETUP":
             self.fail("Should be in SETUP")
@@ -112,7 +112,12 @@ class TestDae(unittest.TestCase):
         spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
         g.change_tables(wiring, detector, spectra)
 
+        set_genie_python_raises_exceptions(False)
+
     def test_GIVEN_valid_tables_to_change_tables_THEN_get_tables_returns_correct_tables(self):
+
+        set_wait_for_complete_callback_dae_settings(True)
+        g.change_tcb(0, 10000, 100, regime=2)
 
         table_path_template = r"{}/tables/{}"
         wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
