@@ -10,8 +10,10 @@ from time import sleep
 try:
     from source import genie_api_setup
     from source import genie as g
+    from source import genie_dae
 except ImportError:
     from genie_python import genie as g
+    from genie_python import genie_dae
     from genie_python import genie_api_setup
 
 # import genie utilities either from the local project in pycharm or from virtual env
@@ -130,6 +132,7 @@ def setup_simulated_wiring_tables():
         _wait_for_and_assert_dae_simulation_mode(True)
 
     table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
+    set_wait_for_complete_callback_dae_settings(True)
 
     g.change_start()
     g.change_tables(
@@ -164,6 +167,20 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
             raise AssertionError("Could not set DAE simulation mode to {}".format(mode))
 
 
+def set_wait_for_complete_callback_dae_settings(wait):
+    """ Sets the wait for completion callback attribute of the DAE
+
+    @param wait: Boolean value, True if you want the DAE to wait for the operation 
+    to complete before returning
+    """
+    genie_api_setup.__api.dae.wait_for_completion_callback_dae_settings = wait
+
+
+def temporarily_kill_icp():
+    # Temporarily kills the ISIS ICP (ISIS DAE)
+
+    return genie_api_setup.__api.dae.temporarily_kill_icp()
+  
 def as_seconds(time):
     """
     Convert a up time to seconds
@@ -252,3 +269,4 @@ def is_ioc_up(ioc_name):
     Returns: True if IOC is up; False otherwise
     """
     return g.get_pv("AS:{}:SR_heartbeat".format(ioc_name), is_local=True) is not None
+
