@@ -4,9 +4,10 @@ from hamcrest import *
 
 import threading
 import unittest
+import time
 
 from genie_python.channel_access_exceptions import UnableToConnectToPVException
-from utilities.utilities import load_config_if_not_already_loaded, g
+from utilities.utilities import load_config_if_not_already_loaded, check_block_exists, g
 
 
 TIMEOUT = 30
@@ -48,9 +49,9 @@ def delayed_set_pv(wait_before_set, wait_after_set, pv, value_to_set):
         pv(string): The PV to set
         value_to_set: The value to set on the target PV
     """
-    g.waitfor_time(seconds=wait_before_set)
+    time.sleep(wait_before_set)
     g.set_pv(pv, value_to_set)
-    g.waitfor_time(seconds=wait_after_set)
+    time.sleep(wait_after_set)
 
 
 class TestBlockUtils(unittest.TestCase):
@@ -130,7 +131,7 @@ class TestWaitforPV(unittest.TestCase):
 
     def test_GIVEN_pv_reaches_correct_value_WHEN_waiting_for_pv_THEN_waitfor_returns_before_timeout(self):
         pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
-        g.set_pv(pv_name, 0)
+        g.set_pv(pv_name, 0, wait=True)
         wait_before = 1
         wait_after = 5
         max_wait = (wait_before + wait_after) * 2
@@ -144,7 +145,7 @@ class TestWaitforPV(unittest.TestCase):
 
     def test_GIVEN_pv_change_but_not_to_correct_value_WHEN_waiting_for_pv_THEN_timeout(self):
         pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
-        g.set_pv(pv_name, 0)
+        g.set_pv(pv_name, 0, wait=True)
         value_to_wait_for = 2
         wrong_value = 3
         wait_before = 1
@@ -156,3 +157,117 @@ class TestWaitforPV(unittest.TestCase):
         g.adv.wait_for_pv(pv_name, value_to_wait_for, maxwait=max_wait)
 
         assert_that(set_pv_thread.is_alive(), is_(False), "SetPV thread should have finished before maxwait has passed.")
+
+class TestWaitforBlock(unittest.TestCase):
+
+    def setUp(self):
+        g.set_instrument(None)
+        load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
+        self.pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
+        self.block_name = "FLOAT_BLOCK"
+        self.wait_before = 1
+        self.wait_after = 2
+        self.max_wait = (self.wait_before + self.wait_after) * 2
+        g.cset(self.block_name, 0)
+        assert_that(check_block_exists(self.block_name), is_(True))
+
+    def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_reaches_value_THEN_waitfor_completes(self):
+        value_to_wait_for = 2
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_to_wait_for))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to correct value")
+
+    def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_wrong_value_THEN_timeout(self):
+        value_to_wait_for = 2
+        wrong_value = 3
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because value is wrong")
+
+    def test_GIVEN_waiting_for_value_in_limits_on_block_WHEN_block_enters_range_THEN_waitfor_completes(self):
+        value_in_range = 2
+        low_limit = 1
+        high_limit = 3
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_in_range))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to value in range")
+
+    def test_GIVEN_waiting_for_value_in_limits_on_block_WHEN_block_wrong_value_THEN_timeout(self):
+        wrong_value = 4
+        low_limit = 1
+        high_limit = 3
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because value is not in range")
+
+    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_enters_range_THEN_waitfor_completes(self):
+        value_in_range = -2
+        high_limit = -1
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_in_range))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to value below limit")
+
+    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_above_limit_THEN_timeout(self):
+        wrong_value = 1
+        high_limit = -1
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because block above limit")
+
+    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_enters_range_THEN_waitfor_completes(self):
+        value_in_range = 3
+        low_limit = 2
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_in_range))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to value above limit")
+
+    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_below_limit_THEN_timeout(self):
+        wrong_value = 1
+        low_limit = 2
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because block below limit")
+
+    # Testing cases where the block is directly on the limit - the highlimit is a maximum value so waitfor should complete
+
+    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_reaches_limit_boundary_THEN_waitfor_completes(self):
+        high_limit = -1
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, high_limit))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to the limit")
+
+    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_reaches_limit_boundary_THEN_waitfor_completes(self):
+        low_limit = 2
+
+        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, low_limit))
+        set_pv_thread.start()
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
+
+        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to the limit")
