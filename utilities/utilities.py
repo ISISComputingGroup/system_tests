@@ -270,6 +270,3 @@ def is_ioc_up(ioc_name):
     """
     return g.get_pv("AS:{}:SR_heartbeat".format(ioc_name), is_local=True) is not None
 
-def check_block_exists(block_name):
-    blocks = g.get_blocks()
-    return block_name in blocks
