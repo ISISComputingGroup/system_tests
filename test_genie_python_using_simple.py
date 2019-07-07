@@ -283,6 +283,10 @@ class TestRunControl(unittest.TestCase):
         self.max_wait = (self.wait_before + self.wait_after) * 2
         g.cset(self.block_name, 0)
         assert_that(check_block_exists(self.block_name), is_(True))
+        self._waitfor_runstate("SETUP")
+
+    def tearDown(self):
+        g.abort()
 
     def test_GIVEN_out_of_range_block_WHEN_start_run_THEN_goes_into_waiting(self):
         if g.get_runstate() != "SETUP":
