@@ -271,3 +271,37 @@ class TestWaitforBlock(unittest.TestCase):
         g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
         assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to the limit")
+
+class TestRunControl(unittest.TestCase):
+
+    def setUp(self):
+        g.set_instrument(None)
+        load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
+        self.block_name = "FLOAT_BLOCK"
+        self.wait_before = 1
+        self.wait_after = 2
+        self.max_wait = (self.wait_before + self.wait_after) * 2
+        g.cset(self.block_name, 0)
+        assert_that(check_block_exists(self.block_name), is_(True))
+
+    def test_GIVEN_out_of_range_block_WHEN_start_run_THEN_goes_into_waiting(self):
+        if g.get_runstate() != "SETUP":
+            self.fail("Should be in SETUP")
+        g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
+        g.begin()
+        self._waitfor_runstate("WAITING")
+
+    def test_GIVEN_dae_waiting_WHEN_block_goes_into_range_THEN_dae_running(self):
+        if g.get_runstate() != "SETUP":
+            self.fail("Should be in SETUP")
+        g.begin()
+        self._waitfor_runstate("RUNNING")
+        g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
+        self._waitfor_runstate("WAITING")
+
+    def _waitfor_runstate(self, state):
+        for _ in range(self.TIMEOUT):
+            if g.get_runstate() == state:
+                return
+            time.sleep(1)
+        self.assertEqual(g.get_runstate(), state)
