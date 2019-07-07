@@ -304,7 +304,7 @@ class TestRunControl(unittest.TestCase):
         self._waitfor_runstate("WAITING")
 
     def _waitfor_runstate(self, state):
-        for _ in range(self.TIMEOUT):
+        for _ in range(TIMEOUT):
             if g.get_runstate() == state:
                 return
             time.sleep(1)
