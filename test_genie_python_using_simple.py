@@ -307,5 +307,5 @@ class TestRunControl(unittest.TestCase):
         for _ in range(TIMEOUT):
             if g.get_runstate() == state:
                 return
-            time.sleep(1)
+            time.sleep(5)
         self.assertEqual(g.get_runstate(), state)
