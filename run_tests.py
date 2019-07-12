@@ -46,9 +46,7 @@ if __name__ == '__main__':
     xml_dir = args.output_dir
 
     # Load tests from test suites
-    #test_suite = unittest.TestLoader().discover(SCRIPT_DIRECTORY, pattern="test_*.py")
-    ### temporary for speed
-    test_suite = unittest.TestLoader().discover(SCRIPT_DIRECTORY, pattern="test_genie_python_using_simple.py")
+    test_suite = unittest.TestLoader().discover(SCRIPT_DIRECTORY, pattern="test_*.py")
 
     config_dirs = [name for name in os.listdir(CONFIGS_DIRECTORY)
                    if os.path.isdir(os.path.join(CONFIGS_DIRECTORY, name))]
