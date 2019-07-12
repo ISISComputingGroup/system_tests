@@ -305,7 +305,7 @@ class TestRunControl(unittest.TestCase):
         self._waitfor_runstate("RUNNING")
         g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
         self._waitfor_runstate("WAITING")
-        g.cset(self.block_name, runcontrol=True, lowlimit=-1, highlimit=-1)
+        g.cset(self.block_name, runcontrol=True, lowlimit=-1, highlimit=1)
         self._waitfor_runstate("RUNNING")
 
     def test_GIVEN_dae_waiting_WHEN_runcontrol_disabled_THEN_dae_running(self):
