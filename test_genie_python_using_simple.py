@@ -283,7 +283,7 @@ class TestRunControl(unittest.TestCase):
         self.max_wait = (self.wait_before + self.wait_after) * 2
         assert_that(check_block_exists(self.block_name), is_(True))
         g.cset(self.block_name, 0)
-        g.cset(self.blockname, runcontrol=False)
+        g.cset(self.block_name, runcontrol=False)
         self.block_pv = g.prefix_pv_name("CS:SB:") + self.block_name
         g.set_pv(self.block_pv + ":AC:ENABLE", 0)
         self._waitfor_runstate("SETUP")
