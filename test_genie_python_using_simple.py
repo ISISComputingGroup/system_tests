@@ -315,6 +315,30 @@ class TestRunControl(unittest.TestCase):
         g.cset(self.block_name, runcontrol=False)
         self._waitfor_runstate("RUNNING")
 
+    def test_GIVEN_alert_range_WHEN_parameter_out_of_range_THEN_alert_sent(self):
+        if g.get_runstate() != "SETUP":
+            self.fail("Should be in SETUP")
+        g.begin()
+        self._waitfor_runstate("RUNNING")
+        mobiles_pv = g.prefix_pv_name("CS:AC:ALERTS:MOBILES:SP")
+        emails_pv = g.prefix_pv_name("CS:AC:ALERTS:EMAILS:SP")
+        pw_pv = g.prefix_pv_name("CS:AC:ALERTS:PW:SP")
+        inst_pv = g.prefix_pv_name("CS:AC:ALERTS:INST:SP")
+        url_pv = g.prefix_pv_name("CS:AC:ALERTS:URL:SP")
+        out_pv = g.prefix_pv_name("CS:AC:OUT:CNT")
+        assert_that(g.get_pv(out_pv), is_(0))
+        g.set_pv(mobiles_pv, "123456;789")
+        g.set_pv(emails_pv, "a@b;c@d")
+        g.set_pv(pw_pv, "dummy")
+        g.set_pv(inst_pv, "TESTINST")
+        g.set_pv(url_pv, "test") # this needs to be "test"
+        block_pv = g.prefix_pv_name("CS:SB:") + self.block_name
+        g.set_pv(block_pv + ":AC:LOW", 1)
+        g.set_pv(block_pv + ":AC:HIGH", 2)
+        g.set_pv(block_pv + ":AC:ENABLE", 1)
+        time.sleep(5)
+        assert_that(g.get_pv(out_pv), is_(1))
+
     def _waitfor_runstate(self, state):
         for _ in range(TIMEOUT):
             if g.get_runstate() == state:
