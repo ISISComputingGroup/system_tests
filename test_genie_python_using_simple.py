@@ -281,8 +281,11 @@ class TestRunControl(unittest.TestCase):
         self.wait_before = 1
         self.wait_after = 2
         self.max_wait = (self.wait_before + self.wait_after) * 2
-        g.cset(self.block_name, 0)
         assert_that(check_block_exists(self.block_name), is_(True))
+        g.cset(self.block_name, 0)
+        g.cset(self.blockname, runcontrol=False)
+        self.block_pv = g.prefix_pv_name("CS:SB:") + self.block_name
+        g.set_pv(self.block_pv + ":AC:ENABLE", 0)
         self._waitfor_runstate("SETUP")
 
     def tearDown(self):
@@ -332,10 +335,9 @@ class TestRunControl(unittest.TestCase):
         g.set_pv(pw_pv, "dummy")
         g.set_pv(inst_pv, "TESTINST")
         g.set_pv(url_pv, "test") # this needs to be "test"
-        block_pv = g.prefix_pv_name("CS:SB:") + self.block_name
-        g.set_pv(block_pv + ":AC:LOW", 1)
-        g.set_pv(block_pv + ":AC:HIGH", 2)
-        g.set_pv(block_pv + ":AC:ENABLE", 1)
+        g.set_pv(self.block_pv + ":AC:LOW", 1)
+        g.set_pv(self.block_pv + ":AC:HIGH", 2)
+        g.set_pv(self.block_pv + ":AC:ENABLE", 1)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(1))
 
