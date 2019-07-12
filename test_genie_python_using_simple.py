@@ -288,7 +288,7 @@ class TestRunControl(unittest.TestCase):
     def tearDown(self):
         g.abort()
 
-    def test_GIVEN_out_of_range_block_WHEN_start_run_THEN_goes_into_waiting(self):
+    def test_GIVEN_out_of_range_block_WHEN_start_run_THEN_dae_waiting(self):
         if g.get_runstate() != "SETUP":
             self.fail("Should be in SETUP")
         g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
@@ -302,6 +302,18 @@ class TestRunControl(unittest.TestCase):
         self._waitfor_runstate("RUNNING")
         g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
         self._waitfor_runstate("WAITING")
+        g.cset(self.block_name, runcontrol=True, lowlimit=-1, highlimit=-1)
+        self._waitfor_runstate("RUNNING")
+
+    def test_GIVEN_dae_waiting_WHEN_runcontrol_disabled_THEN_dae_running(self):
+        if g.get_runstate() != "SETUP":
+            self.fail("Should be in SETUP")
+        g.begin()
+        self._waitfor_runstate("RUNNING")
+        g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
+        self._waitfor_runstate("WAITING")
+        g.cset(self.block_name, runcontrol=False)
+        self._waitfor_runstate("RUNNING")
 
     def _waitfor_runstate(self, state):
         for _ in range(TIMEOUT):
