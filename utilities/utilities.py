@@ -296,3 +296,7 @@ def retry_on_failure(max_times):
                 raise err
         return wrapper
     return decorator
+
+def check_block_exists(block_name):
+    blocks = g.get_blocks()
+    return block_name in blocks
