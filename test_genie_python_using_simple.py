@@ -6,36 +6,11 @@ import threading
 import unittest
 
 from genie_python.channel_access_exceptions import UnableToConnectToPVException
-from utilities.utilities import load_config_if_not_already_loaded, g
+from utilities.utilities import load_config_if_not_already_loaded, g, retry_on_failure
 
 
 TIMEOUT = 30
 SIMPLE_CONFIG_NAME = "rcptt_simple"
-
-
-def retry_on_failure(max_times):
-    """
-    Decorator that will retry running a test if it failed.
-    :param max_times: Maximum number of times to retry running the test
-    :return: the decorator
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            err = None
-            for attempt in range(max_times):
-                try:
-                    func(*args, **kwargs)
-                    return
-                except unittest.SkipTest:
-                    raise
-                except Exception as e:
-                    print("\nTest failed (attempt {} of {}). Retrying...".format(attempt+1, max_times))
-                    err = e
-            if err is not None:
-                raise err
-        return wrapper
-    return decorator
 
 
 def delayed_set_pv(wait_before_set, wait_after_set, pv, value_to_set):
