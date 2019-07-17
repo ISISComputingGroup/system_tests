@@ -4,6 +4,8 @@ Utilities for genie python system tests.
 
 import json
 import os
+import six
+import unittest
 
 from time import sleep
 # import genie either from the local project in pycharm or from virtual env
@@ -269,6 +271,31 @@ def is_ioc_up(ioc_name):
     Returns: True if IOC is up; False otherwise
     """
     return g.get_pv("AS:{}:SR_heartbeat".format(ioc_name), is_local=True) is not None
+
+
+def retry_on_failure(max_times):
+    """
+    Decorator that will retry running a test if it failed.
+    :param max_times: Maximum number of times to retry running the test
+    :return: the decorator
+    """
+    def decorator(func):
+        @six.wraps(func)
+        def wrapper(*args, **kwargs):
+            err = None
+            for attempt in range(max_times):
+                try:
+                    func(*args, **kwargs)
+                    return
+                except unittest.SkipTest:
+                    raise
+                except Exception as e:
+                    print("\nTest failed (attempt {} of {}). Retrying...".format(attempt+1, max_times))
+                    err = e
+            if err is not None:
+                raise err
+        return wrapper
+    return decorator
 
 def check_block_exists(block_name):
     blocks = g.get_blocks()
