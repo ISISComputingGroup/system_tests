@@ -5,8 +5,12 @@ import os
 from time import sleep
 
 from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
-                            set_wait_for_complete_callback_dae_settings, temporarily_kill_icp
+                            set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
+                            load_config_if_not_already_loaded, _get_config_name
 
+
+TEST_TITLE = "Test block value {block}"
+BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
 class TestDae(unittest.TestCase):
     """
@@ -23,6 +27,10 @@ class TestDae(unittest.TestCase):
     def tearDown(self):
         set_genie_python_raises_exceptions(False)
 
+    def fail_if_not_in_setup(self):
+        if g.get_runstate() != "SETUP":
+            self.fail("Should be in SETUP")
+
     def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(self):
         set_genie_python_raises_exceptions(True)
         g.begin()
@@ -34,7 +42,7 @@ class TestDae(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             g.set_dae_simulation_mode(False)
-    
+
     def test_GIVEN_run_state_is_setup_WHEN_attempt_to_change_simulation_mode_THEN_simulation_mode_changes(self):
         if g.get_runstate() != "SETUP":
             self.fail("Should be in SETUP")
@@ -84,6 +92,46 @@ class TestDae(unittest.TestCase):
             self.assertEqual(1, saved_beamstop)
         else:
             self.assertEqual(0, saved_beamstop)
+
+    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self):
+
+        block_to_test = "FLOAT_BLOCK"
+
+        block_test_value = 12.3
+
+        formatted_block_name = BLOCK_FORMAT_PATTERN.format(block_name=block_to_test)
+
+        title = TEST_TITLE.format(block=formatted_block_name)
+
+        self.fail_if_not_in_setup()
+
+        load_config_if_not_already_loaded("block_in_title")
+
+        set_genie_python_raises_exceptions(True)
+        g.begin()
+
+        self._wait_for_sample_pars()
+        g.change_title(title)
+
+        g.cset("FLOAT_BLOCK", 12.3)
+        sleep(5)
+
+        runnumber = g.get_runnumber()
+        inst = g.get_instrument()
+
+        g.end()
+
+        ## Check that 'ending' state has finished before moving on
+        sleep(5)
+
+        print("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber))
+
+        # Obtain saved title from output nexus file
+        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
+            saved_title = f['/raw_data_1/title'][0]
+            print('x', saved_title)
+
+        self.assertEqual(TEST_TITLE.format(block=block_test_value), saved_title)
 
     def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
 
