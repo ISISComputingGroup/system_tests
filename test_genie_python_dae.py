@@ -8,6 +8,7 @@ from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions
                             set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
                             load_config_if_not_already_loaded, _get_config_name
 
+from parameterized import parameterized
 
 TEST_TITLE = "Test block value {block}"
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
@@ -26,6 +27,12 @@ class TestDae(unittest.TestCase):
 
     def tearDown(self):
         set_genie_python_raises_exceptions(False)
+
+    def wait_for_setup_run_state(self):
+        for _ in range(self.TIMEOUT):
+            if g.get_runstate() == "SETUP":
+                return
+            sleep(1.0)
 
     def fail_if_not_in_setup(self):
         if g.get_runstate() != "SETUP":
@@ -93,6 +100,7 @@ class TestDae(unittest.TestCase):
         else:
             self.assertEqual(0, saved_beamstop)
 
+
     def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self):
 
         block_to_test = "FLOAT_BLOCK"
@@ -121,15 +129,11 @@ class TestDae(unittest.TestCase):
 
         g.end()
 
-        ## Check that 'ending' state has finished before moving on
-        sleep(5)
-
-        print("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber))
+        self.wait_for_setup_run_state()
 
         # Obtain saved title from output nexus file
         with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
             saved_title = f['/raw_data_1/title'][0]
-            print('x', saved_title)
 
         self.assertEqual(TEST_TITLE.format(block=block_test_value), saved_title)
 
