@@ -73,26 +73,35 @@ class TestPlotting(unittest.TestCase):
     @retry_on_failure(3)
     def test_WHEN_seven_spectra_added_THEN_six_figures_exist(self):
         g.begin()
-        import matplotlib.pyplot as p
-        for i in range(7):
-            g.plot_spectrum(1)
+        try:
+            import matplotlib.pyplot as p
+            for i in range(7):
+                g.plot_spectrum(1)
 
-        self.assertEqual(6, len(p.get_fignums()))
+            self.assertEqual(6, len(p.get_fignums()))
+        finally:
+            g.end()
 
     @retry_on_failure(3)
     def test_WHEN_seven_figures_added_THEN_six_figures_exist(self):
         g.begin()
-        import matplotlib.pyplot as p
-        for i in range(7):
-            p.figure(i)
+        try:
+            import matplotlib.pyplot as p
+            for i in range(7):
+                p.figure(i)
 
-        self.assertEqual(6, len(p.get_fignums()))
+            self.assertEqual(6, len(p.get_fignums()))
+        finally:
+            g.end()
 
     @retry_on_failure(3)
     def test_WHEN_eight_reverse_numbered_figures_added_THEN_newest_six_exist(self):
         g.begin()
-        import matplotlib.pyplot as p
-        for i in range(8, 0, -1):
-            p.figure(i)
+        try:
+            import matplotlib.pyplot as p
+            for i in range(8, 0, -1):
+                p.figure(i)
 
-        self.assertEqual([1, 2, 3, 4, 5, 6], p.get_fignums())
+            self.assertEqual([1, 2, 3, 4, 5, 6], p.get_fignums())
+        finally:
+            g.end()
