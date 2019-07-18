@@ -100,19 +100,21 @@ class TestDae(unittest.TestCase):
             self.assertEqual(0, saved_beamstop)
 
     @parameterized.expand([
-        ("FLOAT_BLOCK", 12.3),
-        ("LONG_BLOCK", 512),
-        ("STRING_BLOCK", "Test string")
+        ("FLOAT_BLOCK", 12.3, 12.3),
+        ("LONG_BLOCK", 512, 512),
+        ("STRING_BLOCK", "Test string", "Test string"),
+
+        # BI/MBBI can only save integer representation to title
+        ("BI_BLOCK", "YES", 1),
+        ("MBBI_BLOCK", "CHEERFUL", 2)
     ])
-    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self, block_to_test, block_test_value):
+    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self, block_to_test, block_test_value, expected_title_value):
+        self.fail_if_not_in_setup()
+        load_config_if_not_already_loaded("block_in_title")
 
         formatted_block_name = BLOCK_FORMAT_PATTERN.format(block_name=block_to_test)
 
         title = TEST_TITLE.format(block=formatted_block_name)
-
-        self.fail_if_not_in_setup()
-
-        load_config_if_not_already_loaded("block_in_title")
 
         self._wait_for_sample_pars()
         g.change_title(title)
@@ -133,7 +135,7 @@ class TestDae(unittest.TestCase):
         with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
             saved_title = f['/raw_data_1/title'][0]
 
-        self.assertEqual(TEST_TITLE.format(block=block_test_value), saved_title)
+        self.assertEqual(TEST_TITLE.format(block=expected_title_value), saved_title)
 
     def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
 

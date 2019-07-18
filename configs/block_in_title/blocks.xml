@@ -37,6 +37,18 @@
 		<log_deadband>0.0</log_deadband>
 	</block>
 	<block>
+		<name>MBBI_BLOCK</name>
+		<read_pv>SIMPLE:MBBI</read_pv>
+		<local>True</local>
+		<visible>True</visible>
+		<rc_enabled>False</rc_enabled>
+		<rc_lowlimit>0.0</rc_lowlimit>
+		<rc_highlimit>0.0</rc_highlimit>
+		<log_periodic>True</log_periodic>
+		<log_rate>1</log_rate>
+		<log_deadband>0.0</log_deadband>
+	</block>
+	<block>
 		<name>LONG_BLOCK</name>
 		<read_pv>SIMPLE:LONG</read_pv>
 		<local>True</local>
