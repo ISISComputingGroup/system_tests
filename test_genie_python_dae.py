@@ -51,8 +51,7 @@ class TestDae(unittest.TestCase):
             g.set_dae_simulation_mode(False)
 
     def test_GIVEN_run_state_is_setup_WHEN_attempt_to_change_simulation_mode_THEN_simulation_mode_changes(self):
-        if g.get_runstate() != "SETUP":
-            self.fail("Should be in SETUP")
+        self.fail_if_not_in_setup()
 
         g.set_dae_simulation_mode(False)
         self._wait_for_and_assert_dae_simulation_mode(False)
@@ -61,8 +60,8 @@ class TestDae(unittest.TestCase):
         self._wait_for_and_assert_dae_simulation_mode(True)
 
     def test_GIVEN_running_instrument_WHEN_pars_changed_THEN_pars_saved_in_file(self):
-        if g.get_runstate() != "SETUP":
-            self.fail("Should be in SETUP")
+        self.fail_if_not_in_setup()
+
         set_genie_python_raises_exceptions(True)
         g.begin()
         title = "title{}".format(random.randint(1,1000))
