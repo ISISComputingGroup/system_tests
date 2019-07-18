@@ -100,12 +100,12 @@ class TestDae(unittest.TestCase):
         else:
             self.assertEqual(0, saved_beamstop)
 
-
-    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self):
-
-        block_to_test = "FLOAT_BLOCK"
-
-        block_test_value = 12.3
+    @parameterized.expand([
+        ("FLOAT_BLOCK", 12.3),
+        ("LONG_BLOCK", 512),
+        ("STRING_BLOCK", "Test string")
+    ])
+    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self, block_to_test, block_test_value):
 
         formatted_block_name = BLOCK_FORMAT_PATTERN.format(block_name=block_to_test)
 
@@ -115,14 +115,13 @@ class TestDae(unittest.TestCase):
 
         load_config_if_not_already_loaded("block_in_title")
 
-        set_genie_python_raises_exceptions(True)
-        g.begin()
-
         self._wait_for_sample_pars()
         g.change_title(title)
 
-        g.cset("FLOAT_BLOCK", 12.3)
-        sleep(5)
+        set_genie_python_raises_exceptions(True)
+        g.begin()
+
+        g.cset(block_to_test, block_test_value, wait=True)
 
         runnumber = g.get_runnumber()
         inst = g.get_instrument()
