@@ -10,7 +10,6 @@ from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions
 
 from parameterized import parameterized
 
-TEST_TITLE = "Test block value {block}"
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
 class TestDae(unittest.TestCase):
@@ -28,11 +27,6 @@ class TestDae(unittest.TestCase):
     def tearDown(self):
         set_genie_python_raises_exceptions(False)
 
-    def wait_for_setup_run_state(self):
-        for _ in range(self.TIMEOUT):
-            if g.get_runstate() == "SETUP":
-                return
-            sleep(1.0)
 
     def fail_if_not_in_setup(self):
         if g.get_runstate() != "SETUP":
@@ -100,7 +94,7 @@ class TestDae(unittest.TestCase):
             self.assertEqual(0, saved_beamstop)
 
     @parameterized.expand([
-        ("FLOAT_BLOCK", 12.3, 12.3),
+        ("FLOAT_BLOCK", 12.345, 12.345),
         ("LONG_BLOCK", 512, 512),
         ("STRING_BLOCK", "Test string", "Test string"),
 
@@ -114,28 +108,59 @@ class TestDae(unittest.TestCase):
 
         formatted_block_name = BLOCK_FORMAT_PATTERN.format(block_name=block_to_test)
 
-        title = TEST_TITLE.format(block=formatted_block_name)
+        test_title = "Test block value {block}"
+
+        title = test_title.format(block=formatted_block_name)
 
         self._wait_for_sample_pars()
         g.change_title(title)
-
         set_genie_python_raises_exceptions(True)
         g.begin()
-
         g.cset(block_to_test, block_test_value, wait=True)
-
         runnumber = g.get_runnumber()
         inst = g.get_instrument()
-
         g.end()
 
-        self.wait_for_setup_run_state()
+        self._wait_for_setup_run_state()
 
         # Obtain saved title from output nexus file
         with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
             saved_title = f['/raw_data_1/title'][0]
 
-        self.assertEqual(TEST_TITLE.format(block=expected_title_value), saved_title)
+        self.assertEqual(test_title.format(block=expected_title_value), saved_title)
+
+    def test_GIVEN_run_with_multiple_blocks_in_title_WHEN_run_finished_THEN_title_has_all_block_values_in_it(self):
+        self.fail_if_not_in_setup()
+        load_config_if_not_already_loaded("block_in_title")
+
+        test_title = "Run with two blocks in {block1} and {block2}"
+
+        float_test_val = 12.345
+        long_test_val = 512
+
+        formatted_block_name_1 = BLOCK_FORMAT_PATTERN.format(block_name="FLOAT_BLOCK")
+        formatted_block_name_2 = BLOCK_FORMAT_PATTERN.format(block_name="LONG_BLOCK")
+
+        title = test_title.format(block1=formatted_block_name_1, block2=formatted_block_name_2)
+
+        self._wait_for_sample_pars()
+        g.change_title(title)
+        set_genie_python_raises_exceptions(True)
+        g.begin()
+        g.cset("FLOAT_BLOCK", float_test_val, wait=True)
+        g.cset("LONG_BLOCK", long_test_val, wait=True)
+
+        runnumber = g.get_runnumber()
+        inst = g.get_instrument()
+        g.end()
+
+        self._wait_for_setup_run_state()
+
+        # Obtain saved title from output nexus file
+        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
+            saved_title = f['/raw_data_1/title'][0]
+
+        self.assertEqual(test_title.format(block1=float_test_val, block2=long_test_val), saved_title)
 
     def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
 
@@ -309,3 +334,9 @@ class TestDae(unittest.TestCase):
             except:
                 sleep(1)
         self.assertEqual(0, 1)
+
+    def _wait_for_setup_run_state(self):
+        for _ in range(self.TIMEOUT):
+            if g.get_runstate() == "SETUP":
+                return
+            sleep(1.0)
