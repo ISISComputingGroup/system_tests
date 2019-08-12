@@ -253,9 +253,6 @@ class TestRunControl(unittest.TestCase):
         g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
         self.block_name = "FLOAT_BLOCK"
-        self.wait_before = 1
-        self.wait_after = 2
-        self.max_wait = (self.wait_before + self.wait_after) * 2
         assert_that(check_block_exists(self.block_name), is_(True))
         g.cset(self.block_name, 0)
         g.cset(self.block_name, runcontrol=False)
@@ -267,15 +264,11 @@ class TestRunControl(unittest.TestCase):
         g.abort()
 
     def test_GIVEN_out_of_range_block_WHEN_start_run_THEN_dae_waiting(self):
-        if g.get_runstate() != "SETUP":
-            self.fail("Should be in SETUP")
         g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
         g.begin()
         self._waitfor_runstate("WAITING")
 
     def test_GIVEN_dae_waiting_WHEN_block_goes_into_range_THEN_dae_running(self):
-        if g.get_runstate() != "SETUP":
-            self.fail("Should be in SETUP")
         g.begin()
         self._waitfor_runstate("RUNNING")
         g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
@@ -284,8 +277,6 @@ class TestRunControl(unittest.TestCase):
         self._waitfor_runstate("RUNNING")
 
     def test_GIVEN_dae_waiting_WHEN_runcontrol_disabled_THEN_dae_running(self):
-        if g.get_runstate() != "SETUP":
-            self.fail("Should be in SETUP")
         g.begin()
         self._waitfor_runstate("RUNNING")
         g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
@@ -294,8 +285,6 @@ class TestRunControl(unittest.TestCase):
         self._waitfor_runstate("RUNNING")
 
     def test_GIVEN_alert_range_WHEN_parameter_out_of_range_THEN_alert_sent(self):
-        if g.get_runstate() != "SETUP":
-            self.fail("Should be in SETUP")
         g.begin()
         self._waitfor_runstate("RUNNING")
         mobiles_pv = g.prefix_pv_name("CS:AC:ALERTS:MOBILES:SP")
@@ -317,8 +306,5 @@ class TestRunControl(unittest.TestCase):
         assert_that(g.get_pv(out_pv), is_(1))
 
     def _waitfor_runstate(self, state):
-        for _ in range(TIMEOUT):
-            if g.get_runstate() == state:
-                return
-            time.sleep(5)
+        g.waitfor_runstate(state, TIMEOUT)
         self.assertEqual(g.get_runstate(), state)
