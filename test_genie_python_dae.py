@@ -103,17 +103,19 @@ class TestDae(unittest.TestCase):
         g.change_title(test_title)
         set_genie_python_raises_exceptions(True)
         g.begin()
-        yield
-        runnumber = g.get_runnumber()
-        inst = g.get_instrument()
-        g.end()
+        try:
+            yield
+        finally:
+            runnumber = g.get_runnumber()
+            inst = g.get_instrument()
+            g.end()
 
-        self._wait_for_setup_run_state()
+            self._wait_for_setup_run_state()
 
-        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
-            saved_title = f['/raw_data_1/title'][0]
+            with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
+                saved_title = f['/raw_data_1/title'][0]
 
-        self.assertEqual(expected_title, saved_title)
+            self.assertEqual(expected_title, saved_title)
 
     @parameterized.expand([
         ("FLOAT_BLOCK", 12.345, 12.345),
