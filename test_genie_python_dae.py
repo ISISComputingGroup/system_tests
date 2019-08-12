@@ -9,6 +9,7 @@ from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions
                             load_config_if_not_already_loaded, _get_config_name
 
 from parameterized import parameterized
+from contextlib import contextmanager
 
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
@@ -26,7 +27,6 @@ class TestDae(unittest.TestCase):
 
     def tearDown(self):
         set_genie_python_raises_exceptions(False)
-
 
     def fail_if_not_in_setup(self):
         if g.get_runstate() != "SETUP":
@@ -93,6 +93,28 @@ class TestDae(unittest.TestCase):
         else:
             self.assertEqual(0, saved_beamstop)
 
+    @contextmanager
+    def _assert_title_correct(self, test_title, expected_title):
+        """
+        Sets the title to test title, performs a run (yielding during the run)
+        and confirms that the saved title is expected_title.
+        """
+        self._wait_for_sample_pars()
+        g.change_title(test_title)
+        set_genie_python_raises_exceptions(True)
+        g.begin()
+        yield
+        runnumber = g.get_runnumber()
+        inst = g.get_instrument()
+        g.end()
+
+        self._wait_for_setup_run_state()
+
+        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
+            saved_title = f['/raw_data_1/title'][0]
+
+        self.assertEqual(expected_title, saved_title)
+
     @parameterized.expand([
         ("FLOAT_BLOCK", 12.345, 12.345),
         ("LONG_BLOCK", 512, 512),
@@ -112,22 +134,8 @@ class TestDae(unittest.TestCase):
 
         title = test_title.format(block=formatted_block_name)
 
-        self._wait_for_sample_pars()
-        g.change_title(title)
-        set_genie_python_raises_exceptions(True)
-        g.begin()
-        g.cset(block_to_test, block_test_value, wait=True)
-        runnumber = g.get_runnumber()
-        inst = g.get_instrument()
-        g.end()
-
-        self._wait_for_setup_run_state()
-
-        # Obtain saved title from output nexus file
-        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
-            saved_title = f['/raw_data_1/title'][0]
-
-        self.assertEqual(test_title.format(block=expected_title_value), saved_title)
+        with self._assert_title_correct(title, test_title.format(block=expected_title_value)):
+            g.cset(block_to_test, block_test_value, wait=True)
 
     def test_GIVEN_run_with_multiple_blocks_in_title_WHEN_run_finished_THEN_title_has_all_block_values_in_it(self):
         self.fail_if_not_in_setup()
@@ -143,27 +151,11 @@ class TestDae(unittest.TestCase):
 
         title = test_title.format(block1=formatted_block_name_1, block2=formatted_block_name_2)
 
-        self._wait_for_sample_pars()
-        g.change_title(title)
-        set_genie_python_raises_exceptions(True)
-        g.begin()
-        g.cset("FLOAT_BLOCK", float_test_val, wait=True)
-        g.cset("LONG_BLOCK", long_test_val, wait=True)
-
-        runnumber = g.get_runnumber()
-        inst = g.get_instrument()
-        g.end()
-
-        self._wait_for_setup_run_state()
-
-        # Obtain saved title from output nexus file
-        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
-            saved_title = f['/raw_data_1/title'][0]
-
-        self.assertEqual(test_title.format(block1=float_test_val, block2=long_test_val), saved_title)
+        with self._assert_title_correct(title, test_title.format(block1=float_test_val, block2=long_test_val)):
+            g.cset("FLOAT_BLOCK", float_test_val, wait=True)
+            g.cset("LONG_BLOCK", long_test_val, wait=True)
 
     def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
-
         set_wait_for_complete_callback_dae_settings(False)
         set_genie_python_raises_exceptions(True)
 
@@ -178,7 +170,6 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(self):
-
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -192,7 +183,6 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     def test_GIVEN_valid_tables_to_change_tables_THEN_get_tables_returns_correct_tables(self):
-
         set_wait_for_complete_callback_dae_settings(True)
         g.change_tcb(0, 10000, 100, regime=2)
 
@@ -211,9 +201,7 @@ class TestDae(unittest.TestCase):
         self.assertEqual(g.get_wiring_table(), wiring)
         self.assertEqual(g.get_spectra_table(), spectra)
 
-
     def test_GIVEN_valid_tables_to_change_tables_but_ISISDAE_killed_THEN_get_tables_raises_exception(self):
-
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -237,14 +225,12 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     def test_WHEN_change_tables_is_called_with_invalid_file_path_THEN_exception_thrown(self):
-
         set_genie_python_raises_exceptions(True)
         self.assertRaises(Exception, g.change_tables, r"C:\Nonsense\Wibble\Wobble\jelly.txt")
         set_genie_python_raises_exceptions(False)
 
 
     def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
-
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -266,7 +252,6 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     def test_GIVEN_change_tables_called_WHEN_nonexisting_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
-
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -285,7 +270,6 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_THEN_filepath_is_accepted(self):
-
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -302,7 +286,6 @@ class TestDae(unittest.TestCase):
         )
 
     def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_and_with_forward_slashes_THEN_filepath_is_accepted(self):
-
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
