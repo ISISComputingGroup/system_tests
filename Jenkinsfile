@@ -49,7 +49,7 @@ pipeline {
   // The options directive is for configuration that applies to the whole job.
   options {
     buildDiscarder(logRotator(numToKeepStr:'5', daysToKeepStr: '7'))
-    timeout(time: 60, unit: 'MINUTES')
+    timeout(time: 180, unit: 'MINUTES')
     disableConcurrentBuilds()
   }
 }
