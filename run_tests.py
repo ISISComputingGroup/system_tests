@@ -35,7 +35,6 @@ default_configs_path = os.path.join("C:\\", "Instrument", "Settings", "config",
                                     os.environ.get("COMPUTERNAME", "NAME"), "configurations")
 # path to ICP CONFIG ROOT
 PATH_TO_ICPCONFIGROOT = os.environ.get("ICPCONFIGROOT", default_configs_path)
-SETTINGS_CONFIG = os.path.join(PATH_TO_ICPCONFIGROOT, "configurations")
 
 if __name__ == '__main__':
     # get output directory from command line arguments
@@ -52,13 +51,23 @@ if __name__ == '__main__':
                    if os.path.isdir(os.path.join(CONFIGS_DIRECTORY, name))]
 
     for config_dir in config_dirs:
-        dest = os.path.join(SETTINGS_CONFIG, config_dir)
+        dest = os.path.join(PATH_TO_ICPCONFIGROOT, config_dir)
         src = os.path.join(CONFIGS_DIRECTORY, config_dir)
-        try:
-            shutil.rmtree(dest)
-        except OSError:
-            pass
-        shutil.copytree(src, dest)
+
+        for file_or_dir in os.listdir(src):
+            file_or_dir_dest = os.path.join(dest, file_or_dir)
+            file_or_dir_src = os.path.join(src, file_or_dir)
+            try:
+                if os.path.isdir(file_or_dir_src):
+                    shutil.rmtree(file_or_dir_dest)
+                else:
+                    os.remove(file_or_dir_dest)
+            except OSError:
+                pass
+            if os.path.isdir(file_or_dir_src):
+                shutil.copytree(file_or_dir_src, file_or_dir_dest)
+            else:
+                shutil.copy(file_or_dir_src, dest)
 
     print("\n\n------ BEGINNING genie_python SYSTEM TESTS ------")
     ret_vals = list()
