@@ -1,12 +1,14 @@
 import unittest
+from unittest import skip
+
 import h5py
 import random
 import os
 from time import sleep
 
 from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
-                            set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
-                            load_config_if_not_already_loaded, _get_config_name
+    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
+    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode
 
 from parameterized import parameterized
 from contextlib import contextmanager
@@ -44,14 +46,15 @@ class TestDae(unittest.TestCase):
         with self.assertRaises(ValueError):
             g.set_dae_simulation_mode(False)
 
+    @skip("Skip until ticket 4747 is complete")
     def test_GIVEN_run_state_is_setup_WHEN_attempt_to_change_simulation_mode_THEN_simulation_mode_changes(self):
         self.fail_if_not_in_setup()
 
         g.set_dae_simulation_mode(False)
-        self._wait_for_and_assert_dae_simulation_mode(False)
+        _wait_for_and_assert_dae_simulation_mode(False)
 
-        g.set_dae_simulation_mode(True)
-        self._wait_for_and_assert_dae_simulation_mode(True)
+        g.set_dae_simulation_mode(True, force=True)
+        _wait_for_and_assert_dae_simulation_mode(True)
 
     def test_GIVEN_running_instrument_WHEN_pars_changed_THEN_pars_saved_in_file(self):
         self.fail_if_not_in_setup()
@@ -110,7 +113,7 @@ class TestDae(unittest.TestCase):
             inst = g.get_instrument()
             g.end()
 
-            self._wait_for_setup_run_state()
+            g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
             with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
                 saved_title = f['/raw_data_1/title'][0]
@@ -303,14 +306,6 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
-    def _wait_for_and_assert_dae_simulation_mode(self, mode):
-        for _ in range(self.TIMEOUT):
-            if g.get_dae_simulation_mode() == mode:
-                return
-            sleep(1)
-        else:
-            self.assertEqual(g.get_dae_simulation_mode(), mode)
-
     def _wait_for_sample_pars(self):
         for _ in range(self.TIMEOUT):
             try:
@@ -319,9 +314,3 @@ class TestDae(unittest.TestCase):
             except:
                 sleep(1)
         self.assertEqual(0, 1)
-
-    def _wait_for_setup_run_state(self):
-        for _ in range(self.TIMEOUT):
-            if g.get_runstate() == "SETUP":
-                return
-            sleep(1.0)
