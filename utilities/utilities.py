@@ -129,7 +129,7 @@ def setup_simulated_wiring_tables():
 
     """
     if not g.get_dae_simulation_mode():
-        g.set_dae_simulation_mode(True, force=True)
+        g.set_dae_simulation_mode(True, skip_required_runstates=True)
         _wait_for_and_assert_dae_simulation_mode(True)
 
     if g.get_runstate() != "SETUP":

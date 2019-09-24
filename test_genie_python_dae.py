@@ -53,7 +53,7 @@ class TestDae(unittest.TestCase):
         g.set_dae_simulation_mode(False)
         _wait_for_and_assert_dae_simulation_mode(False)
 
-        g.set_dae_simulation_mode(True, force=True)
+        g.set_dae_simulation_mode(True, skip_required_runstates=True)
         _wait_for_and_assert_dae_simulation_mode(True)
 
     def test_GIVEN_running_instrument_WHEN_pars_changed_THEN_pars_saved_in_file(self):
