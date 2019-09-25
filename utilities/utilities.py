@@ -7,8 +7,11 @@ import os
 import six
 import unittest
 
-from time import sleep
+from time import sleep, time
+
 # import genie either from the local project in pycharm or from virtual env
+from mock import patch
+
 try:
     from source import genie_api_setup
     from source import genie as g
@@ -29,7 +32,7 @@ WAIT_FOR_SERVER_TIMEOUT = 60
 when it changed config"""
 
 # Number of seconds to wait for the DAE settings to update
-DAE_MODE_TIMEOUT = 300
+DAE_MODE_TIMEOUT = 120
 
 
 def load_config_if_not_already_loaded(config_name):
@@ -125,13 +128,13 @@ def setup_simulated_wiring_tables():
         None
 
     """
+    if not g.get_dae_simulation_mode():
+        g.set_dae_simulation_mode(True, skip_required_runstates=True)
+        _wait_for_and_assert_dae_simulation_mode(True)
+
     if g.get_runstate() != "SETUP":
         g.abort()
-        g.waitfor_runstate("SETUP")
-
-    if not g.get_dae_simulation_mode():
-        g.set_dae_simulation_mode(True)
-        _wait_for_and_assert_dae_simulation_mode(True)
+        g.waitfor_runstate("SETUP", maxwaitsecs=DAE_MODE_TIMEOUT)
 
     table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
     set_wait_for_complete_callback_dae_settings(True)
@@ -160,13 +163,13 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
         AssertionError if the simulation mode cannot be written
 
     """
-    for _ in range(DAE_MODE_TIMEOUT):
+    start_time = time()
+    while time() - start_time < DAE_MODE_TIMEOUT:
         if g.get_dae_simulation_mode() == mode:
             return
-        sleep(1)
-    else:
-        if g.get_dae_simulation_mode() != mode:
-            raise AssertionError("Could not set DAE simulation mode to {}".format(mode))
+        sleep(1.0)
+    if g.get_dae_simulation_mode() != mode:
+        raise AssertionError("Could not set DAE simulation mode to {}".format(mode))
 
 
 def set_wait_for_complete_callback_dae_settings(wait):
