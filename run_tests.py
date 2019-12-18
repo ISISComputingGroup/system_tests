@@ -25,6 +25,9 @@ import shutil
 import xmlrunner
 import argparse
 
+# Import the configurations upgrade tool
+sys.path.append( os.path.join("C:\\", "Instrument", "Apps", "EPICS", "misc", "upgrade", "master"))
+from upgrade import perform_upgrade
 
 SCRIPT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 DEFAULT_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, 'test-reports')
@@ -68,6 +71,9 @@ if __name__ == '__main__':
                 shutil.copytree(file_or_dir_src, file_or_dir_dest)
             else:
                 shutil.copy(file_or_dir_src, dest)
+
+    print("\n\n------ UPGRADING configurations ------")
+    perform_upgrade()
 
     print("\n\n------ BEGINNING genie_python SYSTEM TESTS ------")
     ret_vals = list()
