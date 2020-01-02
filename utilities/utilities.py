@@ -64,7 +64,8 @@ def load_config_if_not_already_loaded(config_name):
 
     current_config = _get_config_name()
     if current_config != config_name:
-        raise AssertionError("Couldn't change config to '{}' it is '{}'".format(config_name, current_config))
+        raise AssertionError("Couldn't change config to '{}' it is '{}'."
+                             "(Is this because that configs schema is invalid?)".format(config_name, current_config))
 
 
 def _get_config_name():
