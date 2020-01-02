@@ -2,7 +2,8 @@ import unittest
 
 from hamcrest import *
 
-from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop
+from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop, \
+    load_config_if_not_already_loaded
 from six.moves import range
 
 
@@ -13,6 +14,10 @@ class TestProcControl(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
+
+        # all tests that interact with anything but genie should try to load a config to ensure that the configurations
+        # in the tests are not broken, e.g. by a schema update
+        load_config_if_not_already_loaded("empty_for_system_tests")
 
     def test_GIVEN_ioc_is_running_WHEN_call_stop_multiple_times_quickly_THEN_ioc_is_stopped(self):
         # This test is repeated 10 time to ensure a consistent failure before the code update

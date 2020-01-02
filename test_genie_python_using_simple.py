@@ -33,6 +33,9 @@ class TestBlockUtils(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
+
+        # all tests that interact with anything but genie should try to load a config to ensure that the configurations
+        # in the tests are not broken, e.g. by a schema update
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
 
     @retry_on_failure(3)
