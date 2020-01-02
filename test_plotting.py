@@ -16,17 +16,12 @@ class TestPlotting(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """
-        This is all a hack to get around the following:
-        - unittest can't import modules by name
-        - matplotlib imports modules by name as soon as you call either matplotlib.use(...) or import pyplot
-        - once the backend has been imported in matplotlib it can't re-import a different one
+        This sets up genie python start command as in the gui
+        (uk.ac.stfc.isis.ibex.ui.scripting.Commands.GENIE_INITIALISATION)
+        It must be done before the first call to matplotlib because once that is called the backend can not be changed
 
-        Our approach here is:
-        - Set a matplotlib configuration variable to tell it where to find our backend
-        - replace the __import__ special function in matplotlib.backends with a version that always returns our backend
-        - then import pyplot
-
-        THE ORDER OF THESE ITEMS IS IMPORTANT!
+        THE ORDER OF THESE ITEMS IS IMPORTANT! matplotlib.use must be before matplotlib.pyplot
+        (not applicable here but more generally before matplotlib.backends too)
         """
         g.set_instrument(os.getenv("MYPVPREFIX"))
 
@@ -34,8 +29,6 @@ class TestPlotting(unittest.TestCase):
         # in the tests are not broken, e.g. by a schema update
         load_config_if_not_already_loaded("empty_for_system_tests")
 
-        # use the same genie python start command as in the gui
-        # (uk.ac.stfc.isis.ibex.ui.scripting.Commands.GENIE_INITIALISATION)
         import matplotlib
         matplotlib.use('module://genie_python.matplotlib_backend.ibex_web_backend')
         import matplotlib.pyplot as pyplot
