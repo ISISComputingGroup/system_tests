@@ -8,7 +8,7 @@ from time import sleep
 
 from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
     set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
-    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode
+    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list
 
 from parameterized import parameterized
 from contextlib import contextmanager
@@ -310,9 +310,51 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_normal_THEN_change_successful(self):
+        set_genie_python_raises_exceptions(True)
+
+        g.change_number_soft_periods(30)
+        sleep(10)
+        self.assertEqual(g.get_number_periods(), 30)
+
+        set_genie_python_raises_exceptions(False)
+
     def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(self):
         set_genie_python_raises_exceptions(True)
+
+        g.change_number_soft_periods(30)
+        sleep(10)
+        self.assertEqual(g.get_number_periods(), 30)
+
         self.assertRaises(IOError, g.change_number_soft_periods, 1000000)
+        self.assertEqual(g.get_number_periods(), 30)
+
+        set_genie_python_raises_exceptions(False)
+
+    @parameterized.expand(parameterized_list([1, 2, 6, 9, 10]))
+    def test_GIVEN_change_period_called_WHEN_valid_argument_THEN_change_successful(self, _, new_period):
+        set_genie_python_raises_exceptions(True)
+        g.change_number_soft_periods(10)
+        sleep(10)
+        self.assertEqual(g.get_number_periods(), 10)
+
+        g.change_period(new_period)
+        self.assertEqual(g.get_period(), new_period)
+
+        set_genie_python_raises_exceptions(False)
+
+    @parameterized.expand(parameterized_list([-1, 0, 11, 12]))
+    def test_GIVEN_change_period_called_WHEN_invalid_argument_THEN_raise_exception_to_console(self, _, new_period):
+        set_genie_python_raises_exceptions(True)
+        g.change_number_soft_periods(10)
+        sleep(10)
+        self.assertEqual(g.get_number_periods(), 10)
+        g.change_period(1)
+        self.assertEqual(g.get_period(), 1)
+
+        self.assertRaises(IOError, g.change_period, new_period)
+        self.assertEqual(g.get_period(), 1)
+
         set_genie_python_raises_exceptions(False)
 
     def _wait_for_sample_pars(self):
