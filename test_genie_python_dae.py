@@ -310,6 +310,11 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(self):
+        set_genie_python_raises_exceptions(True)
+        self.assertRaises(IOError, g.change_number_soft_periods, 1000000)
+        set_genie_python_raises_exceptions(False)
+
     def _wait_for_sample_pars(self):
         for _ in range(self.TIMEOUT):
             try:
