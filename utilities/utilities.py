@@ -171,7 +171,7 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
         sleep(1.0)
     if g.get_dae_simulation_mode() != mode:
         sim_val = g.get_pv("DAE:SIM_MODE", is_local=True)
-        raise AssertionError("Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode),format(sim_val))
+        raise AssertionError("Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode,sim_val))
 
 
 def set_wait_for_complete_callback_dae_settings(wait):
