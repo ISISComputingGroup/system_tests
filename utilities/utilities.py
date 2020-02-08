@@ -152,7 +152,7 @@ def setup_simulated_wiring_tables():
 
 def _wait_for_and_assert_dae_simulation_mode(mode):
     """
-    Writes the DAE simulation mode to the DAE
+    Waits for specified DAE simulation mode in the DAE
 
     Args:
         mode: Boolean, True if the DAE is in simulation mode
@@ -170,7 +170,8 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
             return
         sleep(1.0)
     if g.get_dae_simulation_mode() != mode:
-        raise AssertionError("Could not set DAE simulation mode to {}".format(mode))
+        sim_val = g.get_pv("DAE:SIM_MODE", is_local=True)
+        raise AssertionError("Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode),format(sim_val))
 
 
 def set_wait_for_complete_callback_dae_settings(wait):
