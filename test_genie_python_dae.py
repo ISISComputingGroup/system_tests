@@ -13,6 +13,8 @@ from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions
 from parameterized import parameterized
 from contextlib import contextmanager
 
+TOO_MANY_PERIODS_FOR_DAE = 1000000
+
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
 class TestDae(unittest.TestCase):
@@ -326,7 +328,7 @@ class TestDae(unittest.TestCase):
         sleep(10)
         self.assertEqual(g.get_number_periods(), 30)
 
-        self.assertRaises(IOError, g.change_number_soft_periods, 1000000)
+        self.assertRaises(IOError, g.change_number_soft_periods, TOO_MANY_PERIODS_FOR_DAE)
         self.assertEqual(g.get_number_periods(), 30)
 
         set_genie_python_raises_exceptions(False)
@@ -362,6 +364,6 @@ class TestDae(unittest.TestCase):
             try:
                 g.get_sample_pars()
                 return
-            except:
+            except Exception:
                 sleep(1)
-        self.assertEqual(0, 1)
+        self.fail("sample pars did not return")
