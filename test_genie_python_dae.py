@@ -319,7 +319,7 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
-        self._wait_for_dae_period_change(30, True)
+        self._wait_for_dae_period_change(30, g.get_number_periods)
 
         set_genie_python_raises_exceptions(False)
 
@@ -327,10 +327,10 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
-        self._wait_for_dae_period_change(30, True)
+        self._wait_for_dae_period_change(30, g.get_number_periods)
 
         self.assertRaises(IOError, g.change_number_soft_periods, EXTREMELY_LARGE_NO_OF_PERIODS)
-        self._wait_for_dae_period_change(30, True)
+        self._wait_for_dae_period_change(30, g.get_number_periods)
 
         set_genie_python_raises_exceptions(False)
 
@@ -338,10 +338,10 @@ class TestDae(unittest.TestCase):
     def test_GIVEN_change_period_called_WHEN_valid_argument_THEN_change_successful(self, _, new_period):
         set_genie_python_raises_exceptions(True)
         g.change_number_soft_periods(10)
-        self._wait_for_dae_period_change(10, True)
+        self._wait_for_dae_period_change(10, g.get_number_periods)
 
         g.change_period(new_period)
-        self._wait_for_dae_period_change(new_period, False)
+        self._wait_for_dae_period_change(new_period, g.get_period)
 
         set_genie_python_raises_exceptions(False)
 
@@ -349,13 +349,13 @@ class TestDae(unittest.TestCase):
     def test_GIVEN_change_period_called_WHEN_invalid_argument_THEN_raise_exception_to_console(self, _, new_period):
         set_genie_python_raises_exceptions(True)
         g.change_number_soft_periods(10)
-        self._wait_for_dae_period_change(10, True)
+        self._wait_for_dae_period_change(10, g.get_number_periods)
 
         g.change_period(1)
-        self._wait_for_dae_period_change(1, False)
+        self._wait_for_dae_period_change(1, g.get_period)
 
         self.assertRaises(IOError, g.change_period, new_period)
-        self._wait_for_dae_period_change(1, False)
+        self._wait_for_dae_period_change(1, g.get_period)
 
         set_genie_python_raises_exceptions(False)
 
@@ -368,12 +368,21 @@ class TestDae(unittest.TestCase):
                 sleep(1)
         self.fail("sample pars did not return")
 
-    def _wait_for_dae_period_change(self, expected_value, get_num_periods):
+    def _wait_for_dae_period_change(self, expected_value, get_function):
+        """
+        Checks if the value returned by the given function is th same as the expected values. If not, it tries again
+        after a couple seconds anf repeats the process up to a number of times equal to the DAE_PERIOD_TIMEOUT constant
+        of this module. This method is meant to be used for checking the result of changing the number of period or the
+        period. Therefore, the function is meant to be either g.get_period() or g.get_number_periods. This method is
+        needed since those functions do not return the new values immediately after they are changed, so for the tests
+        to pass we need to wait a bit.
+
+        Args:
+        expected_value (int): the expected value returned by the function
+        get_function (() -> int): the function for which we check that it will return a certain value.
+        """
         for _ in range(DAE_PERIOD_TIMEOUT):
-            if get_num_periods:
-                current_value = g.get_number_periods()
-            else:
-                current_value = g.get_period()
+            current_value = get_function()
 
             if current_value == expected_value:
                 return expected_value
