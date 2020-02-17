@@ -15,7 +15,10 @@ from contextlib import contextmanager
 
 EXTREMELY_LARGE_NO_OF_PERIODS = 1000000
 
+DAE_PERIOD_TIMEOUT = 3
+
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
+
 
 class TestDae(unittest.TestCase):
     """
@@ -316,8 +319,7 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
-        sleep(10)
-        self.assertEqual(g.get_number_periods(), 30)
+        self._wait_for_dae_period_change(30, True)
 
         set_genie_python_raises_exceptions(False)
 
@@ -325,11 +327,10 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
-        sleep(10)
-        self.assertEqual(g.get_number_periods(), 30)
+        self._wait_for_dae_period_change(30, True)
 
         self.assertRaises(IOError, g.change_number_soft_periods, EXTREMELY_LARGE_NO_OF_PERIODS)
-        self.assertEqual(g.get_number_periods(), 30)
+        self._wait_for_dae_period_change(30, True)
 
         set_genie_python_raises_exceptions(False)
 
@@ -337,11 +338,10 @@ class TestDae(unittest.TestCase):
     def test_GIVEN_change_period_called_WHEN_valid_argument_THEN_change_successful(self, _, new_period):
         set_genie_python_raises_exceptions(True)
         g.change_number_soft_periods(10)
-        sleep(10)
-        self.assertEqual(g.get_number_periods(), 10)
+        self._wait_for_dae_period_change(10, True)
 
         g.change_period(new_period)
-        self.assertEqual(g.get_period(), new_period)
+        self._wait_for_dae_period_change(new_period, False)
 
         set_genie_python_raises_exceptions(False)
 
@@ -349,13 +349,13 @@ class TestDae(unittest.TestCase):
     def test_GIVEN_change_period_called_WHEN_invalid_argument_THEN_raise_exception_to_console(self, _, new_period):
         set_genie_python_raises_exceptions(True)
         g.change_number_soft_periods(10)
-        sleep(10)
-        self.assertEqual(g.get_number_periods(), 10)
+        self._wait_for_dae_period_change(10, True)
+
         g.change_period(1)
-        self.assertEqual(g.get_period(), 1)
+        self._wait_for_dae_period_change(1, False)
 
         self.assertRaises(IOError, g.change_period, new_period)
-        self.assertEqual(g.get_period(), 1)
+        self._wait_for_dae_period_change(1, False)
 
         set_genie_python_raises_exceptions(False)
 
@@ -367,3 +367,16 @@ class TestDae(unittest.TestCase):
             except Exception:
                 sleep(1)
         self.fail("sample pars did not return")
+
+    def _wait_for_dae_period_change(self, expected_value, get_num_periods):
+        for _ in range(DAE_PERIOD_TIMEOUT):
+            if get_num_periods:
+                current_value = g.get_number_periods()
+            else:
+                current_value = g.get_period()
+
+            if current_value == expected_value:
+                return expected_value
+            else:
+                sleep(5)
+        self.fail("dae period or number of periods read timed out")
