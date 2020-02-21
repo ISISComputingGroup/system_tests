@@ -41,7 +41,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--output_dir', default=DEFAULT_DIRECTORY,
                         help='The directory to save the test reports')
-    parser.add_argument('-t', '--test', default=None, nargs='+',
+    parser.add_argument('-t', '--tests', default=None, nargs='+',
                         help="""Dotted names of tests to run. These are of the form module.class.method.
                                     Module just runs the tests in a module. 
                                     Module.class runs the the test class in Module.
@@ -51,11 +51,11 @@ if __name__ == '__main__':
     xml_dir = arguments.output_dir
 
     # Load tests from test suites
-    if arguments.test is not None:
-        test_suite = unittest.TestLoader().loadTestsFromNames(arguments.test)
+    if arguments.tests is not None:
+        test_suite = unittest.TestLoader().loadTestsFromNames(arguments.tests)
     else:
         test_suite = unittest.TestLoader().discover(SCRIPT_DIRECTORY, pattern="test_*.py")
-    
+
     config_dirs = [name for name in os.listdir(CONFIGS_DIRECTORY)
                    if os.path.isdir(os.path.join(CONFIGS_DIRECTORY, name))]
 
