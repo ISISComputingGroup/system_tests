@@ -15,7 +15,7 @@ from contextlib import contextmanager
 
 EXTREMELY_LARGE_NO_OF_PERIODS = 1000000
 
-DAE_PERIOD_TIMEOUT = 3
+DAE_PERIOD_TIMEOUT_SECONDS = 15
 
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
@@ -371,9 +371,9 @@ class TestDae(unittest.TestCase):
     def _wait_for_dae_period_change(self, expected_value, get_function):
         """
         Checks if the value returned by the given function is th same as the expected values. If not, it tries again
-        after a couple seconds anf repeats the process up to a number of times equal to the DAE_PERIOD_TIMEOUT constant
-        of this module. This method is meant to be used for checking the result of changing the number of period or the
-        period. Therefore, the function is meant to be either g.get_period() or g.get_number_periods. This method is
+        after a couple seconds anf repeats the process up to a number of times equal to the DAE_PERIOD_TIMEOUT_SECONDS
+        constant of this module. This method is meant to be used for checking the result of changing the number of period
+        or the period. Therefore, the function is meant to be either g.get_period() or g.get_number_periods. This method is
         needed since those functions do not return the new values immediately after they are changed, so for the tests
         to pass we need to wait a bit.
 
@@ -381,11 +381,11 @@ class TestDae(unittest.TestCase):
         expected_value (int): the expected value returned by the function
         get_function (() -> int): the function for which we check that it will return a certain value.
         """
-        for _ in range(DAE_PERIOD_TIMEOUT):
+        for _ in range(DAE_PERIOD_TIMEOUT_SECONDS):
             current_value = get_function()
 
             if current_value == expected_value:
                 return expected_value
             else:
-                sleep(5)
+                sleep(1)
         self.fail("dae period or number of periods read timed out")
