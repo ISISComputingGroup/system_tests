@@ -35,6 +35,33 @@ when it changed config"""
 DAE_MODE_TIMEOUT = 120
 
 
+def parameterized_list(cases):
+    """
+    Creates a list of cases for parameterized to use to run tests.
+
+    E.g.
+    parameterized_list([1.3435, 12321, 1.0])
+        = [("1.3435", 1.3435),("12321", 12321), ("1.0", 1.0)]
+
+    Args:
+         cases: List of cases to use in tests.
+
+    Returns:
+        list: list of tuples of where the first item is str(case).
+    """
+
+    return_list = []
+
+    for case in cases:
+        test_case = (str(case),)
+        try:
+            return_list.append(test_case + case)
+        except TypeError:
+            return_list.append(test_case + (case,))
+
+    return return_list
+
+
 def load_config_if_not_already_loaded(config_name):
     """
     Load a config be name if it has not already been loaded.

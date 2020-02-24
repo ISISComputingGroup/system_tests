@@ -8,12 +8,17 @@ from time import sleep
 
 from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
     set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
-    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode
+    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list
 
 from parameterized import parameterized
 from contextlib import contextmanager
 
+EXTREMELY_LARGE_NO_OF_PERIODS = 1000000
+
+DAE_PERIOD_TIMEOUT_SECONDS = 15
+
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
+
 
 class TestDae(unittest.TestCase):
     """
@@ -63,13 +68,13 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(True)
         g.begin()
-        title = "title{}".format(random.randint(1,1000))
-        geometry = "geometry{}".format(random.randint(1,1000))
-        width = float(random.randint(1,1000))
-        height = float(random.randint(1,1000))
-        l1 = float(random.randint(1,1000))
+        title = "title{}".format(random.randint(1, 1000))
+        geometry = "geometry{}".format(random.randint(1, 1000))
+        width = float(random.randint(1, 1000))
+        height = float(random.randint(1, 1000))
+        l1 = float(random.randint(1, 1000))
         beamstop = random.choice(['OUT','IN'])
-        filename = "c:/windows/temp/test{}.nxs".format(random.randint(1,1000))
+        filename = "c:/windows/temp/test{}.nxs".format(random.randint(1, 1000))
         self._wait_for_sample_pars()
         g.change_title(title)
         g.change_sample_par("width", width)
@@ -310,11 +315,77 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_normal_THEN_change_successful(self):
+        set_genie_python_raises_exceptions(True)
+
+        g.change_number_soft_periods(30)
+        self._wait_for_dae_period_change(30, g.get_number_periods)
+
+        set_genie_python_raises_exceptions(False)
+
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(self):
+        set_genie_python_raises_exceptions(True)
+
+        g.change_number_soft_periods(30)
+        self._wait_for_dae_period_change(30, g.get_number_periods)
+
+        self.assertRaises(IOError, g.change_number_soft_periods, EXTREMELY_LARGE_NO_OF_PERIODS)
+        self._wait_for_dae_period_change(30, g.get_number_periods)
+
+        set_genie_python_raises_exceptions(False)
+
+    @parameterized.expand(parameterized_list([1, 2, 6, 9, 10]))
+    def test_GIVEN_change_period_called_WHEN_valid_argument_THEN_change_successful(self, _, new_period):
+        set_genie_python_raises_exceptions(True)
+        g.change_number_soft_periods(10)
+        self._wait_for_dae_period_change(10, g.get_number_periods)
+
+        g.change_period(new_period)
+        self._wait_for_dae_period_change(new_period, g.get_period)
+
+        set_genie_python_raises_exceptions(False)
+
+    @parameterized.expand(parameterized_list([-1, 0, 11, 12]))
+    def test_GIVEN_change_period_called_WHEN_invalid_argument_THEN_raise_exception_to_console(self, _, new_period):
+        set_genie_python_raises_exceptions(True)
+        g.change_number_soft_periods(10)
+        self._wait_for_dae_period_change(10, g.get_number_periods)
+
+        g.change_period(1)
+        self._wait_for_dae_period_change(1, g.get_period)
+
+        self.assertRaises(IOError, g.change_period, new_period)
+        self._wait_for_dae_period_change(1, g.get_period)
+
+        set_genie_python_raises_exceptions(False)
+
     def _wait_for_sample_pars(self):
         for _ in range(self.TIMEOUT):
             try:
                 g.get_sample_pars()
                 return
-            except:
+            except Exception:
                 sleep(1)
-        self.assertEqual(0, 1)
+        self.fail("sample pars did not return")
+
+    def _wait_for_dae_period_change(self, expected_value, get_function):
+        """
+        Checks if the value returned by the given function is th same as the expected values. If not, it tries again
+        after a couple seconds anf repeats the process up to a number of times equal to the DAE_PERIOD_TIMEOUT_SECONDS
+        constant of this module. This method is meant to be used for checking the result of changing the number of period
+        or the period. Therefore, the function is meant to be either g.get_period() or g.get_number_periods. This method is
+        needed since those functions do not return the new values immediately after they are changed, so for the tests
+        to pass we need to wait a bit.
+
+        Args:
+        expected_value (int): the expected value returned by the function
+        get_function (() -> int): the function for which we check that it will return a certain value.
+        """
+        for _ in range(DAE_PERIOD_TIMEOUT_SECONDS):
+            current_value = get_function()
+
+            if current_value == expected_value:
+                return expected_value
+            else:
+                sleep(1)
+        self.fail("dae period or number of periods read timed out")
