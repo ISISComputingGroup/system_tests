@@ -25,7 +25,12 @@ pipeline {
     stage("Install latest IBEX") {
       steps {
         bat """
-            call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
+            set \"MYJOB=${env.JOB_NAME}\"
+            if \"%MYJOB%\" == \"System_Tests_debug\" (
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
+            ) else (
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
+            )
             """
       }
     }
