@@ -211,9 +211,9 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
-        self.assertEqual(g.get_detector_table(), detector)
-        self.assertEqual(g.get_wiring_table(), wiring)
-        self.assertEqual(g.get_spectra_table(), spectra)
+        self.assertEqual(g.get_detector_table().lower(), detector.lower())
+        self.assertEqual(g.get_wiring_table().lower(), wiring.lower())
+        self.assertEqual(g.get_spectra_table().lower(), spectra.lower())
 
     def test_GIVEN_valid_tables_to_change_tables_but_ISISDAE_killed_THEN_get_tables_raises_exception(self):
         set_wait_for_complete_callback_dae_settings(True)
@@ -259,9 +259,9 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
-        self.assertEqual(g.get_detector_table(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector))
-        self.assertEqual(g.get_wiring_table(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring))
-        self.assertEqual(g.get_spectra_table(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra))
+        self.assertEqual(g.get_detector_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector).lower())
+        self.assertEqual(g.get_wiring_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring).lower())
+        self.assertEqual(g.get_spectra_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra).lower())
 
         set_genie_python_raises_exceptions(False)
 
