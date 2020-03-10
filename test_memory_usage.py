@@ -33,9 +33,7 @@ class TestMemoryUsage(unittest.TestCase):
         """
         mem_info = virtual_memory()
 
-        total_bytes_used = float(mem_info.used) - float(BASE_MEMORY_USAGE)
-
-        mem_usage = total_bytes_used / (2**30)
+        mem_usage = float(mem_info.used) / (2 ** 30)
 
         print("Memory at start, after, diff: {}, {} {} GB".format(BASE_MEMORY_USAGE, mem_info.used, mem_usage))
 
