@@ -1,5 +1,6 @@
 from hamcrest import *
 import unittest
+import os
 
 from utilities.utilities import load_config_if_not_already_loaded, g, setup_simulated_wiring_tables
 from psutil import virtual_memory
@@ -7,8 +8,11 @@ from psutil import virtual_memory
 TIMEOUT = 30
 TYPICAL_CONFIG_NAME = "memory_usage"
 
+# Contains the memory used by the machine before IBEX was started
+BASE_MEMORY_USAGE = os.environ.get("BASE_MEMORY_USAGE", "0")
 
-class TestBlockUtils(unittest.TestCase):
+
+class TestMemoryUsage(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
@@ -27,12 +31,11 @@ class TestBlockUtils(unittest.TestCase):
             mem_usage: Float, system memory used in gibibytes (2^30 bytes)
 
         """
-
         mem_info = virtual_memory()
 
-        total_bytes_used = float(mem_info.used)
+        mem_usage = float(mem_info.used) / (2 ** 30)
 
-        mem_usage = total_bytes_used / (2**30)
+        print("Memory at start, after, diff: {}, {} {} GB".format(BASE_MEMORY_USAGE, mem_info.used, mem_usage))
 
         return mem_usage
 
