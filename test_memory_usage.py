@@ -11,6 +11,9 @@ TYPICAL_CONFIG_NAME = "memory_usage"
 # Contains the memory used by the machine before IBEX was started
 BASE_MEMORY_USAGE = os.environ.get("BASE_MEMORY_USAGE", "0")
 
+# The assumed memory usage from the rest of the system e.g. os
+ASSUMED_NON_IBEX_USAGE = 2.0
+
 
 class TestMemoryUsage(unittest.TestCase):
 
@@ -33,24 +36,26 @@ class TestMemoryUsage(unittest.TestCase):
         """
         mem_info = virtual_memory()
 
-        mem_usage = float(mem_info.used) / (2 ** 30)
+        total_bytes_used = float(mem_info.used) - float(BASE_MEMORY_USAGE)
+
+        mem_usage = total_bytes_used / (2**30)
 
         print("Memory at start, after, diff: {}, {} {} GB".format(BASE_MEMORY_USAGE, mem_info.used, mem_usage))
 
         return mem_usage
 
     def test_GIVEN_typical_config_with_IOCs_blocks_and_LVDCOM_IOC_WHEN_dae_is_doing_a_run_THEN_memory_usage_stays_under_9point5gb(self):
-        threshold = 9.5
+        system_threshold = 9.5
 
         g.begin()
 
         memory_used = self.get_current_memory_usage()
 
-        assert_that(memory_used, less_than(threshold))
+        assert_that(memory_used, less_than(system_threshold-ASSUMED_NON_IBEX_USAGE))
 
     def test_GIVEN_typical_config_with_IOCs_blocks_and_LVDCOM_IOC_WHEN_dae_is_not_doing_a_run_THEN_memory_usage_stays_under_7point5gb(self):
-        threshold = 7.5
+        system_threshold = 7.5
 
         memory_used = self.get_current_memory_usage()
 
-        assert_that(memory_used, less_than(threshold))
+        assert_that(memory_used, less_than(system_threshold-ASSUMED_NON_IBEX_USAGE))
