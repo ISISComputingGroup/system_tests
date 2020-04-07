@@ -110,9 +110,10 @@ def _get_config_name():
                 raise AssertionError("Current config is none, is the server running?")
             current_config = json.loads(dehex_and_decompress(current_config_pv))
             return current_config["name"]
-        except Exception as final_exception:
+        except Exception as ex:
             sleep(1)
             print("Waiting for config pv: count {}".format(i))
+            final_exception = ex
 
     raise final_exception
 
