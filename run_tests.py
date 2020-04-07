@@ -46,9 +46,12 @@ if __name__ == '__main__':
                                     Module just runs the tests in a module. 
                                     Module.class runs the the test class in Module.
                                     Module.class.method runs a specific test.""")
+    parser.add_argument('-f', '--failfast', action='store_true',
+                        help="""Determines if the rest of tests are skipped after the first failure""")
 
     arguments = parser.parse_args()
     xml_dir = arguments.output_dir
+    failfast_switch = arguments.failfast
 
     # Load tests from test suites
     if arguments.tests is not None:
@@ -80,7 +83,7 @@ if __name__ == '__main__':
 
     print("\n\n------ BEGINNING genie_python SYSTEM TESTS ------")
     ret_vals = list()
-    ret_vals.append(xmlrunner.XMLTestRunner(output=xml_dir).run(test_suite))
+    ret_vals.append(xmlrunner.XMLTestRunner(output=xml_dir, failfast=failfast_switch).run(test_suite))
     print("------ UNIT TESTS COMPLETE ------\n\n")
 
     # Return failure exit code if a test failed
