@@ -86,7 +86,7 @@ class TestDae(unittest.TestCase):
         g.snapshot_crpt(filename)
         sleep(5)
         with h5py.File(filename,  "r") as f:
-            saved_title = str(f['/raw_data_1/title'][0])
+            saved_title = f['/raw_data_1/title'][0].decode()
             saved_width = f['/raw_data_1/sample/width'][0]
             saved_height = f['/raw_data_1/sample/height'][0]
             saved_geometry = f['/raw_data_1/sample/shape'][0]
@@ -123,7 +123,7 @@ class TestDae(unittest.TestCase):
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
             with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
-                saved_title = f['/raw_data_1/title'][0]
+                saved_title = f['/raw_data_1/title'][0].decode()
 
             self.assertEqual(expected_title, saved_title)
 
