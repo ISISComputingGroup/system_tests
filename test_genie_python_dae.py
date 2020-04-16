@@ -89,7 +89,7 @@ class TestDae(unittest.TestCase):
             saved_title = f['/raw_data_1/title'][0].decode()
             saved_width = f['/raw_data_1/sample/width'][0]
             saved_height = f['/raw_data_1/sample/height'][0]
-            saved_geometry = f['/raw_data_1/sample/shape'][0]
+            saved_geometry = f['/raw_data_1/sample/shape'][0].decode()
             saved_l1 = -f['/raw_data_1/instrument/moderator/distance'][0]
             saved_beamstop = f['/raw_data_1/isis_vms_compat/IVPB'][30]
         os.remove(filename)
