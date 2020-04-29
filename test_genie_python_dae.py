@@ -103,6 +103,21 @@ class TestDae(unittest.TestCase):
         else:
             self.assertEqual(0, saved_beamstop)
 
+    def test_GIVEN_running_instrument_WHEN_block_loggin_THEN_block_saved_in_file(self):
+        self.fail_if_not_in_setup()
+
+        set_genie_python_raises_exceptions(True)
+        g.begin()
+        filename = "c:/windows/temp/test{}.nxs".format(random.randint(1, 1000))
+        sleep(5)
+        g.snapshot_crpt(filename)
+        sleep(5)
+        with h5py.File(filename,  "r") as f:
+            saved_value_valid = f['/raw_data_1/selog/FLOAT_BLOCK/value_log/value_valid']
+            saved_value = f['/raw_data_1/selog/FLOAT_BLOCK/value_log/value']
+        os.remove(filename)
+        self.assertEqual(saved_value.size, saved_value_valid.size)
+
     @contextmanager
     def _assert_title_correct(self, test_title, expected_title):
         """
