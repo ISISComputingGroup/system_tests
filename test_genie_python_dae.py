@@ -103,7 +103,7 @@ class TestDae(unittest.TestCase):
         else:
             self.assertEqual(0, saved_beamstop)
 
-    def test_GIVEN_running_instrument_WHEN_block_loggin_THEN_block_saved_in_file(self):
+    def test_GIVEN_running_instrument_WHEN_block_logging_THEN_block_saved_in_file(self):
         self.fail_if_not_in_setup()
 
         set_genie_python_raises_exceptions(True)
