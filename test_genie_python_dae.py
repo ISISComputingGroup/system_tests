@@ -74,7 +74,7 @@ class TestDae(unittest.TestCase):
         height = float(random.randint(1, 1000))
         l1 = float(random.randint(1, 1000))
         beamstop = random.choice(['OUT','IN'])
-        filename = "c:/windows/temp/test{}.nxs".format(random.randint(1, 1000))
+        filename = "{}\\test{}.nxs".format(os.getenv("TEMP"),random.randint(1, 1000))
         self._wait_for_sample_pars()
         g.change_title(title)
         g.change_sample_par("width", width)
@@ -108,13 +108,13 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(True)
         g.begin()
-        filename = "c:/windows/temp/test{}.nxs".format(random.randint(1, 1000))
+        filename = "{}\\test{}.nxs".format(os.getenv("TEMP"),random.randint(1, 1000))
         sleep(5)
         g.snapshot_crpt(filename)
         sleep(5)
         with h5py.File(filename,  "r") as f:
-            saved_value_valid = f['/raw_data_1/selog/FLOAT_BLOCK/value_log/value_valid']
-            saved_value = f['/raw_data_1/selog/FLOAT_BLOCK/value_log/value']
+            saved_value_valid = f['/raw_data_1/selog/EPICS_PUTLOG/value_log/value_valid'][:]
+            saved_value = f['/raw_data_1/selog/EPICS_PUTLOG/value_log/value'][:]
         os.remove(filename)
         self.assertEqual(saved_value.size, saved_value_valid.size)
 
