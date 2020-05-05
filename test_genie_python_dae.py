@@ -136,7 +136,6 @@ class TestDae(unittest.TestCase):
         ("BI_BLOCK", "YES", 1),
         ("MBBI_BLOCK", "CHEERFUL", 2)
     ])
-    @skip("Skip this test until ticket 4828")
     def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self, block_to_test, block_test_value, expected_title_value):
         self.fail_if_not_in_setup()
         load_config_if_not_already_loaded("block_in_title")
@@ -150,7 +149,6 @@ class TestDae(unittest.TestCase):
         with self._assert_title_correct(title, test_title.format(block=expected_title_value)):
             g.cset(block_to_test, block_test_value, wait=True)
 
-    @skip("Skip this test until ticket 4828")
     def test_GIVEN_run_with_multiple_blocks_in_title_WHEN_run_finished_THEN_title_has_all_block_values_in_it(self):
         self.fail_if_not_in_setup()
         load_config_if_not_already_loaded("block_in_title")
