@@ -5,7 +5,7 @@ from kafka import KafkaProducer, KafkaAdminClient
 from kafka.errors import KafkaTimeoutError, UnrecognizedBrokerVersion
 from utilities.utilities import g, load_config_if_not_already_loaded, setup_simulated_wiring_tables
 import os
-import datetime
+import h5py
 
 
 NUMBER_OF_POLLS = 10
@@ -134,7 +134,9 @@ class TestDatastreaming(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         start_kafka()
+        sleep(10)
         start_filewriter()
+        sleep(5)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -142,16 +144,23 @@ class TestDatastreaming(unittest.TestCase):
         stop_kafka()
 
     def setUp(self):
-        #g.set_instrument(None)
+        g.set_instrument(None)
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
-        #load_config_if_not_already_loaded("empty_for_system_tests")
-        pass
+        load_config_if_not_already_loaded("empty_for_system_tests")
 
-    def test_kafka_started(self):
-        print(datetime.datetime.now())
-        sleep(10)
-        print(datetime.datetime.now())
+        setup_simulated_wiring_tables(True)
+
+    def test_WHEN_run_performed_THEN_nexus_file_saved_with_events(self):
+        g.begin()
+        sleep(5)
+        run_number = g.get_runnumber()
+        g.end()
+        sleep(10)  # Wait for file to finish writing, look at status instead?
+        filepath = r".\docker_images\output-files\NDLT1171{}.nxs".format(run_number)
+        with h5py.File(filepath,  "r") as f:
+            saved_events = f[r"/entry/events/event_id"]
+            self.assertTrue(len(saved_events) > 0)
 
 
 if __name__ == "__main__":
