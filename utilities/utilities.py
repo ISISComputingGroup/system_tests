@@ -149,9 +149,12 @@ def set_genie_python_raises_exceptions(does_throw):
     genie_api_setup._exceptions_raised = does_throw
 
 
-def setup_simulated_wiring_tables():
+def setup_simulated_wiring_tables(event_data=False):
     """
     Configures the DAE's wiring tables and sets the DAE to simulation mode
+
+    Args:
+        event_data (bool): true if event data wiring tables should be loaded.
 
     Returns:
         None
@@ -166,11 +169,13 @@ def setup_simulated_wiring_tables():
         g.waitfor_runstate("SETUP", maxwaitsecs=DAE_MODE_TIMEOUT)
 
     table_path_template = r"{}\tables\RCPTT_{}128.dat".format(os.environ["ICPCONFIGROOT"], "{}")
+    wiring_table = table_path_template.format("wiring_events" if event_data else "wiring")
+
     set_wait_for_complete_callback_dae_settings(True)
 
     g.change_start()
     g.change_tables(
-        wiring=table_path_template.format("wiring"),
+        wiring=wiring_table,
         detector=table_path_template.format("detector"),
         spectra=table_path_template.format("spectra"))
     g.change_tcb(0, 10000, 100)
