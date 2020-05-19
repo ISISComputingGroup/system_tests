@@ -1,0 +1,11 @@
+# Note that these are what's required outside of the genie_python requirements
+h5py
+docker-compose
+kafka-python
+mock
+parameterized
+psutil
+PyHamcrest
+requests
+six
+unittest-xml-reporting
