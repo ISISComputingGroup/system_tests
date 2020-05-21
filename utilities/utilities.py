@@ -34,6 +34,9 @@ when it changed config"""
 # Number of seconds to wait for the DAE settings to update
 DAE_MODE_TIMEOUT = 120
 
+# The environment variable used to store the baseline memory usage
+BASE_MEMORY_USAGE = "BASE_MEMORY_USAGE"
+
 
 def parameterized_list(cases):
     """

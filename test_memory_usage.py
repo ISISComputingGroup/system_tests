@@ -2,14 +2,14 @@ from hamcrest import *
 import unittest
 import os
 
-from utilities.utilities import load_config_if_not_already_loaded, g, setup_simulated_wiring_tables
+from utilities.utilities import load_config_if_not_already_loaded, g, setup_simulated_wiring_tables, BASE_MEMORY_USAGE
 from psutil import virtual_memory
 
 TIMEOUT = 30
 TYPICAL_CONFIG_NAME = "memory_usage"
 
 # Contains the memory used by the machine before IBEX was started
-BASE_MEMORY_USAGE_IN_BYTES = os.environ.get("BASE_MEMORY_USAGE", "0")
+BASE_MEMORY_USAGE_IN_BYTES = os.environ.get(BASE_MEMORY_USAGE, "0")
 
 # The assumed memory usage from the rest of the system e.g. os
 ASSUMED_NON_IBEX_USAGE = 2.0
