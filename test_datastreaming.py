@@ -6,10 +6,24 @@ from kafka.errors import KafkaTimeoutError, UnrecognizedBrokerVersion
 from utilities.utilities import g, load_config_if_not_already_loaded, setup_simulated_wiring_tables
 import os
 import h5py
-
+import socket
+import docker
 
 NUMBER_OF_POLLS = 10
 TIMEOUT = 10
+
+
+def check_docker_exists():
+    try:
+        client = docker.from_env()
+        returned_string = client.containers.run("ubuntu:latest", "echo 1")
+        return returned_string == b'1\n'
+    except:
+        return False
+
+
+DOCKER_EXISTS = check_docker_exists()
+
 
 docker_default_options = {
     "--no-deps": False,
@@ -133,10 +147,9 @@ class TestDatastreaming(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        start_kafka()
-        sleep(10)
-        start_filewriter()
-        sleep(5)
+        if DOCKER_EXISTS:
+            start_kafka()
+            start_filewriter()
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -144,6 +157,9 @@ class TestDatastreaming(unittest.TestCase):
         stop_kafka()
 
     def setUp(self):
+        if not DOCKER_EXISTS:
+            self.skipTest("Docker not running on this machine")
+
         g.set_instrument(None)
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
@@ -157,8 +173,8 @@ class TestDatastreaming(unittest.TestCase):
         run_number = g.get_runnumber()
         g.end()
         sleep(10)  # Wait for file to finish writing, look at status instead?
-        filepath = r".\docker_images\output-files\NDLT1171{}.nxs".format(run_number)
-        with h5py.File(filepath,  "r") as f:
+        file_path = r".\docker_images\output-files\{}{}.nxs".format(socket.gethostname(), run_number)
+        with h5py.File(file_path,  "r") as f:
             saved_events = f[r"/entry/events/event_id"]
             self.assertTrue(len(saved_events) > 0)
 
