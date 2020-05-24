@@ -1,6 +1,7 @@
 setlocal
 call create_virtual_env.bat
-python pre_test_setup.py
+python pre_test_setup.py>base_line_memory.txt
+set /P BASE_MEMORY_USAGE=<base_line_memory.txt
 start /wait cmd /c %EPICS_ROOT%\start_ibex_server.bat
 set "PYTHONUNBUFFERED=1"
 python "%~dp0run_tests.py" %* || echo "running base tests failed."
