@@ -104,19 +104,42 @@ class TestDae(unittest.TestCase):
             self.assertEqual(0, saved_beamstop)
 
     def test_GIVEN_running_instrument_WHEN_block_logging_THEN_block_saved_in_file(self):
+        load_config_if_not_already_loaded("rcptt_simple")
         self.fail_if_not_in_setup()
 
         set_genie_python_raises_exceptions(True)
+        test_block_name = "FLOAT_BLOCK"
+        test_values = [10, 5, 1]
+        sleep_between_sets = 5
+
         g.begin()
-        filename = "{}\\test{}.nxs".format(os.getenv("TEMP"),random.randint(1, 1000))
-        sleep(5)
-        g.snapshot_crpt(filename)
-        sleep(5)
-        with h5py.File(filename,  "r") as f:
-            saved_value_valid = f['/raw_data_1/selog/EPICS_PUTLOG/value_log/value_valid'][:]
-            saved_value = f['/raw_data_1/selog/EPICS_PUTLOG/value_log/value'][:]
-        os.remove(filename)
-        self.assertEqual(saved_value.size, saved_value_valid.size)
+        sleep(sleep_between_sets)
+        for value in test_values:
+            g.cset(test_block_name, value)
+            sleep(sleep_between_sets)
+
+        run_number = g.get_runnumber()
+        g.end()
+
+        g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
+
+        nexus_path = r'/raw_data_1/selog/{}/value_log'.format(test_block_name)
+        num_to_test = 4
+        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=g.get_instrument(), run=run_number), "r") as f:
+            is_valid = [sample == 1 for sample in f[nexus_path + r'/value_valid'][-num_to_test:]]
+            value = [int(val) for val in f[nexus_path + r'/value'][-num_to_test:]]
+            severity = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_severity'][-num_to_test:]]
+            alarm_status = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_status'][-num_to_test:]]
+            alarm_time = [int(time) for time in f[nexus_path + r'/alarm_time'][-num_to_test:]]
+
+        self.assertListEqual(is_valid, [False, True, True, True])
+        expected_values = [0] + test_values
+        self.assertListEqual(value, expected_values)
+        self.assertListEqual(severity, ["INVALID", "NONE", "MINOR", "MAJOR"])
+        self.assertListEqual(alarm_status, ["UDF_ALARM", "NO_ALARM", "LOW_ALARM", "LOLO_ALARM"])
+
+        self.assertAlmostEqual(alarm_time[-1]-alarm_time[-2], sleep_between_sets, delta=1)
+        self.assertAlmostEqual(alarm_time[-2]-alarm_time[-3], sleep_between_sets, delta=1)
 
     @contextmanager
     def _assert_title_correct(self, test_title, expected_title):
