@@ -25,7 +25,7 @@ pipeline {
     timeout(time: 180, unit: 'MINUTES')
     disableConcurrentBuilds()
     timestamps()
-    lock(resource: ELOCK, inversePrecedence: true) // hopefully locks for whole build including cleanup
+    lock(resource: "epics_${env.NODE_NAME}", inversePrecedence: true) // hopefully locks for whole build including cleanup
     office365ConnectorWebhooks([[
                     name: "Office 365",
                     notifyBackToNormal: true,
