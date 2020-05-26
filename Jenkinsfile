@@ -25,6 +25,7 @@ pipeline {
     timeout(time: 180, unit: 'MINUTES')
     disableConcurrentBuilds()
     timestamps()
+    lock(resource: ELOCK, inversePrecedence: true) // hopefully locks for whole build including cleanup
     office365ConnectorWebhooks([[
                     name: "Office 365",
                     notifyBackToNormal: true,
@@ -48,11 +49,9 @@ pipeline {
       }
     }
 
-    lock(resource: ELOCK, inversePrecedence: true) {
-
-      stage("Install latest IBEX") {
-        steps {
-          bat """
+    stage("Install latest IBEX") {
+      steps {
+        bat """
             set \"MYJOB=${env.JOB_NAME}\"
             if \"%MYJOB%\" == \"System_Tests_debug\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
@@ -60,18 +59,32 @@ pipeline {
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
             """
-        }
       }
+    }
     
-      stage("Unit Test Results") {
-        steps {
-          bat """
+    stage("Unit Test Results") {
+      steps {
+        bat """
             run_tests.bat
             """
-          junit "test-reports/**/*.xml"
-        }
+        junit "test-reports/**/*.xml"
       }
-
     }
-  }    
+
+  }
+  
+  post {
+    cleanup {
+        echo "Cleaning"
+        timeout(time: 3, unit: 'HOURS') {
+          bat """
+                  rd /q /s C:\Instrument\Apps\EPICS>NUL
+                  rd /q /s C:\Instrument\Apps\EPICS>NUL
+                  rd /q /s C:\Instrument\Apps\EPICS>NUL
+                  exit /b 0
+          """
+        }
+    }
+  }
+  
 }
