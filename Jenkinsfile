@@ -78,9 +78,9 @@ pipeline {
         echo "Cleaning"
         timeout(time: 3, unit: 'HOURS') {
           bat """
-                  rd /q /s C:\Instrument\Apps\EPICS>NUL
-                  rd /q /s C:\Instrument\Apps\EPICS>NUL
-                  rd /q /s C:\Instrument\Apps\EPICS>NUL
+                  rd /q /s C:\\Instrument\\Apps\\EPICS>NUL
+                  rd /q /s C:\\Instrument\\Apps\\EPICS>NUL
+                  rd /q /s C:\\Instrument\\Apps\\EPICS>NUL
                   exit /b 0
           """
         }
