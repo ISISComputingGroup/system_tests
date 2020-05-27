@@ -48,10 +48,10 @@ pipeline {
       }
     }
 
-    lock(resource: ELOCK, inversePrecedence: true) {
 
       stage("Install latest IBEX") {
         steps {
+         lock(resource: ELOCK, inversePrecedence: true) {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
             if \"%MYJOB%\" == \"System_Tests_debug\" (
@@ -59,22 +59,25 @@ pipeline {
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
-            move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-systemtest
-            mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-systemtest
+            move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             """
+		  }
         }
       }
 
       stage("Unit Test Results") {
         steps {
+         lock(resource: ELOCK, inversePrecedence: true) {
           bat """
+            set \"MYJOB=${env.JOB_NAME}\"
+            mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             run_tests.bat
             """
           junit "test-reports/**/*.xml"
         }
       }
-      
-    }
+     }
+
   }
 
   post {
@@ -82,9 +85,10 @@ pipeline {
         echo "Cleaning"
         timeout(time: 3, unit: 'HOURS') {
           bat """
-                  rd /q /s C:\\Instrument\\Apps\\EPICS-systemtest>NUL
-                  rd /q /s C:\\Instrument\\Apps\\EPICS-systemtest>NUL
-                  rd /q /s C:\\Instrument\\Apps\\EPICS-systemtest>NUL
+                  set \"MYJOB=${env.JOB_NAME}\"
+                  rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+                  rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+                  rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   exit /b 0
           """
         }
