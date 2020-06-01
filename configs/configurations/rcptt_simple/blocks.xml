@@ -9,7 +9,7 @@
 		<rc_lowlimit>0.0</rc_lowlimit>
 		<rc_highlimit>0.0</rc_highlimit>
 		<log_periodic>True</log_periodic>
-		<log_rate>0</log_rate>
+		<log_rate>1</log_rate>
 		<log_deadband>0.0</log_deadband>
 	</block>
 	<block>
@@ -21,7 +21,7 @@
 		<rc_lowlimit>0.0</rc_lowlimit>
 		<rc_highlimit>0.0</rc_highlimit>
 		<log_periodic>True</log_periodic>
-		<log_rate>0</log_rate>
+		<log_rate>1</log_rate>
 		<log_deadband>0.0</log_deadband>
 	</block>
 	<block>
@@ -33,7 +33,7 @@
 		<rc_lowlimit>0.0</rc_lowlimit>
 		<rc_highlimit>0.0</rc_highlimit>
 		<log_periodic>True</log_periodic>
-		<log_rate>0</log_rate>
+		<log_rate>1</log_rate>
 		<log_deadband>0.0</log_deadband>
 	</block>
 </blocks>
