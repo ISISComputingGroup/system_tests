@@ -122,32 +122,44 @@ class TestDae(unittest.TestCase):
 
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
-            with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber), "r") as f:
-                saved_title = f['/raw_data_1/title'][0].decode()
+            nexus_file = "C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber)
+            num_of_tries = 5
+            for i in range(num_of_tries):
+                try:
+                    with h5py.File(nexus_file, "r") as f:
+                        saved_title = f['/raw_data_1/title'][0].decode()
+                    break
+                except IOError:
+                    if i == num_of_tries - 1:
+                        print("{} not found, giving up".format(nexus_file))
+                        raise
+                    else:
+                        print("{} not found, retrying".format(nexus_file))
 
             self.assertEqual(expected_title, saved_title)
 
-    @parameterized.expand([
-        ("FLOAT_BLOCK", 12.345, 12.345),
-        ("LONG_BLOCK", 512, 512),
-        ("STRING_BLOCK", "Test string", "Test string"),
-
-        # BI/MBBI can only save integer representation to title
-        ("BI_BLOCK", "YES", 1),
-        ("MBBI_BLOCK", "CHEERFUL", 2)
-    ])
-    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self, block_to_test, block_test_value, expected_title_value):
+    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self):
+        # This is done in one go rather than as a parameterized list as each test needs to quite a long wait
         self.fail_if_not_in_setup()
         load_config_if_not_already_loaded("block_in_title")
 
-        formatted_block_name = BLOCK_FORMAT_PATTERN.format(block_name=block_to_test)
+        test_blocks = [("FLOAT_BLOCK", 12.345, 12.345),
+                       ("LONG_BLOCK", 512, 512),
+                       ("STRING_BLOCK", "Test string", "Test string"),
 
-        test_title = "Test block value {block}"
+                       # BI/MBBI can only save integer representation to title
+                       ("BI_BLOCK", "YES", 1),
+                       ("MBBI_BLOCK", "CHEERFUL", 2)]
 
-        title = test_title.format(block=formatted_block_name)
+        test_title = "Test block value " + ("{} and " * len(test_blocks))
+        formatted_block_names = [BLOCK_FORMAT_PATTERN.format(block_name=block[0]) for block in test_blocks]
+        title = test_title.format(*formatted_block_names)
 
-        with self._assert_title_correct(title, test_title.format(block=expected_title_value)):
-            g.cset(block_to_test, block_test_value, wait=True)
+        expected_title = test_title.format(*[block[2] for block in test_blocks])
+
+        with self._assert_title_correct(title, expected_title):
+            [g.cset(block[0], block[1], wait=True) for block in test_blocks]
+            sleep(10)
 
     def test_GIVEN_run_with_multiple_blocks_in_title_WHEN_run_finished_THEN_title_has_all_block_values_in_it(self):
         self.fail_if_not_in_setup()
@@ -166,6 +178,7 @@ class TestDae(unittest.TestCase):
         with self._assert_title_correct(title, test_title.format(block1=float_test_val, block2=long_test_val)):
             g.cset("FLOAT_BLOCK", float_test_val, wait=True)
             g.cset("LONG_BLOCK", long_test_val, wait=True)
+            sleep(10)
 
     def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
         set_wait_for_complete_callback_dae_settings(False)
