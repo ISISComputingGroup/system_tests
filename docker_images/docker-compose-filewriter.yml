@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  filewriter:
+    image: screamingudder/file-writer:77e831e
+    network_mode: "host"
+    environment:
+      CONFIG_FILE: "/file_writer_config.ini"
+    volumes:
+      - ./config-files/file_writer_config.ini:/file_writer_config.ini
+      - ./output-files/:/output-files/
+      - ./logs/:/filewriter_logs/
