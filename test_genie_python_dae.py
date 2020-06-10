@@ -125,7 +125,8 @@ class TestDae(unittest.TestCase):
 
         nexus_path = r'/raw_data_1/selog/{}/value_log'.format(test_block_name)
         num_to_test = 4
-        with h5py.File("C:/data/{instrument}{run}.nxs".format(instrument=g.get_instrument(), run=run_number), "r") as f:
+        nexus_filepath = "C:/data/{instrument}{run}.nxs".format(instrument=g.adv.get_instrument(), run=run_number)
+        with h5py.File(nexus_filepath, "r") as f:
             is_valid = [sample == 1 for sample in f[nexus_path + r'/value_valid'][-num_to_test:]]
             value = [int(val) for val in f[nexus_path + r'/value'][-num_to_test:]]
             severity = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_severity'][-num_to_test:]]
@@ -155,7 +156,7 @@ class TestDae(unittest.TestCase):
             yield
         finally:
             runnumber = g.get_runnumber()
-            inst = g.get_instrument()
+            inst = g.adv.get_instrument()
             g.end()
 
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)

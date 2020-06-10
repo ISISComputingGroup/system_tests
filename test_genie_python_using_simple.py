@@ -7,8 +7,8 @@ import unittest
 import time
 
 from genie_python.channel_access_exceptions import UnableToConnectToPVException
-from utilities.utilities import load_config_if_not_already_loaded, check_block_exists, g, retry_on_failure
-
+from utilities.utilities import load_config_if_not_already_loaded, check_block_exists, g, retry_on_failure, \
+    set_genie_python_raises_exceptions
 
 TIMEOUT = 30
 SIMPLE_CONFIG_NAME = "rcptt_simple"
@@ -100,6 +100,10 @@ class TestWaitforPV(unittest.TestCase):
     def setUp(self):
         g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
+        set_genie_python_raises_exceptions(True)
+
+    def tearDown(self):
+        set_genie_python_raises_exceptions(False)
 
     def test_GIVEN_pv_does_not_exist_WHEN_waiting_for_pv_THEN_error_is_returned(self):
         pv_name = g.prefix_pv_name("NONSENSE:PV")
