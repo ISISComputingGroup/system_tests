@@ -86,6 +86,7 @@ pipeline {
         timeout(time: 3, unit: 'HOURS') {
           bat """
                   set \"MYJOB=${env.JOB_NAME}\"
+				  REM Retry delete multiple times as sometimes fails
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
