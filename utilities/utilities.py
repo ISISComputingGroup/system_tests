@@ -182,6 +182,8 @@ def setup_simulated_wiring_tables(event_data=False):
         detector=table_path_template.format("detector"),
         spectra=table_path_template.format("spectra"))
     g.change_tcb(0, 10000, 100)
+    if event_data:
+        g.change_tcb(0, 10000, 100, regime=2)
     g.change_finish()
     set_genie_python_raises_exceptions(False)
 
