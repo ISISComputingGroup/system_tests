@@ -161,8 +161,11 @@ class TestDae(unittest.TestCase):
 
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
+            # isisicp writes files asynchronously, so need to retry file read
+            # in case file not completed and still locked
             nexus_file = "C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber)
             num_of_tries = 5
+            sleep_between_file_checks = 5
             for i in range(num_of_tries):
                 try:
                     with h5py.File(nexus_file, "r") as f:
@@ -174,6 +177,7 @@ class TestDae(unittest.TestCase):
                         raise
                     else:
                         print("{} not found, retrying".format(nexus_file))
+                        sleep(sleep_between_file_checks)
 
             self.assertEqual(expected_title, saved_title)
 
