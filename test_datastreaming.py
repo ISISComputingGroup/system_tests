@@ -153,8 +153,9 @@ class TestDatastreaming(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
-        stop_filewriter()
-        stop_kafka()
+        if DOCKER_EXISTS:
+            stop_filewriter()
+            stop_kafka()
 
     def setUp(self):
         if not DOCKER_EXISTS:
