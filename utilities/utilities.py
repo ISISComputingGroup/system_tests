@@ -10,6 +10,7 @@ import unittest
 from time import sleep, time
 
 # import genie either from the local project in pycharm or from virtual env
+from genie_python.channel_access_exceptions import UnableToConnectToPVException
 from mock import patch
 
 try:
@@ -313,7 +314,11 @@ def is_ioc_up(ioc_name):
 
     Returns: True if IOC is up; False otherwise
     """
-    return g.get_pv("AS:{}:SR_heartbeat".format(ioc_name), is_local=True) is not None
+    try:
+        heartbeat = g.get_pv("AS:{}:SR_heartbeat".format(ioc_name), is_local=True)
+    except UnableToConnectToPVException:
+        return False
+    return heartbeat is not None
 
 
 def retry_on_failure(max_times):
