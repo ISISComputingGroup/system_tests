@@ -172,17 +172,17 @@ class TestDae(unittest.TestCase):
             alarm_time = [int(time) for time in f[nexus_path + r'/alarm_time'][:]]
 
             # There could be some samples at the beginning/end but we only care about the ones we've set
-            first_value_index = values.index(10)
-            first_alarm_index = severity.index("NONE")
+            first_value_index = values.index(test_values[0])
 
             # Only care about test values and the final invalid one
             is_valid = is_valid[first_value_index:first_value_index + len(test_values) + 1]
             values = values[first_value_index:first_value_index + len(test_values) + 1]
-            severity = severity[first_alarm_index:first_alarm_index + len(test_values) + 1]
-            alarm_status = alarm_status[first_alarm_index:first_alarm_index + len(test_values) + 1]
-            alarm_time = alarm_time[first_alarm_index:first_alarm_index + len(test_values) + 1]
+            severity = severity[first_value_index:first_value_index + len(test_values) + 1]
+            alarm_status = alarm_status[first_value_index:first_value_index + len(test_values) + 1]
+            alarm_time = alarm_time[first_value_index:first_value_index + len(test_values) + 1]
 
             self.assertListEqual(is_valid, [True, True, True, False])
+            # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
             self.assertListEqual(values, test_values + [0])
             self.assertListEqual(severity, ["NONE", "MINOR", "MAJOR", "INVALID"])
             self.assertListEqual(alarm_status, ["NO_ALARM", "LOW_ALARM", "LOLO_ALARM", "UDF_ALARM"])
