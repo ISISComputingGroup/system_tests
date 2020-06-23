@@ -173,13 +173,15 @@ class TestDae(unittest.TestCase):
 
             # There could be some samples at the beginning/end but we only care about the ones we've set
             first_value_index = values.index(test_values[0])
+            # find last occurrence of NONE, which is start of our values
+            first_alarm_index = len(severity) - 1 - severity[::-1].index("NONE")
 
             # Only care about test values and the final invalid one
             is_valid = is_valid[first_value_index:first_value_index + len(test_values) + 1]
             values = values[first_value_index:first_value_index + len(test_values) + 1]
-            severity = severity[first_value_index:first_value_index + len(test_values) + 1]
-            alarm_status = alarm_status[first_value_index:first_value_index + len(test_values) + 1]
-            alarm_time = alarm_time[first_value_index:first_value_index + len(test_values) + 1]
+            severity = severity[first_alarm_index:first_alarm_index + len(test_values) + 1]
+            alarm_status = alarm_status[first_alarm_index:first_alarm_index + len(test_values) + 1]
+            alarm_time = alarm_time[first_alarm_index:first_alarm_index + len(test_values) + 1]
 
             self.assertListEqual(is_valid, [True, True, True, False])
             # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
