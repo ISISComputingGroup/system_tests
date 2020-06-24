@@ -157,6 +157,9 @@ class TestDae(unittest.TestCase):
             sleep(1)
         self.assertTrue(in_alarm, "Block never went invalid when IOC stopped")
 
+        # blocks are on a 5 second flush write from archive
+        sleep(5)
+
         run_number = g.get_runnumber()
         g.end()
 
