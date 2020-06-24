@@ -1,12 +1,12 @@
 import unittest
-from unittest import skip
 
 import h5py
 import random
 import os
 from time import sleep
 
-from utilities.utilities import g, genie_dae, set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
+from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
+    set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
     set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
     load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list
 
@@ -18,6 +18,32 @@ EXTREMELY_LARGE_NO_OF_PERIODS = 1000000
 DAE_PERIOD_TIMEOUT_SECONDS = 15
 
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
+
+
+def nexus_file_with_retry(instrument, run_number, test_func):
+    # isisicp writes files asynchronously, so need to retry file read
+    # in case file not completed and still locked
+    nexus_file = "C:/data/{instrument}{run}.nxs".format(instrument=instrument, run=run_number)
+    num_of_tries = 5
+    sleep_between_file_checks = 5
+    for i in range(num_of_tries):
+        try:
+            with h5py.File(nexus_file, "r") as f:
+                test_func(f)
+        except IOError:
+            if i == num_of_tries - 1:
+                print("{} not found, giving up".format(nexus_file))
+                raise
+            else:
+                print("{} not found, retrying".format(nexus_file))
+                sleep(sleep_between_file_checks)
+        except KeyError as e:
+            if i == num_of_tries - 1:
+                print("{} found but {} occurred, giving up".format(nexus_file, e))
+                raise
+            else:
+                print("{} found but {} occurred, retrying".format(nexus_file, e))
+                sleep(sleep_between_file_checks)
 
 
 class TestDae(unittest.TestCase):
@@ -118,29 +144,58 @@ class TestDae(unittest.TestCase):
             g.cset(test_block_name, value)
             sleep(sleep_between_sets)
 
+        # Restarting the IOC will make it invalid
+        stop_ioc("SIMPLE")
+        start_ioc("SIMPLE")
+        wait_for_ioc_start_stop(30, True, "SIMPLE")
+
+        # Wait for alarm
+        for _ in range(5):
+            in_alarm = g.cget(test_block_name)["alarm"] == "INVALID"
+            if in_alarm:
+                break
+            sleep(1)
+        self.assertTrue(in_alarm, "Block never went invalid when IOC stopped")
+
+        # blocks are on a 5 second flush write from archive
+        sleep(5)
+
         run_number = g.get_runnumber()
         g.end()
 
         g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
         nexus_path = r'/raw_data_1/selog/{}/value_log'.format(test_block_name)
-        num_to_test = 4
-        nexus_filepath = "C:/data/{instrument}{run}.nxs".format(instrument=g.adv.get_instrument(), run=run_number)
-        with h5py.File(nexus_filepath, "r") as f:
-            is_valid = [sample == 1 for sample in f[nexus_path + r'/value_valid'][-num_to_test:]]
-            value = [int(val) for val in f[nexus_path + r'/value'][-num_to_test:]]
-            severity = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_severity'][-num_to_test:]]
-            alarm_status = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_status'][-num_to_test:]]
-            alarm_time = [int(time) for time in f[nexus_path + r'/alarm_time'][-num_to_test:]]
 
-        self.assertListEqual(is_valid, [False, True, True, True])
-        expected_values = [0] + test_values
-        self.assertListEqual(value, expected_values)
-        self.assertListEqual(severity, ["INVALID", "NONE", "MINOR", "MAJOR"])
-        self.assertListEqual(alarm_status, ["UDF_ALARM", "NO_ALARM", "LOW_ALARM", "LOLO_ALARM"])
+        def test_function(f):
+            is_valid = [sample == 1 for sample in f[nexus_path + r'/value_valid'][:]]
+            values = [int(val) for val in f[nexus_path + r'/value'][:]]
+            severity = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_severity'][:]]
+            alarm_status = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_status'][:]]
+            alarm_time = [int(time) for time in f[nexus_path + r'/alarm_time'][:]]
 
-        self.assertAlmostEqual(alarm_time[-1]-alarm_time[-2], sleep_between_sets, delta=1)
-        self.assertAlmostEqual(alarm_time[-2]-alarm_time[-3], sleep_between_sets, delta=1)
+            # There could be some samples at the beginning/end but we only care about the ones we've set
+            first_value_index = values.index(test_values[0])
+            # find last occurrence of NONE, which is start of our values
+            first_alarm_index = len(severity) - 1 - severity[::-1].index("NONE")
+
+            # Only care about test values and the final invalid one
+            is_valid = is_valid[first_value_index:first_value_index + len(test_values) + 1]
+            values = values[first_value_index:first_value_index + len(test_values) + 1]
+            severity = severity[first_alarm_index:first_alarm_index + len(test_values) + 1]
+            alarm_status = alarm_status[first_alarm_index:first_alarm_index + len(test_values) + 1]
+            alarm_time = alarm_time[first_alarm_index:first_alarm_index + len(test_values) + 1]
+
+            self.assertListEqual(is_valid, [True, True, True, False])
+            # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
+            self.assertListEqual(values, test_values + [0])
+            self.assertListEqual(severity, ["NONE", "MINOR", "MAJOR", "INVALID"])
+            self.assertListEqual(alarm_status, ["NO_ALARM", "LOW_ALARM", "LOLO_ALARM", "UDF_ALARM"])
+
+            self.assertAlmostEqual(alarm_time[1] - alarm_time[0], sleep_between_sets, delta=1)
+            self.assertAlmostEqual(alarm_time[2] - alarm_time[1], sleep_between_sets, delta=1)
+
+        nexus_file_with_retry(g.adv.get_instrument(), run_number, test_function)
 
     @contextmanager
     def _assert_title_correct(self, test_title, expected_title):
@@ -161,25 +216,11 @@ class TestDae(unittest.TestCase):
 
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
-            # isisicp writes files asynchronously, so need to retry file read
-            # in case file not completed and still locked
-            nexus_file = "C:/data/{instrument}{run}.nxs".format(instrument=inst, run=runnumber)
-            num_of_tries = 5
-            sleep_between_file_checks = 5
-            for i in range(num_of_tries):
-                try:
-                    with h5py.File(nexus_file, "r") as f:
-                        saved_title = f['/raw_data_1/title'][0].decode()
-                    break
-                except IOError:
-                    if i == num_of_tries - 1:
-                        print("{} not found, giving up".format(nexus_file))
-                        raise
-                    else:
-                        print("{} not found, retrying".format(nexus_file))
-                        sleep(sleep_between_file_checks)
+            def test_func(f):
+                saved_title = f['/raw_data_1/title'][0].decode()
+                self.assertEqual(expected_title, saved_title)
 
-            self.assertEqual(expected_title, saved_title)
+            nexus_file_with_retry(inst, runnumber, test_func)
 
     def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self):
         # This is done in one go rather than as a parameterized list as each test needs to quite a long wait
