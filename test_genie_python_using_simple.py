@@ -253,3 +253,65 @@ class TestWaitforBlock(unittest.TestCase):
         g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
         assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to the limit")
+
+class TestRunControl(unittest.TestCase):
+
+    def setUp(self):
+        g.set_instrument(None)
+        load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
+        self.block_name = "FLOAT_BLOCK"
+        assert_that(check_block_exists(self.block_name), is_(True))
+        g.cset(self.block_name, 0)
+        g.cset(self.block_name, runcontrol=False)
+        self.block_pv = g.prefix_pv_name("CS:SB:") + self.block_name
+        g.set_pv(self.block_pv + ":AC:ENABLE", 0)
+        self._waitfor_runstate("SETUP")
+
+    def tearDown(self):
+        g.abort()
+
+    def test_GIVEN_out_of_range_block_WHEN_start_run_THEN_dae_waiting(self):
+        g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
+        g.begin()
+        self._waitfor_runstate("WAITING")
+
+    def test_GIVEN_dae_waiting_WHEN_block_goes_into_range_THEN_dae_running(self):
+        g.begin()
+        self._waitfor_runstate("RUNNING")
+        g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
+        self._waitfor_runstate("WAITING")
+        g.cset(self.block_name, runcontrol=True, lowlimit=-1, highlimit=1)
+        self._waitfor_runstate("RUNNING")
+
+    def test_GIVEN_dae_waiting_WHEN_runcontrol_disabled_THEN_dae_running(self):
+        g.begin()
+        self._waitfor_runstate("RUNNING")
+        g.cset(self.block_name, runcontrol=True, lowlimit=1, highlimit=2)
+        self._waitfor_runstate("WAITING")
+        g.cset(self.block_name, runcontrol=False)
+        self._waitfor_runstate("RUNNING")
+
+    def test_GIVEN_alert_range_WHEN_parameter_out_of_range_THEN_alert_sent(self):
+        g.begin()
+        self._waitfor_runstate("RUNNING")
+        mobiles_pv = g.prefix_pv_name("CS:AC:ALERTS:MOBILES:SP")
+        emails_pv = g.prefix_pv_name("CS:AC:ALERTS:EMAILS:SP")
+        pw_pv = g.prefix_pv_name("CS:AC:ALERTS:PW:SP")
+        inst_pv = g.prefix_pv_name("CS:AC:ALERTS:INST:SP")
+        url_pv = g.prefix_pv_name("CS:AC:ALERTS:URL:SP")
+        out_pv = g.prefix_pv_name("CS:AC:OUT:CNT")
+        assert_that(g.get_pv(out_pv), is_(0))
+        g.set_pv(mobiles_pv, "123456;789")
+        g.set_pv(emails_pv, "a@b;c@d")
+        g.set_pv(pw_pv, "dummy")
+        g.set_pv(inst_pv, "TESTINST")
+        g.set_pv(url_pv, "test") # this needs to be "test"
+        g.set_pv(self.block_pv + ":AC:LOW", 1)
+        g.set_pv(self.block_pv + ":AC:HIGH", 2)
+        g.set_pv(self.block_pv + ":AC:ENABLE", 1)
+        time.sleep(5)
+        assert_that(g.get_pv(out_pv), is_(1))
+
+    def _waitfor_runstate(self, state):
+        g.waitfor_runstate(state, TIMEOUT)
+        self.assertEqual(g.get_runstate(), state)
