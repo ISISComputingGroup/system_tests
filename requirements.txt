@@ -11,3 +11,5 @@ PyHamcrest
 requests
 six
 unittest-xml-reporting
+ess-streaming-data-types
+
