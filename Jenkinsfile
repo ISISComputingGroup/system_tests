@@ -59,6 +59,7 @@ pipeline {
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
+	    IF %errorlevel% NEQ 0 exit /b %errorlevel%
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             """
 		  }
