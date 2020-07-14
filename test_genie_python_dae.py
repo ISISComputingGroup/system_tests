@@ -383,7 +383,7 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
 
-        table_path_template = "{}\tables\{}"
+        table_path_template = r"{}\tables\{}"
         wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
         detector = table_path_template.format(os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat")
         spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
