@@ -318,7 +318,7 @@ class TestAlerts(unittest.TestCase):
         inst_pv = g.prefix_pv_name("CS:AC:ALERTS:INST:SP")
         url_pv = g.prefix_pv_name("CS:AC:ALERTS:URL:SP")
         out_pv = g.prefix_pv_name("CS:AC:OUT:CNT")
-        send_cnt_pv = g.prefix_pv_name("CS:AC:_SENDCNT")
+        send_cnt_pv = g.prefix_pv_name("CS:AC:ALERTS:_SENDCNT")
         assert_that(g.get_pv(out_pv), is_(0))
         assert_that(g.get_pv(send_cnt_pv), is_(0))
         g.set_pv(pw_pv, "dummy")
@@ -366,5 +366,8 @@ class TestAlerts(unittest.TestCase):
         assert_that(vals['highlimit'], is_(20.0))
         assert_that(vals['delay_in'], is_(2.0))
         assert_that(vals['delay_out'], is_(2.1))
-        assert_that(vals['enabled'], is_(0))
+        assert_that(vals['enabled'], is_('NO'))
 
+    def _waitfor_runstate(self, state):
+        g.waitfor_runstate(state, TIMEOUT)
+        self.assertEqual(g.get_runstate(), state)
