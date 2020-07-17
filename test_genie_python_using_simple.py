@@ -301,8 +301,7 @@ class TestAlerts(unittest.TestCase):
         self.block_name = "FLOAT_BLOCK"
         assert_that(check_block_exists(self.block_name), is_(True))
         g.cset(self.block_name, 0)
-        self.block_pv = g.prefix_pv_name("CS:SB:") + self.block_name
-        g.set_pv(self.block_pv + ":AC:ENABLE", 0)
+        g.alerts.enable(self.block_name, False)
         self._waitfor_runstate("SETUP")
 
     def tearDown(self):
@@ -323,7 +322,7 @@ class TestAlerts(unittest.TestCase):
         assert_that(g.get_pv(send_cnt_pv), is_(0))
         g.set_pv(pw_pv, "dummy")
         g.set_pv(inst_pv, "TESTINST")
-        g.set_pv(url_pv, "test") # this needs to be "test"
+        g.set_pv(url_pv, "test")  # this needs to be "test" so that webget knows not to send a message
 
         # check setting mobiles and emails
         g.alerts.set_sms(["123456", "789"])
