@@ -263,8 +263,6 @@ class TestRunControl(unittest.TestCase):
         assert_that(check_block_exists(self.block_name), is_(True))
         g.cset(self.block_name, 0)
         g.cset(self.block_name, runcontrol=False)
-        self.block_pv = g.prefix_pv_name("CS:SB:") + self.block_name
-        g.set_pv(self.block_pv + ":AC:ENABLE", 0)
         self._waitfor_runstate("SETUP")
 
     def tearDown(self):
@@ -291,7 +289,26 @@ class TestRunControl(unittest.TestCase):
         g.cset(self.block_name, runcontrol=False)
         self._waitfor_runstate("RUNNING")
 
+    def _waitfor_runstate(self, state):
+        g.waitfor_runstate(state, TIMEOUT)
+        self.assertEqual(g.get_runstate(), state)
+
+class TestAlerts(unittest.TestCase):
+
+    def setUp(self):
+        g.set_instrument(None)
+        load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
+        self.block_name = "FLOAT_BLOCK"
+        assert_that(check_block_exists(self.block_name), is_(True))
+        g.cset(self.block_name, 0)
+        g.alerts.enable(self.block_name, False)
+        self._waitfor_runstate("SETUP")
+
+    def tearDown(self):
+        g.abort()
+
     def test_GIVEN_alert_range_WHEN_parameter_out_of_range_THEN_alert_sent(self):
+        # setup  
         g.begin()
         self._waitfor_runstate("RUNNING")
         mobiles_pv = g.prefix_pv_name("CS:AC:ALERTS:MOBILES:SP")
@@ -300,17 +317,55 @@ class TestRunControl(unittest.TestCase):
         inst_pv = g.prefix_pv_name("CS:AC:ALERTS:INST:SP")
         url_pv = g.prefix_pv_name("CS:AC:ALERTS:URL:SP")
         out_pv = g.prefix_pv_name("CS:AC:OUT:CNT")
+        send_cnt_pv = g.prefix_pv_name("CS:AC:ALERTS:_SENDCNT")
         assert_that(g.get_pv(out_pv), is_(0))
-        g.set_pv(mobiles_pv, "123456;789")
-        g.set_pv(emails_pv, "a@b;c@d")
+        assert_that(g.get_pv(send_cnt_pv), is_(0))
         g.set_pv(pw_pv, "dummy")
         g.set_pv(inst_pv, "TESTINST")
-        g.set_pv(url_pv, "test") # this needs to be "test"
-        g.set_pv(self.block_pv + ":AC:LOW", 1)
-        g.set_pv(self.block_pv + ":AC:HIGH", 2)
-        g.set_pv(self.block_pv + ":AC:ENABLE", 1)
+        g.set_pv(url_pv, "test")  # this needs to be "test" so that webget knows not to send a message
+
+        # check setting mobiles and emails
+        g.alerts.set_sms(["123456", "789"])
+        g.alerts.set_email(["a@b", "c@d"])
+        time.sleep(5)
+        assert_that(g.get_pv(mobiles_pv), "123456;789")
+        assert_that(g.get_pv(emails_pv), "a@b;c@d")
+
+        # enable alert and check still in range
+        g.alerts.set_range(self.block_name, -10.0, 20.0, 2.0, 2.1)
+        g.alerts.enable(self.block_name, True)
+        time.sleep(5)
+        assert_that(g.get_pv(out_pv), is_(0))
+        assert_that(g.get_pv(send_cnt_pv), is_(0))
+        
+        # now make out of range
+        g.alerts.set_range(self.block_name, 10.0, 20.0, 2.0, 2.1)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(1))
+        assert_that(g.get_pv(send_cnt_pv), is_(1))
+        
+        # now make in range
+        g.alerts.set_range(self.block_name, -10.0, 20.0, 2.0, 2.1)
+        time.sleep(5)
+        assert_that(g.get_pv(out_pv), is_(0))
+        assert_that(g.get_pv(send_cnt_pv), is_(2))
+
+        # now disable alerts, but put out of range
+        g.alerts.enable(self.block_name, False)
+        g.alerts.set_range(self.block_name, 10.0, 20.0, 2.0, 2.1)
+        time.sleep(5)
+        assert_that(g.get_pv(out_pv), is_(0))
+        assert_that(g.get_pv(send_cnt_pv), is_(2))
+
+        # check values
+        vals = g.alerts._dump(self.block_name)
+        assert_that(vals['emails'], is_(["a@b", "c@d"]))
+        assert_that(vals['mobiles'], is_(["123456", "789"]))
+        assert_that(vals['lowlimit'], is_(10.0))
+        assert_that(vals['highlimit'], is_(20.0))
+        assert_that(vals['delay_in'], is_(2.0))
+        assert_that(vals['delay_out'], is_(2.1))
+        assert_that(vals['enabled'], is_('NO'))
 
     def _waitfor_runstate(self, state):
         g.waitfor_runstate(state, TIMEOUT)
