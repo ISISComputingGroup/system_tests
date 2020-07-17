@@ -332,27 +332,27 @@ class TestAlerts(unittest.TestCase):
         assert_that(g.get_pv(emails_pv), "a@b;c@d")
 
         # enable alert and check still in range
-        g.alerts.set_range(self.block_name, -10.0, 20.0, 2.0, 2.1)
+        g.alerts.set_range(self.block_name, -10.0, 20.0)
         g.alerts.enable(self.block_name, True)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(0))
         assert_that(g.get_pv(send_cnt_pv), is_(0))
         
         # now make out of range
-        g.alerts.set_range(self.block_name, 10.0, 20.0, 2.0, 2.1)
+        g.alerts.set_range(self.block_name, 10.0, 20.0)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(1))
         assert_that(g.get_pv(send_cnt_pv), is_(1))
         
         # now make in range
-        g.alerts.set_range(self.block_name, -10.0, 20.0, 2.0, 2.1)
+        g.alerts.set_range(self.block_name, -10.0, 20.0)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(0))
         assert_that(g.get_pv(send_cnt_pv), is_(2))
 
         # now disable alerts, but put out of range
         g.alerts.enable(self.block_name, False)
-        g.alerts.set_range(self.block_name, 10.0, 20.0, 2.0, 2.1)
+        g.alerts.set_range(self.block_name, 10.0, 20.0, False)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(0))
         assert_that(g.get_pv(send_cnt_pv), is_(2))
