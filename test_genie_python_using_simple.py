@@ -364,7 +364,7 @@ class TestAlerts(unittest.TestCase):
         assert_that(vals['lowlimit'], is_(10.0))
         assert_that(vals['highlimit'], is_(20.0))
         assert_that(vals['delay_in'], is_(2.0))
-        assert_that(vals['delay_out'], is_(2.1))
+        assert_that(vals['delay_out'], is_(2.0))
         assert_that(vals['enabled'], is_('NO'))
 
     def _waitfor_runstate(self, state):
