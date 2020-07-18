@@ -59,10 +59,11 @@ pipeline {
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
-	    IF %errorlevel% NEQ 0 exit /b %errorlevel%
+            IF %errorlevel% NEQ 0 exit /b %errorlevel%
+            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             """
-		  }
+         }
         }
       }
 
@@ -72,6 +73,14 @@ pipeline {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
             mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
+            IF %errorlevel% NEQ 0 (
+                @echo unable to make directory junction
+                exit /b %errorlevel%
+            )
+            if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
+                @echo Unable to find config_env.bat in linked directory
+                exit /b 1
+            )
             run_tests.bat
             """
           junit "test-reports/**/*.xml"
@@ -87,7 +96,7 @@ pipeline {
         timeout(time: 3, unit: 'HOURS') {
           bat """
                   set \"MYJOB=${env.JOB_NAME}\"
-				  REM Retry delete multiple times as sometimes fails
+                  REM Retry delete multiple times as sometimes fails
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
