@@ -19,6 +19,7 @@ Run system tests for genie_python. Copies across needed configs before running t
 
 import os
 import sys
+import time
 import unittest
 
 import shutil
@@ -69,13 +70,15 @@ if __name__ == '__main__':
         for file_or_dir in os.listdir(src):
             file_or_dir_dest = os.path.join(dest, file_or_dir)
             file_or_dir_src = os.path.join(src, file_or_dir)
-            try:
-                if os.path.isdir(file_or_dir_src):
-                    shutil.rmtree(file_or_dir_dest)
-                else:
-                    os.remove(file_or_dir_dest)
-            except OSError:
-                pass
+            for _ in range(2):
+                try:
+                    if os.path.isdir(file_or_dir_src):
+                        shutil.rmtree(file_or_dir_dest, True)
+                    else:
+                        os.remove(file_or_dir_dest)
+                except OSError:
+                    pass
+                time.sleep(2)
             if os.path.isdir(file_or_dir_src):
                 shutil.copytree(file_or_dir_src, file_or_dir_dest)
             else:

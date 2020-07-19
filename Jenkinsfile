@@ -60,7 +60,9 @@ pipeline {
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
             IF %errorlevel% NEQ 0 exit /b %errorlevel%
-            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+            )
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             """
          }

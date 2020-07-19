@@ -158,7 +158,7 @@ class TestDae(unittest.TestCase):
         self.assertTrue(in_alarm, "Block never went invalid when IOC stopped")
 
         # blocks are on a 5 second flush write from archive
-        sleep(5)
+        sleep(7)
 
         run_number = g.get_runnumber()
         g.end()
@@ -170,26 +170,28 @@ class TestDae(unittest.TestCase):
         def test_function(f):
             is_valid = [sample == 1 for sample in f[nexus_path + r'/value_valid'][:]]
             values = [int(val) for val in f[nexus_path + r'/value'][:]]
-            severity = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_severity'][:]]
+            alarm_severity = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_severity'][:]]
             alarm_status = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_status'][:]]
             alarm_time = [int(time) for time in f[nexus_path + r'/alarm_time'][:]]
 
             # There could be some samples at the beginning/end but we only care about the ones we've set
             first_value_index = values.index(test_values[0])
             # find last occurrence of NONE, which is start of our values
-            first_alarm_index = len(severity) - 1 - severity[::-1].index("NONE")
+            first_alarm_index = len(alarm_severity) - 1 - alarm_severity[::-1].index("NONE")
 
             # Only care about test values and the final invalid one
             is_valid = is_valid[first_value_index:first_value_index + len(test_values) + 1]
             values = values[first_value_index:first_value_index + len(test_values) + 1]
-            severity = severity[first_alarm_index:first_alarm_index + len(test_values) + 1]
+            alarm_severity = alarm_severity[first_alarm_index:first_alarm_index + len(test_values) + 1]
             alarm_status = alarm_status[first_alarm_index:first_alarm_index + len(test_values) + 1]
             alarm_time = alarm_time[first_alarm_index:first_alarm_index + len(test_values) + 1]
+            self.assertTrue(len(is_valid) == len(test_values) + 1, "Not enough values/value_valid items logged to file")
+            self.assertTrue(len(alarm_severity) == len(test_values) + 1, "Not enough alarm status/severity items logged to file")
 
             self.assertListEqual(is_valid, [True, True, True, False])
             # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
             self.assertListEqual(values, test_values + [0])
-            self.assertListEqual(severity, ["NONE", "MINOR", "MAJOR", "INVALID"])
+            self.assertListEqual(alarm_severity, ["NONE", "MINOR", "MAJOR", "INVALID"])
             self.assertListEqual(alarm_status, ["NO_ALARM", "LOW_ALARM", "LOLO_ALARM", "UDF_ALARM"])
 
             self.assertAlmostEqual(alarm_time[1] - alarm_time[0], sleep_between_sets, delta=1)
