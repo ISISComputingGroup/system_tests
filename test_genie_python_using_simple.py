@@ -368,13 +368,10 @@ class TestAlerts(unittest.TestCase):
         assert_that(vals['enabled'], is_('NO'))
 
     def test_GIVEN_details_WHEN_message_specified_THEN_alert_message_sent(self):
-        inst_pv = g.prefix_pv_name("CS:AC:ALERTS:INST:SP")
         url_pv = g.prefix_pv_name("CS:AC:ALERTS:URL:SP")
         message_pv = g.prefix_pv_name("CS:AC:ALERTS:MESSAGE:SP")
         send_cnt_pv = g.prefix_pv_name("CS:AC:ALERTS:_SENDCNT")
         old_send_cnt = g.get_pv(send_cnt_pv)
-        g.set_pv(pw_pv, "dummy")
-        g.set_pv(inst_pv, "TESTINST")
         g.set_pv(url_pv, "test")  # this needs to be "test" so that webget knows not to send a message
         
         g.alerts.send("test message")
