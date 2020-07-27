@@ -363,8 +363,8 @@ class TestAlerts(unittest.TestCase):
         assert_that(vals['mobiles'], is_(["123456", "789"]))
         assert_that(vals['lowlimit'], is_(10.0))
         assert_that(vals['highlimit'], is_(20.0))
-        assert_that(vals['delay_in'], is_(2.0))
-        assert_that(vals['delay_out'], is_(2.0))
+        assert_that(vals['delay_in'], is_(0.0))
+        assert_that(vals['delay_out'], is_(0.0))
         assert_that(vals['enabled'], is_('NO'))
 
     def test_GIVEN_details_WHEN_message_specified_THEN_alert_message_sent(self):
