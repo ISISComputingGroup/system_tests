@@ -332,7 +332,7 @@ class TestAlerts(unittest.TestCase):
         assert_that(g.get_pv(emails_pv), "a@b;c@d")
 
         # enable alert and check still in range
-        g.alerts.set_range(self.block_name, -10.0, 20.0)
+        g.alerts.set_range(self.block_name, -10.0, 20.0, delay_out=1, delay_in=2)
         g.alerts.enable(self.block_name, True)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(0))
@@ -364,7 +364,7 @@ class TestAlerts(unittest.TestCase):
         assert_that(vals['lowlimit'], is_(10.0))
         assert_that(vals['highlimit'], is_(20.0))
         assert_that(vals['delay_in'], is_(2.0))
-        assert_that(vals['delay_out'], is_(2.0))
+        assert_that(vals['delay_out'], is_(1.0))
         assert_that(vals['enabled'], is_('NO'))
 
     def test_GIVEN_details_WHEN_message_specified_THEN_alert_message_sent(self):
