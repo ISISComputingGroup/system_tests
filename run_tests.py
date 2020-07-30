@@ -31,6 +31,8 @@ SCRIPT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 DEFAULT_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, 'test-reports')
 CONFIGS_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, 'configs')
 
+NUM_RETRY_DELETION = 5
+
 # default icp config path
 default_configs_path = os.path.join("C:\\", "Instrument", "Settings", "config",
                                     os.environ.get("COMPUTERNAME", "NAME"), "configurations")
@@ -70,14 +72,14 @@ if __name__ == '__main__':
         for file_or_dir in os.listdir(src):
             file_or_dir_dest = os.path.join(dest, file_or_dir)
             file_or_dir_src = os.path.join(src, file_or_dir)
-            for _ in range(2):
+            for _ in range(NUM_RETRY_DELETION):
                 try:
                     if os.path.isdir(file_or_dir_src):
                         shutil.rmtree(file_or_dir_dest, True)
                     else:
                         os.remove(file_or_dir_dest)
-                except OSError:
-                    pass
+                except OSError as e:
+                    print("Error deleting file {} exception message is {}".format(file_or_dir_dest, e))
                 time.sleep(2)
             if os.path.isdir(file_or_dir_src):
                 shutil.copytree(file_or_dir_src, file_or_dir_dest)
