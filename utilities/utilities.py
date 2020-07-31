@@ -68,7 +68,7 @@ def parameterized_list(cases):
 
 def load_config_if_not_already_loaded(config_name):
     """
-    Load a config be name if it has not already been loaded.
+    Load a config by name if it has not already been loaded.
 
     Args:
         config_name: config to load
