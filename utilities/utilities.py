@@ -106,6 +106,16 @@ def _get_config_name():
     Raises: AssertionError if the cv can not be read
 
     """
+    return get_config_details()["name"]
+
+
+def get_config_details():
+    """
+    Returns the current config name after waiting for up to WAIT_FOR_SERVER_TIMEOUT seconds for it to be readable
+    Returns: the current configs name
+    Raises: AssertionError if the cv can not be read
+
+    """
     final_exception = None
     for i in range(WAIT_FOR_SERVER_TIMEOUT):
         try:
@@ -113,7 +123,7 @@ def _get_config_name():
             if current_config_pv is None:
                 raise AssertionError("Current config is none, is the server running?")
             current_config = json.loads(dehex_and_decompress(current_config_pv))
-            return current_config["name"]
+            return current_config
         except Exception as ex:
             sleep(1)
             print("Waiting for config pv: count {}".format(i))
