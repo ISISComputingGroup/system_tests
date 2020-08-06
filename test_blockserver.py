@@ -8,7 +8,6 @@ import time
 from genie_python import genie as g
 
 
-
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
 
 
