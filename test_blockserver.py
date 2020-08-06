@@ -28,7 +28,7 @@ class TestBlockserver(unittest.TestCase):
             else:
                 time.sleep(1)
         else:
-            raise AssertionError("IOC SIMPLE could not be started.")
+            raise AssertionError("IOC SIMPLE and/or CAENV895 could not be started.")
 
         time.sleep(60)  # Time for IOCs to fully boot etc
 
