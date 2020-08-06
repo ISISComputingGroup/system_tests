@@ -21,13 +21,7 @@ class TestBlockserver(unittest.TestCase):
     def test_GIVEN_config_changes_by_block_THEN_iocs_do_not_restart_except_for_caenv895(self):
         utilities.load_config_if_not_already_loaded("test_blockserver")
 
-        for _ in range(SECONDS_TO_WAIT_FOR_IOC_STARTS):
-            if utilities.is_ioc_up("SIMPLE") and utilities.is_ioc_up("CAENV895_01"):
-                break
-            else:
-                time.sleep(1)
-        else:
-            raise AssertionError("IOC SIMPLE and/or CAENV895 could not be started.")
+        utilities.wait_for_iocs_to_be_up(["SIMPLE", "CAENV895_01"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
 
         time.sleep(60)  # Time for IOCs to fully boot etc
 
@@ -48,5 +42,6 @@ class TestBlockserver(unittest.TestCase):
                 break
             except (Exception, AssertionError) as e:
                 err = e
+                time.sleep(1)
         else:
             raise err

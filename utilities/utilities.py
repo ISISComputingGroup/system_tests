@@ -6,6 +6,7 @@ import json
 import os
 import six
 import unittest
+import copy
 
 from time import sleep, time
 
@@ -329,6 +330,33 @@ def is_ioc_up(ioc_name):
     except UnableToConnectToPVException:
         return False
     return heartbeat is not None
+
+
+def wait_for_iocs_to_be_up(ioc_names, seconds_to_wait):
+    """
+    Wait for a number of iocs to be up by checking for existence of heartbeat PVs for each ioc.
+
+    Args:
+        ioc_names: A list of IOC names to wait for.
+        seconds_to_wait: The number of seconds to wait for iocs to be up.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: raised when at least one IOC hasn't started.
+    """
+    iocs_not_up = copy.deepcopy(ioc_names)
+    for _ in range(seconds_to_wait):
+        for ioc_name in ioc_names:
+            if is_ioc_up(ioc_name) and ioc_name in iocs_not_up:
+                iocs_not_up.remove(ioc_name)
+        if len(iocs_not_up) == 0:
+            break
+        else:
+            sleep(1)
+    else:
+        raise AssertionError("IOCs: {} could not be started.".format(iocs_not_up))
 
 
 def retry_on_failure(max_times):
