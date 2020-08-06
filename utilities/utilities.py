@@ -346,17 +346,46 @@ def wait_for_iocs_to_be_up(ioc_names, seconds_to_wait):
     Raises:
         AssertionError: raised when at least one IOC hasn't started.
     """
-    iocs_not_up = copy.deepcopy(ioc_names)
     for _ in range(seconds_to_wait):
-        for ioc_name in ioc_names:
-            if is_ioc_up(ioc_name) and ioc_name in iocs_not_up:
-                iocs_not_up.remove(ioc_name)
-        if len(iocs_not_up) == 0:
+        if all(is_ioc_up(ioc_name) for ioc_name in ioc_names):
             break
         else:
             sleep(1)
     else:
-        raise AssertionError("IOCs: {} could not be started.".format(iocs_not_up))
+        raise AssertionError(
+            "IOCs: {} could not be started.".format([ioc_name for ioc_name in ioc_names if not is_ioc_up(ioc_name)])
+        )
+
+
+def wait_for_string_pvs_to_not_be_empty(pvs, seconds_to_wait, is_local=True):
+    """
+    Wait for a number of string pvs to be non-empty and return their values.
+    Raises an assertion error if at least one is not found.
+
+    Args:
+        pvs: The pvs to wait and get values for.
+        seconds_to_wait: The seconds to wait for pvs.
+        is_local: Whether the pvs are local or not.
+
+    Returns:
+        A dictionary of values, where the key is the pv and the value is the returned pv value.
+
+    Raises:
+        AssertionError: If at least one pv is empty by the end.
+    """
+    pv_values = {pv: "" for pv in pvs}
+    for _ in range(seconds_to_wait):
+        for pv, value in pv_values.items():
+            if not value:  # String is falsy if empty
+                new_value = g.get_pv(pv, is_local=is_local)
+                pv_values[pv] = new_value
+        if all(pv_values.values()):
+            break
+        else:
+            sleep(1)
+    else:
+        raise AssertionError("{} not available".format([pv for pv, value in pv_values.items() if not value]))
+    return pv_values
 
 
 def retry_on_failure(max_times):
