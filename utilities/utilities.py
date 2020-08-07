@@ -6,6 +6,7 @@ import json
 import os
 import six
 import unittest
+import copy
 
 from time import sleep, time
 
@@ -106,6 +107,16 @@ def _get_config_name():
     Raises: AssertionError if the cv can not be read
 
     """
+    return get_config_details()["name"]
+
+
+def get_config_details():
+    """
+    Returns the current config name after waiting for up to WAIT_FOR_SERVER_TIMEOUT seconds for it to be readable
+    Returns: the current configs name
+    Raises: AssertionError if the cv can not be read
+
+    """
     final_exception = None
     for i in range(WAIT_FOR_SERVER_TIMEOUT):
         try:
@@ -113,7 +124,7 @@ def _get_config_name():
             if current_config_pv is None:
                 raise AssertionError("Current config is none, is the server running?")
             current_config = json.loads(dehex_and_decompress(current_config_pv))
-            return current_config["name"]
+            return current_config
         except Exception as ex:
             sleep(1)
             print("Waiting for config pv: count {}".format(i))
@@ -319,6 +330,62 @@ def is_ioc_up(ioc_name):
     except UnableToConnectToPVException:
         return False
     return heartbeat is not None
+
+
+def wait_for_iocs_to_be_up(ioc_names, seconds_to_wait):
+    """
+    Wait for a number of iocs to be up by checking for existence of heartbeat PVs for each ioc.
+
+    Args:
+        ioc_names: A list of IOC names to wait for.
+        seconds_to_wait: The number of seconds to wait for iocs to be up.
+
+    Returns:
+        None
+
+    Raises:
+        AssertionError: raised when at least one IOC hasn't started.
+    """
+    for _ in range(seconds_to_wait):
+        if all(is_ioc_up(ioc_name) for ioc_name in ioc_names):
+            break
+        else:
+            sleep(1)
+    else:
+        raise AssertionError(
+            "IOCs: {} could not be started.".format([ioc_name for ioc_name in ioc_names if not is_ioc_up(ioc_name)])
+        )
+
+
+def wait_for_string_pvs_to_not_be_empty(pvs, seconds_to_wait, is_local=True):
+    """
+    Wait for a number of string pvs to be non-empty and return their values.
+    Raises an assertion error if at least one is not found.
+
+    Args:
+        pvs: The pvs to wait and get values for.
+        seconds_to_wait: The seconds to wait for pvs.
+        is_local: Whether the pvs are local or not.
+
+    Returns:
+        A dictionary of values, where the key is the pv and the value is the returned pv value.
+
+    Raises:
+        AssertionError: If at least one pv is empty by the end.
+    """
+    pv_values = {pv: "" for pv in pvs}
+    for _ in range(seconds_to_wait):
+        for pv, value in pv_values.items():
+            if not value:  # String is falsy if empty
+                new_value = g.get_pv(pv, is_local=is_local)
+                pv_values[pv] = new_value
+        if all(pv_values.values()):
+            break
+        else:
+            sleep(1)
+    else:
+        raise AssertionError("{} not available".format([pv for pv, value in pv_values.items() if not value]))
+    return pv_values
 
 
 def retry_on_failure(max_times):
