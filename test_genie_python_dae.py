@@ -158,7 +158,7 @@ class TestDae(unittest.TestCase):
         self.assertTrue(in_alarm, "Block never went invalid when IOC stopped")
 
         # blocks are on a 5 second flush write from archive
-        sleep(7)
+        sleep(15)
 
         run_number = g.get_runnumber()
         g.end()
@@ -176,15 +176,19 @@ class TestDae(unittest.TestCase):
 
             # There could be some samples at the beginning/end but we only care about the ones we've set
             first_value_index = values.index(test_values[0])
-            # find last occurrence of NONE, which is start of our values
-            first_alarm_index = len(alarm_severity) - 1 - alarm_severity[::-1].index("NONE")
 
             # Only care about test values and the final invalid one
             is_valid = is_valid[first_value_index:first_value_index + len(test_values) + 1]
             values = values[first_value_index:first_value_index + len(test_values) + 1]
-            alarm_severity = alarm_severity[first_alarm_index:first_alarm_index + len(test_values) + 1]
-            alarm_status = alarm_status[first_alarm_index:first_alarm_index + len(test_values) + 1]
-            alarm_time = alarm_time[first_alarm_index:first_alarm_index + len(test_values) + 1]
+
+            # find first occurrence of NONE after the start of the run, which is start of our values
+            first_positive_alarm_timestamp = next(k for k, val in enumerate(alarm_time) if val > 0)
+            first_alarm_index = alarm_severity.index("NONE", first_positive_alarm_timestamp)
+            final_alarm_index = first_alarm_index + len(test_values) + 1
+            alarm_severity = alarm_severity[first_alarm_index:final_alarm_index]
+            alarm_status = alarm_status[first_alarm_index:final_alarm_index]
+            alarm_time = alarm_time[first_alarm_index:final_alarm_index]
+
             self.assertTrue(len(is_valid) == len(test_values) + 1, "Not enough values/value_valid items logged to file")
             self.assertTrue(len(alarm_severity) == len(test_values) + 1, "Not enough alarm status/severity items logged to file")
 
