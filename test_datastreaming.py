@@ -1,13 +1,15 @@
 import unittest
 from compose.cli.main import TopLevelCommand, project_from_options
 from time import sleep
-from kafka import KafkaProducer, KafkaAdminClient
+from kafka import KafkaProducer, KafkaAdminClient, KafkaConsumer, TopicPartition
 from kafka.errors import KafkaTimeoutError, UnrecognizedBrokerVersion
 from utilities.utilities import g, load_config_if_not_already_loaded, setup_simulated_wiring_tables
 import os
 import h5py
 import socket
 import docker
+from streaming_data_types.histogram_hs00 import deserialise_hs00
+import numpy
 
 NUMBER_OF_POLLS = 10
 TIMEOUT = 10
@@ -46,6 +48,17 @@ docker_default_options = {
 }
 
 
+def get_last_kafka_message(topic):
+    consumer = KafkaConsumer()
+    topic_partition = TopicPartition(topic, 0)
+    consumer.assign([topic_partition])
+    consumer.seek_to_end(topic_partition)
+    last_offset = consumer.position(topic_partition)
+    if last_offset != 0:
+        consumer.seek(topic_partition, last_offset - 1)
+    return next(consumer)
+
+
 def run_containers(cmd, options):
     print("Running docker-compose up", flush=True)
     cmd.up(options)
@@ -57,12 +70,15 @@ def wait_until_kafka_ready(docker_cmd, docker_options):
     print("Waiting for Kafka broker to be ready for system tests...")
     conf = {"bootstrap_servers": "localhost:9092"}
     kafka_ready = False
+    wait_topic = "waitUntilUp"
 
     for _ in range(NUMBER_OF_POLLS):
         try:
             producer = KafkaProducer(**conf)
-            record_data = producer.send("waitUntilUp", value=b"Test message")
+            record_data = producer.send(wait_topic, value=b"Test message")
             record_data.get(TIMEOUT)
+            get_last_kafka_message(wait_topic)
+
         except (KafkaTimeoutError, UnrecognizedBrokerVersion):
             pass
         else:
@@ -78,7 +94,7 @@ def wait_until_kafka_ready(docker_cmd, docker_options):
 
     for _ in range(NUMBER_OF_POLLS):
         topics = client.list_topics()
-        if "TEST_runInfo" in topics:
+        if "TEST_runInfo" in topics and "TEST_monitorHistograms" in topics:
             topic_ready = True
             print("Topic is ready!", flush=True)
             break
@@ -150,6 +166,7 @@ class TestDatastreaming(unittest.TestCase):
         if DOCKER_EXISTS:
             start_kafka()
             start_filewriter()
+            pass
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -178,6 +195,36 @@ class TestDatastreaming(unittest.TestCase):
         with h5py.File(file_path,  "r") as f:
             saved_events = f[r"/entry/events/event_id"]
             self.assertTrue(len(saved_events) > 0)
+
+    def test_WHEN_run_performed_THEN_histogram_events_published(self):
+        low, high, step = 10, 100, 5
+        num_time_channels = (high-low)/step
+        g.change_tcb(low=low, high=high, step=step)
+        g.begin()
+        sleep(1)
+        g.end()
+        latest_histogram_message = get_last_kafka_message("TEST_monitorHistograms")
+        latest_histogram_message = deserialise_hs00(latest_histogram_message.value)
+
+        self.assertEqual(latest_histogram_message["source"], "monitor_1")
+        self.assertListEqual(latest_histogram_message["current_shape"], [g.get_number_periods(), 1, num_time_channels])
+        dimensions = latest_histogram_message["dim_metadata"]
+
+        def test_dimension(index, expected_length, expected_boundaries, expected_label):
+            length = dimensions[index]["length"]
+            boundaries = dimensions[index]["bin_boundaries"]
+            label = dimensions[index]["label"]
+            self.assertEqual(length, expected_length)
+            self.assertTrue(numpy.array_equal(boundaries, expected_boundaries))
+            self.assertEqual(label, expected_label)
+
+        expected_array = numpy.arange(0.5, g.get_number_periods() + 0.6, 1)
+        test_dimension(0, g.get_number_periods(), expected_array, "period_index")
+
+        test_dimension(1, 1, numpy.array([2.5, 3.5]), "spectrum_index")
+
+        expected_array = numpy.arange(low, high + 0.5, step)
+        test_dimension(2, num_time_channels, expected_array, "time_of_flight")
 
 
 if __name__ == "__main__":
