@@ -314,7 +314,7 @@ def wait_for_ioc_start_stop(timeout, is_start, ioc_name):
         if is_ioc_up(ioc_name) == is_start:
             break
     else:
-        raise IOError("IOC is not {}".format("started" if is_start else "stopped"))
+        raise IOError("IOC {} is not {}".format(ioc_name, "started" if is_start else "stopped"))
 
 
 def is_ioc_up(ioc_name):
