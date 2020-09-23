@@ -81,7 +81,10 @@ class TestProcControl(unittest.TestCase):
 
         wait_for_ioc_start_stop(timeout=30, is_start=False, ioc_name="SIMPLE")
 
-    def test_GIVEN_all_iocs_stopped_through_procserv_THEN_status_is_shutdown(self):
+    def test_WHEN_start_iocs_THEN_iocs_started_WHEN_stop_iocs_THEN_iocs_stopped(self):
+
+        # A test to check all IOCs start and stop correctly
+        # Implemented to test for the error we encountered where we met our procserv limit and some iocs didn't start
 
         tree = ET.parse(os.path.join("C:\\", "Instrument", "Apps", "EPICS", "iocstartup", "config.xml"))
         root = tree.getroot()
@@ -96,13 +99,16 @@ class TestProcControl(unittest.TestCase):
         for schema in schemas:
             iocs.extend([ioc_config.attrib["name"] for ioc_config in root.iter("{}ioc_config".format(schema))])
 
-        self.assertGreater(len(iocs), 100)  # Check parsed IOCs are a sensible length
-        self.assertIn("SIMPLE", iocs)  # Check there's at least one known ioc in the list
+        # Check parsed IOCs are a sensible length
+        self.assertGreater(len(iocs), 100)
+        # Check there's at least one known ioc in the list
+        self.assertTrue(any(item in iocs for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
 
         for ioc in iocs:
             if "PSCTRL" in ioc:
                 print("skipping {}".format(ioc))
                 continue
             print("testing {}".format(ioc))
+            # Start/stop ioc also waits for the ioc to start/stop respectively or errors after a 30 second timeout
             start_ioc(ioc_name=ioc)
             stop_ioc(ioc_name=ioc)
