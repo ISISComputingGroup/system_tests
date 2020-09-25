@@ -107,7 +107,7 @@ class TestProcControl(unittest.TestCase):
         errored_iocs = []
 
         for ioc in iocs:
-            if any(iocname in ioc for iocname in ["PSCTRL", "DELFTDCMAG_02"]):
+            if any(iocname in ioc for iocname in ["PSCTRL", "DELFTDCMAG_02", "DELFTDCMAG_01"]):
                 print("skipping {}".format(ioc))
                 continue
             print("testing {}".format(ioc))
