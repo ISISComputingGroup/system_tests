@@ -6,7 +6,7 @@ import threading
 import unittest
 import time
 
-from genie_python.channel_access_exceptions import UnableToConnectToPVException
+from genie_python.channel_access_exceptions import UnableToConnectToPVException, WriteAccessException
 from utilities.utilities import load_config_if_not_already_loaded, check_block_exists, g, retry_on_failure, \
     set_genie_python_raises_exceptions
 
@@ -139,6 +139,37 @@ class TestWaitforPV(unittest.TestCase):
         g.adv.wait_for_pv(pv_name, value_to_wait_for, maxwait=max_wait)
 
         assert_that(set_pv_thread.is_alive(), is_(False), "SetPV thread should have finished before maxwait has passed.")
+
+
+class TestDispSetOnBlock(unittest.TestCase):
+    def setUp(self):
+        g.set_instrument(None)
+        load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
+        set_genie_python_raises_exceptions(True)
+        self._pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
+
+    def tearDown(self):
+        g.set_pv(self._pv_name+".DISP", 0)
+
+    def test_GIVEN_disp_set_on_block_WHEN_setting_pv_value_THEN_exception_is_raised(self):
+        g.set_pv(self._pv_name+".DISP", '1')
+        with self.assertRaises(WriteAccessException):
+            g.set_pv(self._pv_name, "test")
+
+    def test_GIVEN_disp_not_set_on_block_WHEN_setting_pv_value_THEN_pv_value_is_set(self):
+        g.set_pv(self._pv_name+".DISP", '0')
+        test_value = 123
+        g.set_pv(self._pv_name, test_value)
+        assert g.get_pv(self._pv_name) == test_value
+
+    def test_GIVEN_field_WHEN_setting_pv_value_THEN_field_is_set_and_disp_is_not_checked(self):
+        test_value = "m"
+        g.set_pv(self._pv_name+".EGU", test_value)
+        assert g.get_pv(self._pv_name+".EGU") == test_value
+
+    def test_GIVEN_disp_not_present_on_pv_WHEN_setting_pv_value_THEN_field_is_set_disp_not_checked(self):
+        pass
+
 
 class TestWaitforBlock(unittest.TestCase):
 
