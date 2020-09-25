@@ -105,7 +105,7 @@ class TestProcControl(unittest.TestCase):
         self.assertTrue(any(item in iocs for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
 
         for ioc in iocs:
-            if "PSCTRL" in ioc:
+            if any(iocname in ioc for iocname in ["PSCTRL", "DELFTDCMAG_02"]):
                 print("skipping {}".format(ioc))
                 continue
             print("testing {}".format(ioc))
