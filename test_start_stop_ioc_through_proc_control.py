@@ -104,11 +104,17 @@ class TestProcControl(unittest.TestCase):
         # Check there's at least one known ioc in the list
         self.assertTrue(any(item in iocs for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
 
+        errored_iocs = []
+
         for ioc in iocs:
             if any(iocname in ioc for iocname in ["PSCTRL", "DELFTDCMAG_02"]):
                 print("skipping {}".format(ioc))
                 continue
             print("testing {}".format(ioc))
             # Start/stop ioc also waits for the ioc to start/stop respectively or errors after a 30 second timeout
-            start_ioc(ioc_name=ioc)
-            stop_ioc(ioc_name=ioc)
+            try:
+                start_ioc(ioc_name=ioc)
+                stop_ioc(ioc_name=ioc)
+            except IOError:
+                errored_iocs.append(ioc)
+        self.assertEqual(errored_iocs, [], "IOCs failed: {}".format(errored_iocs))
