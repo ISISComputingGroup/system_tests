@@ -159,6 +159,7 @@ class TestDispSetOnBlock(unittest.TestCase):
     def test_GIVEN_disp_not_set_on_block_WHEN_setting_pv_value_THEN_pv_value_is_set(self):
         g.set_pv(self._pv_name+".DISP", '0')
         test_value = 123
+        time.sleep(2)
         g.set_pv(self._pv_name, test_value)
         assert g.get_pv(self._pv_name) == test_value
 
@@ -166,7 +167,6 @@ class TestDispSetOnBlock(unittest.TestCase):
         test_value = "m"
         g.set_pv(self._pv_name+".EGU", test_value)
         assert g.get_pv(self._pv_name+".EGU") == test_value
-
 
 
 class TestWaitforBlock(unittest.TestCase):
