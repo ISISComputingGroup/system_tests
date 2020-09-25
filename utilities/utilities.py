@@ -29,7 +29,7 @@ try:
 except ImportError:
     from genie_python.utilities import dehex_and_decompress, compress_and_hex
 
-WAIT_FOR_SERVER_TIMEOUT = 120
+WAIT_FOR_SERVER_TIMEOUT = 200
 """Number of seconds to wait for a pv to become available in the config server e.g. when it starts or 
 when it changed config"""
 
