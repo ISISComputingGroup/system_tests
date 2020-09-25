@@ -167,8 +167,6 @@ class TestDispSetOnBlock(unittest.TestCase):
         g.set_pv(self._pv_name+".EGU", test_value)
         assert g.get_pv(self._pv_name+".EGU") == test_value
 
-    def test_GIVEN_disp_not_present_on_pv_WHEN_setting_pv_value_THEN_field_is_set_disp_not_checked(self):
-        pass
 
 
 class TestWaitforBlock(unittest.TestCase):
