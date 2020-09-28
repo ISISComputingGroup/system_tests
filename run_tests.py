@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     print("\n\n------ BEGINNING genie_python SYSTEM TESTS ------")
     ret_vals = list()
-    ret_vals.append(xmlrunner.XMLTestRunner(output=xml_dir, failfast=failfast_switch).run(test_suite))
+    ret_vals.append(xmlrunner.XMLTestRunner(output=xml_dir, failfast=failfast_switch, verbosity=2).run(test_suite))
     print("------ UNIT TESTS COMPLETE ------\n\n")
 
     # Return failure exit code if a test failed
