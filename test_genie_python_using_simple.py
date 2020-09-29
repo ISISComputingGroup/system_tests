@@ -152,12 +152,12 @@ class TestDispSetOnBlock(unittest.TestCase):
         g.set_pv(self._pv_name+".DISP", 0)
 
     def test_GIVEN_disp_set_on_block_WHEN_setting_pv_value_THEN_exception_is_raised(self):
-        g.set_pv(self._pv_name+".DISP", '1')
+        g.set_pv(self._pv_name+".DISP", 1)
         with self.assertRaises(WriteAccessException):
             g.set_pv(self._pv_name, "test")
 
     def test_GIVEN_disp_not_set_on_block_WHEN_setting_pv_value_THEN_pv_value_is_set(self):
-        g.set_pv(self._pv_name+".DISP", '0')
+        g.set_pv(self._pv_name+".DISP", 0)
         test_value = 123
         time.sleep(2)
         g.set_pv(self._pv_name, test_value)
