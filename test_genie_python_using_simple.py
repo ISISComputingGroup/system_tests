@@ -168,6 +168,11 @@ class TestDispSetOnBlock(unittest.TestCase):
         g.set_pv(self._pv_name+".EGU", test_value)
         assert g.get_pv(self._pv_name+".EGU") == test_value
 
+    def test_GIVEN_disp_is_set_on_pv_WHEN_setting_field_value_THEN_exception_is_raised(self):
+        g.set_pv(self._pv_name + ".DISP", 1)
+        with self.assertRaises(WriteAccessException):
+            g.set_pv(self._pv_name + ".EGU", "test")
+
 
 class TestWaitforBlock(unittest.TestCase):
 
