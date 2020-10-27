@@ -10,6 +10,35 @@ import xml.etree.ElementTree as ET
 import os
 
 
+# The following iocs are ignored in the test which starts/stops all iocs
+# This is usually because they don't build by default, or have some complex dependency,
+# or are special in some way (e.g. psctrl).
+IOCS_TO_IGNORE_START_STOP = [
+    "PSCTRL",  # Special, controls other IOCs
+    "DELFTDCMAG_01",  # Delft iocs have a weird build/run process?
+    "DELFTDCMAG_02",
+    'DELFTSHEAR_01',
+    'ASTRIUM_01',
+    'ASTRIUM_02',
+    'BGRSCRPT_01',  # Won't keep running unless it has a config file
+    'BGRSCRPT_02',
+    'BKHOFF_02',  # Complex build
+    'ECLAB_01',
+    'LSICORR_01',  # Needs vendor library in correct place to keep running
+    'LSICORR_02',
+    'MOXA12XX_01',
+    'MOXA12XX_02',
+    'MOXA12XX_03',
+    'NANODAC_01',
+    'OERCONE_02',
+    'REFL_01',  # Won't run correctly without a config
+    'TWINCAT_01',
+    'MOTORSIM',  # Simulation ioc
+    'PIXELMAN',
+    'CHOPPERSIM',  # Simulation ioc
+]
+
+
 class TestProcControl(unittest.TestCase):
     """
 
@@ -107,7 +136,7 @@ class TestProcControl(unittest.TestCase):
         errored_iocs = []
 
         for ioc in iocs:
-            if any(iocname in ioc for iocname in ["PSCTRL", "DELFTDCMAG_02", "DELFTDCMAG_01"]):
+            if any(iocname in ioc for iocname in IOCS_TO_IGNORE_START_STOP):
                 print("skipping {}".format(ioc))
                 continue
             print("testing {}".format(ioc))
