@@ -156,7 +156,7 @@ class TestProcControl(unittest.TestCase):
     def _retry_in_recsim(errored_iocs: List[str], ioc: str):
         # open with w flag and overwrite - we don't need to
         with open(GLOBALS_FILENAME, "w") as globals_file:
-            globals_file.write(f"{ioc}__SIM=1")
+            globals_file.write(f"{ioc}__RECSIM=1")
             try:
                 start_ioc(ioc_name=ioc)
                 stop_ioc(ioc_name=ioc)
