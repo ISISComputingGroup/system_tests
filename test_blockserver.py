@@ -59,3 +59,68 @@ class TestBlockserver(unittest.TestCase):
                 time.sleep(1)
         else:
             raise err
+
+    def test_GIVEN_config_changes_to_empty_and_back_again_THEN_runcontrol_settings_reset_to_config_defaults(self):
+        utilities.load_config_if_not_already_loaded("rcptt_simple")
+
+        # Settings different than config default
+        g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
+
+        self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"])
+
+        utilities.load_config_if_not_already_loaded("empty_for_system_tests")
+        utilities.load_config_if_not_already_loaded("rcptt_simple")
+
+        self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
+
+    def test_GIVEN_config_explicitly_reloaded_THEN_runcontrol_settings_reset_to_config_defaults(self):
+        utilities.load_config_if_not_already_loaded("rcptt_simple")
+
+        # Settings different than config default
+        g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
+
+        self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"])
+
+        g.reload_current_config()
+
+        # Give time for config to be fully reloaded.
+        time.sleep(60)
+
+        err = None
+        for _ in range(SECONDS_TO_WAIT_FOR_IOC_STARTS):
+            try:
+                self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
+                break
+            except AssertionError as e:
+                err = e
+                time.sleep(1)
+        else:
+            raise err
+
+    def test_GIVEN_config_reloaded_THEN_alerts_username_and_pw_are_retained(self):
+        utilities.load_config_if_not_already_loaded("rcptt_simple")
+
+        url = "https://test.invalid/url/which/might/be/longer/than/40/characters"
+        pw = "test_password"
+        g.set_pv("CS:AC:ALERTS:URL:SP", url, is_local=True)
+        g.set_pv("CS:AC:ALERTS:PW:SP", pw, is_local=True)
+
+        # Give time for autosave to pick up the new values, in theory 30s is enough but wait a bit longer to be sure.
+        time.sleep(60)
+
+        g.reload_current_config()
+
+        # Give time for config to be fully reloaded.
+        time.sleep(60)
+
+        err = None
+        for _ in range(SECONDS_TO_WAIT_FOR_IOC_STARTS):
+            try:
+                self.assertEqual(g.get_pv("CS:AC:ALERTS:URL:SP", is_local=True), url)
+                self.assertEqual(g.get_pv("CS:AC:ALERTS:PW:SP", is_local=True), pw)
+                break
+            except AssertionError as e:
+                err = e
+                time.sleep(1)
+        else:
+            raise err
