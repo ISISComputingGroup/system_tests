@@ -157,10 +157,10 @@ class TestProcControl(unittest.TestCase):
         # open with w flag and overwrite - we don't need to
         with open(GLOBALS_FILENAME, "w") as globals_file:
             globals_file.write(f"{ioc}__RECSIM=1")
+            globals_file.flush()
             try:
                 start_ioc(ioc_name=ioc)
                 stop_ioc(ioc_name=ioc)
-                pass
             except IOError:
                 errored_iocs.append(ioc)
             finally:
