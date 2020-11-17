@@ -1,4 +1,5 @@
 import unittest
+from typing import List
 
 from hamcrest import *
 
@@ -37,6 +38,8 @@ IOCS_TO_IGNORE_START_STOP = [
     'PIXELMAN',
     'CHOPPERSIM',  # Simulation ioc
 ]
+
+GLOBALS_FILENAME = os.path.join(os.environ['ICPCONFIGROOT'], "globals.txt")
 
 
 class TestProcControl(unittest.TestCase):
@@ -126,7 +129,7 @@ class TestProcControl(unittest.TestCase):
 
         iocs = []
         for schema in schemas:
-            iocs.extend([ioc_config.attrib["name"] for ioc_config in root.iter("{}ioc_config".format(schema))])
+            iocs.extend([ioc_config.attrib["name"] for ioc_config in root.iter(f"{schema}ioc_config")])
 
         # Check parsed IOCs are a sensible length
         self.assertGreater(len(iocs), 100)
@@ -137,13 +140,28 @@ class TestProcControl(unittest.TestCase):
 
         for ioc in iocs:
             if any(iocname in ioc for iocname in IOCS_TO_IGNORE_START_STOP):
-                print("skipping {}".format(ioc))
+                print(f"skipping {ioc}")
                 continue
-            print("testing {}".format(ioc))
+            print(f"testing {ioc}")
             # Start/stop ioc also waits for the ioc to start/stop respectively or errors after a 30 second timeout
             try:
                 start_ioc(ioc_name=ioc)
                 stop_ioc(ioc_name=ioc)
             except IOError:
-                errored_iocs.append(ioc)
+                self._retry_in_recsim(errored_iocs, ioc)
+
         self.assertEqual(errored_iocs, [], "IOCs failed: {}".format(errored_iocs))
+
+    @staticmethod
+    def _retry_in_recsim(errored_iocs: List[str], ioc: str):
+        # open with w flag and overwrite - we don't need to
+        with open(GLOBALS_FILENAME, "w") as globals_file:
+            globals_file.write(f"{ioc}__RECSIM=1")
+            globals_file.flush()
+            try:
+                start_ioc(ioc_name=ioc)
+                stop_ioc(ioc_name=ioc)
+            except IOError:
+                errored_iocs.append(ioc)
+            finally:
+                globals_file.truncate(0)
