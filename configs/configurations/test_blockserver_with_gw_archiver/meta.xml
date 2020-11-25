@@ -6,5 +6,5 @@
 		<edit>2020-07-31 14:37:50</edit>
 	</edits>
 	<isProtected>false</isProtected>
-	<configuresBlockGWAndArchiver>false</configuresBlockGWAndArchiver>
+	<configuresBlockGWAndArchiver>true</configuresBlockGWAndArchiver>
 </meta>
