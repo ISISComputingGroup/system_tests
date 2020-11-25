@@ -30,6 +30,7 @@ IOCS_TO_IGNORE_START_STOP = [
     'MOXA12XX_01',
     'MOXA12XX_02',
     'MOXA12XX_03',
+    'MK3CHOPR_01',
     'NANODAC_01',
     'OERCONE_02',
     'REFL_01',  # Won't run correctly without a config
