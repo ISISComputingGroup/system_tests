@@ -54,16 +54,31 @@ pipeline {
          lock(resource: ELOCK, inversePrecedence: true) {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
+            REM EPICS should always be a directory junction on build servers
+            if exist "C:\\Instrument\\Apps\\EPICS" (
+                rmdir "C:\\Instrument\\Apps\\EPICS"
+            )
             if \"%MYJOB%\" == \"System_Tests_debug\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
-            IF %errorlevel% NEQ 0 exit /b %errorlevel%
+            REM preserve error code as we need always need to rename EPICS directory
+            set insterr=%errorlevel%
             if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                 rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             )
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
+            set moveerr=%errorlevel%
+            IF %insterr% NEQ 0 (
+                @echo ERROR unable to install ibex
+                exit /b %insterr%
+            )
+            IF %moveerr% NEQ 0 (
+                @echo ERROR unable to rename directory
+                exit /b %moveerr%
+            )
             """
          }
         }
@@ -76,11 +91,11 @@ pipeline {
             set \"MYJOB=${env.JOB_NAME}\"
             mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             IF %errorlevel% NEQ 0 (
-                @echo unable to make directory junction
+                @echo ERROR unable to make directory junction
                 exit /b %errorlevel%
             )
             if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
-                @echo Unable to find config_env.bat in linked directory
+                @echo ERROR Unable to find config_env.bat in linked directory
                 exit /b 1
             )
             run_tests.bat
@@ -98,6 +113,7 @@ pipeline {
         timeout(time: 3, unit: 'HOURS') {
           bat """
                   set \"MYJOB=${env.JOB_NAME}\"
+                  rd C:\\Instrument\\Apps\\EPICS
                   REM Retry delete multiple times as sometimes fails
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
