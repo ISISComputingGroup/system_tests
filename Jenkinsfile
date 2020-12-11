@@ -84,11 +84,14 @@ pipeline {
         }
       }
 
-      stage("Unit Test Results") {
+      stage("System Tests") {
         steps {
          lock(resource: ELOCK, inversePrecedence: true) {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
+            if exist "C:\\Instrument\\Apps\\EPICS" (
+                rmdir "C:\\Instrument\\Apps\\EPICS"
+            )
             mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             IF %errorlevel% NEQ 0 (
                 @echo ERROR unable to make directory junction
@@ -98,9 +101,9 @@ pipeline {
                 @echo ERROR Unable to find config_env.bat in linked directory
                 exit /b 1
             )
-            run_tests.bat
-            """
-          junit "test-reports/**/*.xml"
+            call run_tests.bat
+            exit /b %errorlevel%
+          """
         }
       }
      }
@@ -108,18 +111,20 @@ pipeline {
   }
 
   post {
+    always {
+        junit "test-reports/**/*.xml"
+    }
+
     cleanup {
-        echo "Cleaning"
         timeout(time: 3, unit: 'HOURS') {
-          bat """
+        bat """
                   set \"MYJOB=${env.JOB_NAME}\"
-                  rd C:\\Instrument\\Apps\\EPICS
                   REM Retry delete multiple times as sometimes fails
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                   exit /b 0
-          """
+        """
         }
     }
   }
