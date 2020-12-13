@@ -56,6 +56,7 @@ pipeline {
             set \"MYJOB=${env.JOB_NAME}\"
             REM EPICS should always be a directory junction on build servers
             if exist "C:\\Instrument\\Apps\\EPICS" (
+                call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
             if \"%MYJOB%\" == \"System_Tests_debug\" (
@@ -66,6 +67,8 @@ pipeline {
             REM preserve error code as we need always need to rename EPICS directory
             set insterr=%errorlevel%
             if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                REM Retry delete multiple times as sometimes fails
+                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                 rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                 rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             )
@@ -90,6 +93,7 @@ pipeline {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
             if exist "C:\\Instrument\\Apps\\EPICS" (
+                call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
             mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
@@ -113,19 +117,6 @@ pipeline {
   post {
     always {
         junit "test-reports/**/*.xml"
-    }
-
-    cleanup {
-        timeout(time: 3, unit: 'HOURS') {
-        bat """
-                  set \"MYJOB=${env.JOB_NAME}\"
-                  REM Retry delete multiple times as sometimes fails
-                  rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-                  rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-                  rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-                  exit /b 0
-        """
-        }
     }
   }
   
