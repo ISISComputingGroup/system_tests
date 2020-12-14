@@ -56,11 +56,14 @@ class TestDae(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
+
+        self._adjust_icp_begin_delay(0)
+
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
-        # load_config_if_not_already_loaded("empty_for_system_tests")
+        load_config_if_not_already_loaded("empty_for_system_tests")
 
-        # setup_simulated_wiring_tables()
+        setup_simulated_wiring_tables()
 
     def tearDown(self):
         set_genie_python_raises_exceptions(False)
@@ -461,9 +464,47 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(False)
 
+    def _adjust_icp_begin_delay(self, delay_seconds):
+
+        icp_properties_files = [
+            r"C:\Labview modules\dae\isisicp.properties",
+            r"C:\Instrument\Apps\EPICS\ICP_Binaries\isisicp.properties",
+        ]
+
+        begindelay_property = "isisicp.begindelay"
+        config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
+
+        with g._genie_api.dae.temporarily_kill_icp():
+            config_found = False
+
+            for filepath in icp_properties_files:
+                if os.path.exists(filepath):
+                    config_found = True
+                    with open(filepath) as f:
+                        lines = f.readlines()
+
+                    for index, line in enumerate(lines):
+                        if begindelay_property in line:
+                            lines[index] = config_line
+                            break
+                    else:
+                        lines.append(config_line)
+
+                    with open(filepath, "w") as f:
+                        f.writelines(lines)
+
+            if not config_found:
+                raise IOError("Could not find at least one icp config file (looked in {})".format(icp_properties_files))
+
+        # Give time for ICP to restart
+        time.sleep(15)
+        g.waitfor_runstate("SETUP")
+
     def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(self):
 
         load_config_if_not_already_loaded("rcptt_simple")
+
+        self._adjust_icp_begin_delay(10)
 
         low_limit = 0
         high_limit = 2
@@ -471,46 +512,33 @@ class TestDae(unittest.TestCase):
         in_range = (low_limit + high_limit) / 2
         out_of_range = high_limit + 1
 
-        g.cset("FLOAT_BLOCK", in_range)
-        g.cset("FLOAT_BLOCK", lowlimit=0, highlimit=2, runcontrol=True)
+        try:
+            g.cset("FLOAT_BLOCK", in_range)
+            g.cset("FLOAT_BLOCK", lowlimit=0, highlimit=2, runcontrol=True)
 
-        for attempt in range(100):
-            print("Attempt {}".format(attempt))
+            number_of_attempts = 100
 
-            # Start with block in range
-            g.cset("FLOAT_BLOCK", in_range, wait=True)
+            for attempt in range(number_of_attempts):
+                print("runcontrol race condition check attempt {} / {}".format(attempt + 1, number_of_attempts))
 
-            g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+                # Start with block in range
+                g.cset("FLOAT_BLOCK", in_range, wait=True)
 
-            # Use a low-level begin directly as g.begin() would wait for the begin to complete, making the test meaningless
-            g.set_pv("DAE:BEGINRUNEX", 0, wait=False, is_local=True)
+                # Use a low-level begin directly as g.begin() would wait for the begin to complete, making the test meaningless
+                g.set_pv("DAE:BEGINRUNEX", 0, wait=False, is_local=True)
 
-            time.sleep(5)
-            g.cset("FLOAT_BLOCK", in_range, wait=False)
+                time.sleep(5)
+                g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+                time.sleep(3)
+                g.cset("FLOAT_BLOCK", in_range, wait=False)
 
-            # set_count = 1
-            #
-            # while g.get_runstate() == "BEGINNING":
-            #     g.cset("FLOAT_BLOCK", out_of_range, wait=False)
-            #     g.cset("FLOAT_BLOCK", in_range, wait=False)
-            #     set_count += 1
-            #
-            # print("Set and unset pv {} times".format(set_count))
+                g.waitfor_runstate("RUNNING")
 
-            g.waitfor_runstate("RUNNING")
+                g.abort()
 
-            # Sleep to assert it stays in running and doesn't go into waiting
-            time.sleep(5)
-
-            self.assertTrue(g.get_runstate(), "RUNNING")
-
-            # Now assert it does go into waiting when out of range
-            g.cset("FLOAT_BLOCK", out_of_range, wait=False)
-            g.waitfor_runstate("WAITING")
-
-            g.abort()
-
-            g.waitfor_runstate("SETUP")
+                g.waitfor_runstate("SETUP")
+        finally:
+            self._adjust_icp_begin_delay(0)
 
     def _wait_for_sample_pars(self):
         for _ in range(self.TIMEOUT):
