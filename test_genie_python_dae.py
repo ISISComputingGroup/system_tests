@@ -1,3 +1,4 @@
+import time
 import unittest
 
 import h5py
@@ -57,9 +58,9 @@ class TestDae(unittest.TestCase):
         g.set_instrument(None)
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
-        load_config_if_not_already_loaded("empty_for_system_tests")
+        # load_config_if_not_already_loaded("empty_for_system_tests")
 
-        setup_simulated_wiring_tables()
+        # setup_simulated_wiring_tables()
 
     def tearDown(self):
         set_genie_python_raises_exceptions(False)
@@ -459,6 +460,57 @@ class TestDae(unittest.TestCase):
         self._wait_for_dae_period_change(1, g.get_period)
 
         set_genie_python_raises_exceptions(False)
+
+    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(self):
+
+        load_config_if_not_already_loaded("rcptt_simple")
+
+        low_limit = 0
+        high_limit = 2
+
+        in_range = (low_limit + high_limit) / 2
+        out_of_range = high_limit + 1
+
+        g.cset("FLOAT_BLOCK", in_range)
+        g.cset("FLOAT_BLOCK", lowlimit=0, highlimit=2, runcontrol=True)
+
+        for attempt in range(100):
+            print("Attempt {}".format(attempt))
+
+            # Start with block in range
+            g.cset("FLOAT_BLOCK", in_range, wait=True)
+
+            g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+
+            # Use a low-level begin directly as g.begin() would wait for the begin to complete, making the test meaningless
+            g.set_pv("DAE:BEGINRUNEX", 0, wait=False, is_local=True)
+
+            time.sleep(5)
+            g.cset("FLOAT_BLOCK", in_range, wait=False)
+
+            # set_count = 1
+            #
+            # while g.get_runstate() == "BEGINNING":
+            #     g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+            #     g.cset("FLOAT_BLOCK", in_range, wait=False)
+            #     set_count += 1
+            #
+            # print("Set and unset pv {} times".format(set_count))
+
+            g.waitfor_runstate("RUNNING")
+
+            # Sleep to assert it stays in running and doesn't go into waiting
+            time.sleep(5)
+
+            self.assertTrue(g.get_runstate(), "RUNNING")
+
+            # Now assert it does go into waiting when out of range
+            g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+            g.waitfor_runstate("WAITING")
+
+            g.abort()
+
+            g.waitfor_runstate("SETUP")
 
     def _wait_for_sample_pars(self):
         for _ in range(self.TIMEOUT):
