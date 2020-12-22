@@ -79,15 +79,15 @@ class TestBlockUtils(unittest.TestCase):
             assert_that(g.cget(bi_block_name)["value"], is_(expected_val))
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_mbbi_pv_WHEN_set_and_get_pv_value_THEN_value_is_set_and_read(self):
-        mbbi_pv_name = "SIMPLE:MBBI"
+    def test_GIVE_config_with_mbbi_pv_WHEN_set_and_get_pv_value_with_not_is_local_THEN_value_is_set_and_read(self):
+        mbbi_pv_name = g.prefix_pv_name("SIMPLE:MBBI")
 
         for expected_val in ["CHEERFUL", "HAPPY"]:
-            g.set_pv(mbbi_pv_name, expected_val, is_local=True, wait=True)
-            assert_that(g.get_pv(mbbi_pv_name, is_local=True), is_(expected_val))
+            g.set_pv(mbbi_pv_name, expected_val, wait=True)
+            assert_that(g.get_pv(mbbi_pv_name), is_(expected_val))
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_bi_pv_WHEN_set_and_get_pv_value_THEN_value_is_set_and_read(self):
+    def test_GIVE_config_with_bi_pv_WHEN_set_and_get_pv_value_with_is_local_THEN_value_is_set_and_read(self):
         bi_pv_name = "SIMPLE:BI"
 
         for expected_val in ["NO", "YES"]:
