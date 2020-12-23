@@ -106,7 +106,9 @@ pipeline {
                 exit /b 1
             )
             call run_tests.bat
-            exit /b %errorlevel%
+            set errcode=%errorlevel%
+            rmdir "C:\\Instrument\\Apps\\EPICS"
+            exit /b %errcode%
           """
         }
       }
@@ -117,6 +119,14 @@ pipeline {
   post {
     always {
         junit "test-reports/**/*.xml"
+    }
+
+    cleanup {
+        bat """
+            set \"MYJOB=${env.JOB_NAME}\"
+            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+            exit /b 0
+        """
     }
   }
   
