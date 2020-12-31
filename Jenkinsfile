@@ -42,8 +42,10 @@ pipeline {
   stages {  
     stage("Checkout") {
       steps {
-        echo "Branch: ${env.BRANCH_NAME}"
-        checkout scm
+        retry(3) {
+            echo "Branch: ${env.BRANCH_NAME}"
+            checkout scm
+        }
       }
     }
 
