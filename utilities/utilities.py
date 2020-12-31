@@ -308,8 +308,11 @@ def wait_for_ioc_start_stop(timeout, is_start, ioc_name):
     Raises:
         IOError error if IOC does not start/stop after timeout
     """
-    for count in range(timeout):
-        g.waitfor_time(seconds=1)
+    start_time = time()
+    count = 0
+    while count < timeout:
+        sleep(1.0)
+        count = time() - start_time
         print("Waited {}s for IOC to {}".format(count, "start" if is_start else "stop"))
         if is_ioc_up(ioc_name) == is_start:
             break
@@ -346,7 +349,8 @@ def wait_for_iocs_to_be_up(ioc_names, seconds_to_wait):
     Raises:
         AssertionError: raised when at least one IOC hasn't started.
     """
-    for _ in range(seconds_to_wait):
+    start_time = time()
+    while time() - start_time < seconds_to_wait:
         if all(is_ioc_up(ioc_name) for ioc_name in ioc_names):
             break
         else:
@@ -374,7 +378,8 @@ def wait_for_string_pvs_to_not_be_empty(pvs, seconds_to_wait, is_local=True):
         AssertionError: If at least one pv is empty by the end.
     """
     pv_values = {pv: "" for pv in pvs}
-    for _ in range(seconds_to_wait):
+    start_time = time()
+    while time() - start_time < seconds_to_wait:
         for pv, value in pv_values.items():
             if not value:  # String is falsy if empty
                 new_value = g.get_pv(pv, is_local=is_local)
