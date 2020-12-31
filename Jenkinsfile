@@ -91,7 +91,7 @@ pipeline {
       stage("System Tests") {
         steps {
          lock(resource: ELOCK, inversePrecedence: true) {
-           timeout(time: 180, unit: 'MINUTES') {
+           timeout(time: 360, unit: 'MINUTES') {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
             if exist "C:\\Instrument\\Apps\\EPICS" (
