@@ -24,6 +24,8 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr:'5', daysToKeepStr: '7'))
     disableConcurrentBuilds()
     timestamps()
+    // as we "checkout scm" as a stage, we do not need to do it here too
+    skipDefaultCheckout(true)
     office365ConnectorWebhooks([[
                     name: "Office 365",
                     notifyBackToNormal: true,
