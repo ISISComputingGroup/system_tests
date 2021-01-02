@@ -112,7 +112,6 @@ pipeline {
             del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
             call run_tests.bat
             set errcode=%errorlevel%
-            robocopy "C:\\Instrument\\Var\\logs\\ioc" "%WORKSPACE%\\ioc-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             rmdir "C:\\Instrument\\Apps\\EPICS"
             exit /b %errcode%
           """
@@ -125,6 +124,10 @@ pipeline {
 
   post {
     always {
+        bat """
+            robocopy "C:\\Instrument\\Var\\logs\\ioc" "%WORKSPACE%\\ioc-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            exit /b 0
+        """
         archiveArtifacts artifacts: 'ioc-logs/*.log', caseSensitive: false
         junit "test-reports/**/*.xml"
     }
