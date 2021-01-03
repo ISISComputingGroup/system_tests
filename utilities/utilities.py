@@ -36,6 +36,9 @@ when it changed config"""
 # Number of seconds to wait for the DAE settings to update
 DAE_MODE_TIMEOUT = 120
 
+# Number of seconds to wait for IOC to start/stop
+IOCS_START_STOP_TIMEOUT = 60
+
 # The environment variable used to store the baseline memory usage
 BASE_MEMORY_USAGE = "BASE_MEMORY_USAGE"
 
@@ -264,13 +267,13 @@ def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
         ioc_name: name of the ioc
 
     Raises:
-        IOError error if IOC does not start/stop after 30 seconds
+        IOError error if IOC does not start/stop after IOCS_START_STOP_TIMEOUT seconds
 
     """
     if is_ioc_up(ioc_name) != is_a_start:
         g.set_pv("CS:PS:{}:{}".format(ioc_name, "START" if is_a_start else "STOP"), 1, is_local=True)
 
-    wait_for_ioc_start_stop(timeout=30, is_start=is_a_start, ioc_name=ioc_name)
+    wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=is_a_start, ioc_name=ioc_name)
 
 
 def start_ioc(ioc_name):
@@ -280,7 +283,7 @@ def start_ioc(ioc_name):
         ioc_name: name of the ioc to start
 
     Raises:
-        IOError error if IOC does not start after 30 seconds
+        IOError error if IOC does not start after IOCS_START_STOP_TIMEOUT seconds
     """
     _start_stop_ioc_is_a_start(True, ioc_name)
 
@@ -292,7 +295,7 @@ def stop_ioc(ioc_name):
         ioc_name: name of the ioc to stop
 
     Raises:
-        IOError error if IOC does not stop after 30 seconds
+        IOError error if IOC does not stop after IOCS_START_STOP_TIMEOUT seconds
     """
     _start_stop_ioc_is_a_start(False, ioc_name)
 
