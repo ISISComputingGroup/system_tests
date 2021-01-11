@@ -56,7 +56,6 @@ class TestDae(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
-
         self._adjust_icp_begin_delay(0)
 
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
@@ -473,7 +472,8 @@ class TestDae(unittest.TestCase):
 
         begindelay_property = "isisicp.begindelay"
         config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
-
+        if g.get_runstate() != "SETUP":
+            g.abort() # make sure not left in a funny state from e.g. previous aborted test
         with g._genie_api.dae.temporarily_kill_icp():
             config_found = False
 
@@ -504,7 +504,10 @@ class TestDae(unittest.TestCase):
 
         load_config_if_not_already_loaded("rcptt_simple")
 
-        self._adjust_icp_begin_delay(10)
+        # needs to be long enough so the various cset() commands below can exectute prior to begin completion
+        # the test is to move in and out of range multiple times during the begin and get the correct final state
+        # it needs to be several times as we widh to test both asyn queueing and any channel access RPRO
+        self._adjust_icp_begin_delay(15)
 
         low_limit = 0
         high_limit = 2
@@ -514,28 +517,49 @@ class TestDae(unittest.TestCase):
 
         try:
             g.cset("FLOAT_BLOCK", in_range)
-            g.cset("FLOAT_BLOCK", lowlimit=0, highlimit=2, runcontrol=True)
+            g.cset("FLOAT_BLOCK", lowlimit=low_limit, highlimit=high_limit, runcontrol=True)
 
             number_of_attempts = 100
 
             for attempt in range(number_of_attempts):
-                print("runcontrol race condition check attempt {} / {}".format(attempt + 1, number_of_attempts))
+                print("runcontrol race condition check1 attempt {} / {}".format(attempt + 1, number_of_attempts))
 
-                # Start with block in range
-                g.cset("FLOAT_BLOCK", in_range, wait=True)
+                # Start with block out of range
+                g.cset("FLOAT_BLOCK", out_of_range, wait=True)
+                time.sleep(2)
 
                 # Use a low-level begin directly as g.begin() would wait for the begin to complete, making the test meaningless
+                # we should begin in a waiting state due to above out of range
                 g.set_pv("DAE:BEGINRUNEX", 0, wait=False, is_local=True)
+                time.sleep(1)
 
-                time.sleep(5)
-                g.cset("FLOAT_BLOCK", out_of_range, wait=False)
-                time.sleep(3)
+                # now queue various in and out of range movements
                 g.cset("FLOAT_BLOCK", in_range, wait=False)
+                time.sleep(2)
 
-                g.waitfor_runstate("RUNNING")
+                g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+                time.sleep(2)
+
+                g.cset("FLOAT_BLOCK", in_range, wait=False)
+                time.sleep(2)
+
+                g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+                time.sleep(2)
+
+                g.cset("FLOAT_BLOCK", in_range, wait=False)
+                time.sleep(2)
+
+                # check we are running
+                g.waitfor_runstate("RUNNING", maxwaitsecs=30)
+                time.sleep(5)
+
+                # check we are still running
+                g.waitfor_runstate("RUNNING", maxwaitsecs=30)
+
+                if g.get_runstate() != "RUNNING":
+                    self.fail("Should be in RUNNING")
 
                 g.abort()
-
                 g.waitfor_runstate("SETUP")
         finally:
             self._adjust_icp_begin_delay(0)
