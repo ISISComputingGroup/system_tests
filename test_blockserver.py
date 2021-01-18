@@ -9,6 +9,7 @@ import time
 from genie_python import genie as g
 import requests
 from hamcrest import *
+import socket
 
 
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
@@ -21,6 +22,9 @@ class TestBlockserver(unittest.TestCase):
     def setUp(self) -> None:
         g.set_instrument(None, import_instrument_init=False)
         self.pvlist_file = os.path.join(r"C:\Instrument", "Settings", "gwblock.pvlist")
+        self.rc_settings_file = os.path.join(
+            r"C:\Instrument", "Settings", "config", socket.gethostname(), "configurations", "rc_settings.cmd"
+        )
         self.config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs", "configurations")
 
     def test_GIVEN_config_changes_by_block_THEN_iocs_do_not_restart_except_for_caenv895(self):
@@ -180,3 +184,25 @@ class TestBlockserver(unittest.TestCase):
         with open(self.pvlist_file, "r") as pvlist:
             file_content = pvlist.read()
             assert_that(file_content, contains_string(g.prefix_pv_name("CS:SB:a")))
+
+    def test_GIVEN_config_contains_rc_settings_THEN_configuration_rc_settings_used(self):
+        config = "test_blockserver_with_gw_archiver"
+        utilities.load_config_if_not_already_loaded(config)
+
+        config_rc_settings_file = os.path.join(self.config_dir, config, "rc_settings.cmd")
+        with open(self.rc_settings_file, "r") as rc_settings, open(config_rc_settings_file, "r") as config_rc_settings:
+            assert_that(rc_settings.read(), is_(config_rc_settings.read()))
+
+    def test_GIVEN_config_claims_but_does_not_contain_rc_settings_THEN_rc_settings_generated(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
+
+        with open(self.rc_settings_file, "r") as rc_settings:
+            file_content = rc_settings.read()
+            assert_that(file_content, contains_string("TIZRWARNING"))
+
+    def test_GIVEN_config_does_not_contain_rc_settings_THEN_rc_settings_generated(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver")
+
+        with open(self.rc_settings_file, "r") as rc_settings:
+            file_content = rc_settings.read()
+            assert_that(file_content, contains_string(g.prefix_pv_name("CS:SB:A")))
