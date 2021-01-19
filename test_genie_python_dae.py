@@ -1,3 +1,4 @@
+import time
 import unittest
 
 import h5py
@@ -55,6 +56,8 @@ class TestDae(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
+        self._adjust_icp_begin_delay(0)
+
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
         load_config_if_not_already_loaded("empty_for_system_tests")
@@ -459,6 +462,107 @@ class TestDae(unittest.TestCase):
         self._wait_for_dae_period_change(1, g.get_period)
 
         set_genie_python_raises_exceptions(False)
+
+    def _adjust_icp_begin_delay(self, delay_seconds):
+
+        icp_properties_files = [
+            r"C:\Labview modules\dae\isisicp.properties",
+            r"C:\Instrument\Apps\EPICS\ICP_Binaries\isisicp.properties",
+        ]
+
+        begindelay_property = "isisicp.begindelay"
+        config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
+        if g.get_runstate() != "SETUP":
+            g.abort() # make sure not left in a funny state from e.g. previous aborted test
+        with g._genie_api.dae.temporarily_kill_icp():
+            config_found = False
+
+            for filepath in icp_properties_files:
+                if os.path.exists(filepath):
+                    config_found = True
+                    with open(filepath) as f:
+                        lines = f.readlines()
+
+                    for index, line in enumerate(lines):
+                        if begindelay_property in line:
+                            lines[index] = config_line
+                            break
+                    else:
+                        lines.append(config_line)
+
+                    with open(filepath, "w") as f:
+                        f.writelines(lines)
+
+            if not config_found:
+                raise IOError("Could not find at least one icp config file (looked in {})".format(icp_properties_files))
+
+        # Give time for ICP to restart
+        time.sleep(15)
+        g.waitfor_runstate("SETUP")
+
+    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(self):
+
+        load_config_if_not_already_loaded("rcptt_simple")
+
+        # needs to be long enough so the various cset() commands below can exectute prior to begin completion
+        # the test is to move in and out of range multiple times during the begin and get the correct final state
+        # it needs to be several times as we widh to test both asyn queueing and any channel access RPRO
+        self._adjust_icp_begin_delay(15)
+
+        low_limit = 0
+        high_limit = 2
+
+        in_range = (low_limit + high_limit) / 2
+        out_of_range = high_limit + 1
+
+        try:
+            g.cset("FLOAT_BLOCK", in_range)
+            g.cset("FLOAT_BLOCK", lowlimit=low_limit, highlimit=high_limit, runcontrol=True)
+
+            number_of_attempts = 100
+
+            for attempt in range(number_of_attempts):
+                print("runcontrol race condition check1 attempt {} / {}".format(attempt + 1, number_of_attempts))
+
+                # Start with block out of range
+                g.cset("FLOAT_BLOCK", out_of_range, wait=True)
+                time.sleep(2)
+
+                # Use a low-level begin directly as g.begin() would wait for the begin to complete, making the test meaningless
+                # we should begin in a waiting state due to above out of range
+                g.set_pv("DAE:BEGINRUNEX", 0, wait=False, is_local=True)
+                time.sleep(1)
+
+                # now queue various in and out of range movements
+                g.cset("FLOAT_BLOCK", in_range, wait=False)
+                time.sleep(2)
+
+                g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+                time.sleep(2)
+
+                g.cset("FLOAT_BLOCK", in_range, wait=False)
+                time.sleep(2)
+
+                g.cset("FLOAT_BLOCK", out_of_range, wait=False)
+                time.sleep(2)
+
+                g.cset("FLOAT_BLOCK", in_range, wait=False)
+                time.sleep(2)
+
+                # check we are running
+                g.waitfor_runstate("RUNNING", maxwaitsecs=30)
+                time.sleep(5)
+
+                # check we are still running
+                g.waitfor_runstate("RUNNING", maxwaitsecs=30)
+
+                if g.get_runstate() != "RUNNING":
+                    self.fail("Should be in RUNNING")
+
+                g.abort()
+                g.waitfor_runstate("SETUP")
+        finally:
+            self._adjust_icp_begin_delay(0)
 
     def _wait_for_sample_pars(self):
         for _ in range(self.TIMEOUT):
