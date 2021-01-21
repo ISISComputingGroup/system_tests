@@ -2,7 +2,7 @@
 h5py
 configobj
 docker
-docker-compose
+docker-compose==1.27.4
 kafka-python
 mock
 parameterized
