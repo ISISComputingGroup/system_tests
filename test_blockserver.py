@@ -136,18 +136,6 @@ class TestBlockserver(unittest.TestCase):
         else:
             raise err
 
-    def retry_assert(self, retry_amount: int, func: Callable[[], None]):
-        error = None
-        for i in range(retry_amount):
-            try:
-                func()
-                break
-            except AssertionError as newError:
-                error = newError
-            time.sleep(1)
-        else:
-            raise error
-
     def test_GIVEN_config_contains_gw_and_archiver_files_THEN_archiver_uses_configuration_file(self):
         utilities.load_config_if_not_already_loaded("test_blockserver_with_gw_archiver")
 
@@ -157,7 +145,7 @@ class TestBlockserver(unittest.TestCase):
             assert_that(len(response["Channels"]), is_(1))
             assert_that(response["Channels"][0]["Channel"], is_("PREFIX:MYTESTBLOCK"))
 
-        self.retry_assert(5, assert_block_archive_blocks_group_has_one_channel)
+        utilities.retry_assert(5, assert_block_archive_blocks_group_has_one_channel)
 
     def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
         utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")

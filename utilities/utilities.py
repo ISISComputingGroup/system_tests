@@ -7,6 +7,7 @@ import os
 import six
 import unittest
 import copy
+from typing import Callable
 
 from time import sleep, time
 
@@ -420,6 +421,41 @@ def retry_on_failure(max_times):
         return wrapper
     return decorator
 
+
 def check_block_exists(block_name):
+    """
+    Check that the given block name is in the current blocks.
+
+    Args:
+        block_name (str): The name of the block to check for
+
+    Returns:
+        bool: true if block is in current blocks, false if not.
+    """
     blocks = g.get_blocks()
     return block_name in blocks
+
+
+def retry_assert(retry_limit: int, func: Callable[[], None]):
+    """
+    Take a function (func) that makes assertions. Try to call the function and catch any AssertionErrors if raised.
+    Repeat this until either the function does not raise an AssertionError or the retry_limit is reached.
+    If the retry limit is reach reraise the last error.
+
+    Args:
+        retry_limit (int): The limit of times to retry.
+        func (Callable): A callable that makes assertions.
+
+    Raises:
+        AssertionError: If the function fails in every retry.
+    """
+    error = None
+    for i in range(retry_limit):
+        try:
+            func()
+            break
+        except AssertionError as newError:
+            error = newError
+        sleep(1)
+    else:
+        raise error
