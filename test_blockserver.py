@@ -1,6 +1,7 @@
 import json
 import os
 import unittest
+from typing import Callable
 
 from genie_python.utilities import compress_and_hex
 
@@ -26,6 +27,7 @@ class TestBlockserver(unittest.TestCase):
             r"C:\Instrument", "Settings", "config", socket.gethostname(), "configurations", "rc_settings.cmd"
         )
         self.config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs", "configurations")
+        self.block_archive_blocks_url = "http://localhost:4813/group?name=BLOCKS&format=json"
 
     def test_GIVEN_config_changes_by_block_THEN_iocs_do_not_restart_except_for_caenv895(self):
         utilities.load_config_if_not_already_loaded("test_blockserver")
@@ -134,20 +136,33 @@ class TestBlockserver(unittest.TestCase):
         else:
             raise err
 
+    def retry_assert(self, retry_amount: int, func: Callable[[], None]):
+        error = None
+        for i in range(retry_amount):
+            try:
+                func()
+                break
+            except AssertionError as newError:
+                error = newError
+            time.sleep(1)
+        else:
+            raise error
+
     def test_GIVEN_config_contains_gw_and_archiver_files_THEN_archiver_uses_configuration_file(self):
         utilities.load_config_if_not_already_loaded("test_blockserver_with_gw_archiver")
 
-        url = "http://localhost:4813/group?name=BLOCKS&format=json"
-        response = requests.get(url).json()
+        def assert_block_archive_blocks_group_has_one_channel():
+            response = requests.get(self.block_archive_blocks_url).json()
 
-        assert_that(len(response["Channels"]), is_(1))
-        assert_that(response["Channels"][0]["Channel"], is_("PREFIX:MYTESTBLOCK"))
+            assert_that(len(response["Channels"]), is_(1))
+            assert_that(response["Channels"][0]["Channel"], is_("PREFIX:MYTESTBLOCK"))
+
+        self.retry_assert(5, assert_block_archive_blocks_group_has_one_channel)
 
     def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
         utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
 
-        url = "http://localhost:4813/group?name=BLOCKS&format=json"
-        response = requests.get(url).json()
+        response = requests.get(self.block_archive_blocks_url).json()
 
         assert_that(len(response["Channels"]), is_(2))
         assert_that(response["Channels"][0]["Channel"], ends_with("TIZROUTOFRANGE"))
@@ -156,8 +171,7 @@ class TestBlockserver(unittest.TestCase):
     def test_GIVEN_config_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
         utilities.load_config_if_not_already_loaded("test_blockserver")
 
-        url = "http://localhost:4813/group?name=BLOCKS&format=json"
-        response = requests.get(url).json()
+        response = requests.get(self.block_archive_blocks_url).json()
 
         assert_that(len(response["Channels"]), is_(1))
         assert_that(response["Channels"][0]["Channel"], ends_with("a"))
@@ -205,4 +219,4 @@ class TestBlockserver(unittest.TestCase):
 
         with open(self.rc_settings_file, "r") as rc_settings:
             file_content = rc_settings.read()
-            assert_that(file_content, contains_string(g.prefix_pv_name("CS:SB:A")))
+            assert_that(file_content, contains_string("$(MYPVPREFIX)CS:SB:A"))
