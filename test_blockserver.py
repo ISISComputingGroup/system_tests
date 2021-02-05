@@ -1,11 +1,16 @@
 import json
+import os
 import unittest
+from typing import Callable
 
 from genie_python.utilities import compress_and_hex
 
 from utilities import utilities
 import time
 from genie_python import genie as g
+import requests
+from hamcrest import *
+import socket
 
 
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
@@ -17,6 +22,12 @@ class TestBlockserver(unittest.TestCase):
     """
     def setUp(self) -> None:
         g.set_instrument(None, import_instrument_init=False)
+        self.pvlist_file = os.path.join(r"C:\Instrument", "Settings", "gwblock.pvlist")
+        self.rc_settings_file = os.path.join(
+            r"C:\Instrument", "Settings", "config", socket.gethostname(), "configurations", "rc_settings.cmd"
+        )
+        self.config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs", "configurations")
+        self.block_archive_blocks_url = "http://localhost:4813/group?name=BLOCKS&format=json"
 
     def test_GIVEN_config_changes_by_block_THEN_iocs_do_not_restart_except_for_caenv895(self):
         utilities.load_config_if_not_already_loaded("test_blockserver")
@@ -124,3 +135,76 @@ class TestBlockserver(unittest.TestCase):
                 time.sleep(1)
         else:
             raise err
+
+    def test_GIVEN_config_contains_gw_and_archiver_files_THEN_archiver_uses_configuration_file(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver_with_gw_archiver")
+
+        def assert_block_archive_blocks_group_has_one_channel():
+            response = requests.get(self.block_archive_blocks_url).json()
+
+            assert_that(len(response["Channels"]), is_(1))
+            assert_that(response["Channels"][0]["Channel"], is_("PREFIX:MYTESTBLOCK"))
+
+        utilities.retry_assert(5, assert_block_archive_blocks_group_has_one_channel)
+
+    def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
+
+        response = requests.get(self.block_archive_blocks_url).json()
+
+        assert_that(len(response["Channels"]), is_(2))
+        assert_that(response["Channels"][0]["Channel"], ends_with("TIZROUTOFRANGE"))
+        assert_that(response["Channels"][1]["Channel"], ends_with("TIZRWARNING"))
+
+    def test_GIVEN_config_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver")
+
+        response = requests.get(self.block_archive_blocks_url).json()
+
+        assert_that(len(response["Channels"]), is_(1))
+        assert_that(response["Channels"][0]["Channel"], ends_with("a"))
+
+    def test_GIVEN_config_contains_gw_and_archiver_files_THEN_configuration_pvlist_used(self):
+        config = "test_blockserver_with_gw_archiver"
+        utilities.load_config_if_not_already_loaded(config)
+
+        config_pvlist_file = os.path.join(self.config_dir, config, "gwblock.pvlist")
+        with open(self.pvlist_file, "r") as pvlist, open(config_pvlist_file, "r") as config_pvlist:
+            assert_that(pvlist.read(), is_(config_pvlist.read()))
+
+    def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_pvlist_generated(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
+
+        with open(self.pvlist_file, "r") as pvlist:
+            file_content = pvlist.read()
+            assert_that(file_content, contains_string("TIZRWARNING"))
+            assert_that(file_content, contains_string("TIZROUTOFRANGE"))
+
+    def test_GIVEN_config_does_not_contain_gw_and_archiver_files_THEN_pvlist_generated(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver")
+
+        with open(self.pvlist_file, "r") as pvlist:
+            file_content = pvlist.read()
+            assert_that(file_content, contains_string(g.prefix_pv_name("CS:SB:a")))
+
+    def test_GIVEN_config_contains_rc_settings_THEN_configuration_rc_settings_used(self):
+        config = "test_blockserver_with_gw_archiver"
+        utilities.load_config_if_not_already_loaded(config)
+
+        config_rc_settings_file = os.path.join(self.config_dir, config, "rc_settings.cmd")
+        with open(self.rc_settings_file, "r") as rc_settings, open(config_rc_settings_file, "r") as config_rc_settings:
+            assert_that(rc_settings.read(), is_(config_rc_settings.read()))
+
+    def test_GIVEN_config_claims_but_does_not_contain_rc_settings_THEN_rc_settings_generated(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
+
+        with open(self.rc_settings_file, "r") as rc_settings:
+            file_content = rc_settings.read()
+            assert_that(file_content, contains_string("TIZRWARNING"))
+
+    def test_GIVEN_config_does_not_contain_rc_settings_THEN_rc_settings_generated(self):
+        utilities.load_config_if_not_already_loaded("test_blockserver")
+
+        with open(self.rc_settings_file, "r") as rc_settings:
+            file_content = rc_settings.read()
+            assert_that(file_content, contains_string("$(MYPVPREFIX)CS:SB:A"))

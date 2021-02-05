@@ -1,0 +1,13 @@
+##
+EVALUATION ORDER ALLOW, DENY
+
+## serve blockserver internal variables, including Flag variables needed by blockserver process to restart gateway
+.*:CS:GATEWAY:BLOCKSERVER:.*    				    ALLOW	ANYBODY	    1
+## allow anybody to generate gateway reports
+.*:CS:GATEWAY:BLOCKSERVER:report[1-9]Flag		ALLOW	ANYBODY		1
+
+## Standard block with entries for matching :SP and :SP:RBV as well as .EGU
+.*:CS:SB:TIZRWARNING\([.:].*\)    ALIAS    .*:TIZR_01:TIZRWARNING\1
+.*:CS:SB:TIZRWARNING    ALIAS    .*:TIZR_01:TIZRWARNING
+## Runcontrol settings should not be diverted to underlying PV
+.*:CS:SB:TIZRWARNING\(:[ADR]C:.*\)    DENY
