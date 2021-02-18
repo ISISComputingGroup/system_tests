@@ -110,6 +110,7 @@ pipeline {
                 exit /b 1
             )
             del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
+            call clean_files.bat
             call run_tests.bat
             set errcode=%errorlevel%
             rmdir "C:\\Instrument\\Apps\\EPICS"
