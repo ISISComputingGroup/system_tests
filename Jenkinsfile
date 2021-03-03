@@ -142,6 +142,7 @@ pipeline {
                 call "C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat"
             )
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+            rd /q /s %WORKSPACE%\my_venv>NUL
             exit /b 0
         """
     }
