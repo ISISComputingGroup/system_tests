@@ -21,7 +21,7 @@ pipeline {
 
   // The options directive is for configuration that applies to the whole job.
   options {
-    buildDiscarder(logRotator(numToKeepStr:'5', daysToKeepStr: '7'))
+    buildDiscarder(logRotator(numToKeepStr:'10', daysToKeepStr: '7'))
     disableConcurrentBuilds()
     timestamps()
     // as we "checkout scm" as a stage, we do not need to do it here too
