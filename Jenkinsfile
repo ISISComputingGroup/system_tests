@@ -63,9 +63,9 @@ pipeline {
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
             if \"%MYJOB%\" == \"System_Tests_debug\" (
-                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN FreddieBuild
             ) else (
-                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN FreddieBuild
             )
             REM preserve error code as we need always need to rename EPICS directory
             set insterr=%errorlevel%
