@@ -3,7 +3,7 @@ import unittest
 import os
 
 from utilities.utilities import load_config_if_not_already_loaded, g, setup_simulated_wiring_tables, BASE_MEMORY_USAGE
-from psutil import virtual_memory
+from psutil import virtual_memory, Process, process_iter, AccessDenied
 
 TIMEOUT = 30
 TYPICAL_CONFIG_NAME = "memory_usage"
@@ -63,3 +63,46 @@ class TestMemoryUsage(unittest.TestCase):
         memory_used = self.get_current_memory_usage()
 
         assert_that(memory_used, less_than(system_threshold-ASSUMED_NON_IBEX_USAGE))
+
+    def get_matching_process_cmdline_substring_from_process_or_none(self, process, process_cmdline_substrings):
+        """
+        Get the first substring from process_cmdline_substrings that is contained in the cmdline call for the process
+         or None if no substrings match.
+        """
+        cmdline = " ".join(process.cmdline())
+        for process_cmdline_substring in process_cmdline_substrings:
+            if process_cmdline_substring in cmdline:
+                return process_cmdline_substring
+    
+    def get_commit_sizes_in_kb(self, process_cmdline_substrings):
+        """
+        Get the commit sizes of the processes that contain the given substrings in their command line call.
+        """
+        commit_sizes_kb = {}
+        for process in process_iter():
+            try:
+                process_cmdline_found = self.get_matching_process_cmdline_substring_from_process_or_none(process, process_cmdline_substrings)            
+                if process_cmdline_found is not None:
+                    commit_size_kb = process.memory_info().private / 1000
+                    commit_sizes_kb[process_cmdline_found] = commit_size_kb
+            except AccessDenied:
+                continue
+        return commit_sizes_kb
+    
+    def assert_commit_sizes_are_less_than_expected_max_commit_size(self, process_cmdline_substrings_and_expected_max_commit_size, commit_sizes_in_kb):
+        assertion_error_occurred = False
+        for process_cmdline_substring, commit_size_in_kb in commit_sizes_in_kb.items():
+            try:
+                assert_that(commit_size_in_kb, less_than(process_cmdline_substrings_and_expected_max_commit_size[process_cmdline_substring]))
+            except AssertionError:
+                assertion_error_occurred = True
+        if assertion_error_occurred:
+            raise AssertionError(f"Expected commit size to be less than values: {process_cmdline_substrings_and_expected_max_commit_size}. Actually got: {commit_sizes_in_kb}")
+
+    def test_GIVEN_standard_setup_THEN_commit_size_of_python_processes_are_reasonable(self):
+        process_cmdline_substrings_and_expected_max_commit_size = {"block_server.py": 600000, "database_server.py": 600000, "nicos-daemon": 900000}
+        commit_sizes_in_kb = self.get_commit_sizes_in_kb(process_cmdline_substrings_and_expected_max_commit_size.keys())
+        # Assert all substrings have been found
+        assert_that(len(commit_sizes_in_kb), is_(len(process_cmdline_substrings_and_expected_max_commit_size)))
+        self.assert_commit_sizes_are_less_than_expected_max_commit_size(process_cmdline_substrings_and_expected_max_commit_size, commit_sizes_in_kb)        
+
