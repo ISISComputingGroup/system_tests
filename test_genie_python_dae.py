@@ -474,7 +474,7 @@ class TestDae(unittest.TestCase):
         config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
         if g.get_runstate() != "SETUP":
             g.abort() # make sure not left in a funny state from e.g. previous aborted test
-        with g._genie_api.dae.temporarily_kill_icp():
+        with temporarily_kill_icp():
             config_found = False
 
             for filepath in icp_properties_files:
@@ -594,3 +594,43 @@ class TestDae(unittest.TestCase):
             else:
                 sleep(1)
         self.fail("dae period or number of periods read timed out")
+
+
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_seconds_returned_is_correct(self):
+
+        # Arrange
+        expected = 5
+        g.begin()
+        sleep(expected)
+
+        # Act
+
+        actual = g.get_time_since_start()
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
+
+        # Arrange
+        sleep_time = 5
+        expected = sleep_time*3
+        g.begin()
+        sleep(sleep_time)
+        g.pause()
+        sleep(sleep_time)
+        g.resume()
+        sleep(sleep_time)
+
+        # Act
+
+        actual = g.get_time_since_start()
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+
+
+
+
+

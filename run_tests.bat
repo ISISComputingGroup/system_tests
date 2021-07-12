@@ -13,12 +13,12 @@ IF %errorlevel% NEQ 0 (
 	goto finish
 )
 
-call %EPICS_ROOT%\ISIS\JournalParser\master\test\run_tests.bat
-IF %errorlevel% NEQ 0 (
-	set exitcode=%errorlevel%
-    echo "running journal tests failed."
-	goto finish
-)
+@REM call %EPICS_ROOT%\ISIS\JournalParser\master\test\run_tests.bat
+@REM IF %errorlevel% NEQ 0 (
+@REM 	set exitcode=%errorlevel%
+@REM     echo "running journal tests failed."
+@REM 	goto finish
+@REM )
 
 :finish
 python test_setup_teardown.py --tear_down
