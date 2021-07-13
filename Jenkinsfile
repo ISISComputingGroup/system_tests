@@ -117,8 +117,29 @@ pipeline {
             call clean_files.bat
             call run_tests.bat
             set errcode=%errorlevel%
-            rmdir "C:\\Instrument\\Apps\\EPICS"
             exit /b %errcode%
+          """
+          }
+        }
+      }
+     }
+	 
+	  stage("IOC Tests") {
+        steps {
+         lock(resource: ELOCK, inversePrecedence: true) {
+           timeout(time: 1800, unit: 'MINUTES') {
+          bat """
+             if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
+                @echo ERROR Unable to find config_env.bat in linked directory
+                exit /b 1
+             )
+			 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
+             del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
+             pushd "C:\\Instrument\\Apps\\EPICS"
+			 call config_env.bat
+             make ioctests
+			 popd
+             exit /b %ERRCODE%
           """
           }
         }
@@ -131,10 +152,11 @@ pipeline {
     always {
         bat """
             robocopy "C:\\Instrument\\Var\\logs\\ioc" "%WORKSPACE%\\ioc-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\IOCTestFramework" "%WORKSPACE%\\test-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             exit /b 0
         """
-        archiveArtifacts artifacts: 'ioc-logs/*.log', caseSensitive: false
-        junit "test-reports/**/*.xml"
+        archiveArtifacts artifacts: '*-logs/*.log', caseSensitive: false
+        junit "test-reports/**/*.xml", "C:/Instrument/Apps/EPICS/**/test-reports/**/*.xml"
     }
 
     cleanup {
@@ -145,6 +167,7 @@ pipeline {
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call "C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat"
             )
+			rmdir "C:\\Instrument\\Apps\\EPICS"
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             rd /q /s %WORKSPACE%\\my_venv>NUL
             exit /b 0
