@@ -1,5 +1,6 @@
 import time
 import unittest
+from datetime import datetime
 
 import h5py
 import random
@@ -597,7 +598,10 @@ class TestDae(unittest.TestCase):
 
 
     def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_seconds_returned_is_correct(self):
-
+        """
+        Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
+        :return:
+        """
         # Arrange
         expected = 5
         g.begin()
@@ -611,23 +615,54 @@ class TestDae(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
-
+        """
+        Checks if the seconds elapsed since the start, including paused time period, is the same as the expected elapsed second with the pause.
+        :return:
+        """
         # Arrange
         sleep_time = 5
         expected = sleep_time*3
+
         g.begin()
         sleep(sleep_time)
         g.pause()
         sleep(sleep_time)
         g.resume()
         sleep(sleep_time)
+        g.end()
 
         # Act
-
         actual = g.get_time_since_start()
 
         # Assert
         self.assertEqual(expected, actual)
+
+    def test_GIVEN_time_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_datetime_returned_is_correct(self):
+        """
+        Checks if the time elapsed since the start is the same as the expected elapsed time. Time is returned in optional choice, as a datetime object.
+        :return:
+        """
+        # Arrange
+        sleep_time = 5
+
+        # Adding time it took since start to the current datetime
+        expected = (sleep_time*3) + datetime.utcnow()
+
+        g.begin()
+        sleep(sleep_time)
+        g.pause()
+        sleep(sleep_time)
+        g.resume()
+        sleep(sleep_time)
+        g.end()
+
+        # Act
+        actual = g.get_time_since_start(True)
+        #Assert
+        self.assertEqual(expected,actual)
+
+
+
 
 
 
