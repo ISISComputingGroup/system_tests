@@ -156,7 +156,8 @@ pipeline {
             exit /b 0
         """
         archiveArtifacts artifacts: '*-logs/*.log', caseSensitive: false
-        junit "test-reports/**/*.xml", "C:/Instrument/Apps/EPICS/**/test-reports/**/*.xml"
+        junit testResults: "test-reports/**/*.xml", checksName: System_Tests
+		junit testResults: "C:/Instrument/Apps/EPICS/**/test-reports/**/*.xml", checksName: IOC_System_Tests
     }
 
     cleanup {
