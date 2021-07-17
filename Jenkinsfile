@@ -133,7 +133,7 @@ pipeline {
                 @echo ERROR Unable to find config_env.bat in linked directory
                 exit /b 1
              )
-			 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
+             call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
              del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
              pushd "C:\\Instrument\\Apps\\EPICS"
 			 call config_env.bat
@@ -156,7 +156,7 @@ pipeline {
             exit /b 0
         """
         archiveArtifacts artifacts: '*-logs/*.log', caseSensitive: false
-        junit "test-reports/**/*.xml", "C:/Instrument/Apps/EPICS/**/test-reports/**/*.xml"
+        junit "test-reports/**/*.xml,**/test-reports/**/*.xml"
     }
 
     cleanup {
