@@ -1,4 +1,5 @@
 import time
+import timeit
 import unittest
 from datetime import datetime
 
@@ -57,7 +58,7 @@ class TestDae(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
-        self._adjust_icp_begin_delay(0)
+        #self._adjust_icp_begin_delay(0)
 
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
@@ -645,6 +646,7 @@ class TestDae(unittest.TestCase):
         # Arrange
         sleep_time = 5
 
+        execution_time = timeit.timeit(g.begin)
         # Adding time it took since start to the current datetime
         expected = (sleep_time*3) + datetime.utcnow()
 
@@ -657,9 +659,9 @@ class TestDae(unittest.TestCase):
         g.end()
 
         # Act
-        actual = g.get_time_since_start(True)
+        actual = g.get_time_since_start(True) + execution_time
         #Assert
-        self.assertEqual(expected,actual)
+        self.assertEqual(expected, actual)
 
 
 
