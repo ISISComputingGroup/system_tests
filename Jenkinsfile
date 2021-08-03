@@ -94,65 +94,58 @@ pipeline {
         }
       }
 
-      stage("System Tests") {
+      stage("Run Tests") {
         steps {
-         lock(resource: ELOCK, inversePrecedence: true) {
-           timeout(time: 360, unit: 'MINUTES') {
-          bat """
-            set \"MYJOB=${env.JOB_NAME}\"
-            if exist "C:\\Instrument\\Apps\\EPICS" (
+          lock(resource: ELOCK, inversePrecedence: true) {
+           timeout(time: 1800, unit: 'MINUTES') {
+              bat """
+                set \"MYJOB=${env.JOB_NAME}\"
+                if exist "C:\\Instrument\\Apps\\EPICS" (
+                    call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
+                    rmdir "C:\\Instrument\\Apps\\EPICS"
+                )
+                del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
+                del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
+                mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
+                IF %errorlevel% NEQ 0 (
+                    @echo ERROR unable to make directory junction
+                    exit /b %errorlevel%
+                )
+                if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
+                    @echo ERROR Unable to find config_env.bat in linked directory
+                    exit /b 1
+                )
+                @echo Running system tests
+                call clean_files.bat
+                call run_tests.bat
+                set errcode1=%errorlevel%
+                @echo Running IOC tests
+                pushd "C:\\Instrument\\Apps\\EPICS"
+                call config_env.bat
+                make ioctests
+                set errcode2=%errorlevel%
+                popd
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
-            )
-            mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
-            IF %errorlevel% NEQ 0 (
-                @echo ERROR unable to make directory junction
-                exit /b %errorlevel%
-            )
-            if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
-                @echo ERROR Unable to find config_env.bat in linked directory
-                exit /b 1
-            )
-            del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
-            call clean_files.bat
-            call run_tests.bat
-            set errcode=%errorlevel%
-            exit /b %errcode%
-          """
+                if %errcode1% NEQ 0 (
+                    exit /b %errcode1%
+                )
+                exit /b %errcode2%
+             """
           }
         }
+       }
       }
-     }
-	 
-	  stage("IOC Tests") {
-        steps {
-         lock(resource: ELOCK, inversePrecedence: true) {
-           timeout(time: 1800, unit: 'MINUTES') {
-          bat """
-             if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
-                @echo ERROR Unable to find config_env.bat in linked directory
-                exit /b 1
-             )
-             call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
-             del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
-             pushd "C:\\Instrument\\Apps\\EPICS"
-			 call config_env.bat
-             make ioctests
-			 popd
-             exit /b %ERRCODE%
-          """
-          }
-        }
-      }
-     }
 
   }
 
   post {
     always {
         bat """
+            set \"MYJOB=${env.JOB_NAME}\"
             robocopy "C:\\Instrument\\Var\\logs\\ioc" "%WORKSPACE%\\ioc-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\Instrument\\Var\\logs\\IOCTestFramework" "%WORKSPACE%\\test-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\IOCTestFramework" "%WORKSPACE%\\ioctest-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Apps\\EPICS-%MYJOB%" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             exit /b 0
         """
         archiveArtifacts artifacts: '*-logs/*.log', caseSensitive: false
@@ -164,10 +157,11 @@ pipeline {
             set \"MYJOB=${env.JOB_NAME}\"
             REM not ideal to call without lock, and retaking lock may be a potential race condition
             REM however the directory junction will only exist if the previous step times out      
+            REM we do not remove or use a path with C:\\Instrument\\Apps\\EPICS as e.g. a build
+            REM may have started and changed it
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call "C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat"
             )
-			rmdir "C:\\Instrument\\Apps\\EPICS"
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             rd /q /s %WORKSPACE%\\my_venv>NUL
             exit /b 0
