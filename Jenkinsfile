@@ -122,7 +122,9 @@ pipeline {
                 @echo Running IOC tests
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
-                make ioctests
+                REM we need to pass -i to ignore build errors or we will stop on first test failure
+                REM overall build status will still fail due to junit
+                make -i ioctests
                 set errcode2=%errorlevel%
                 popd
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
