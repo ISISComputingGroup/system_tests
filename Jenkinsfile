@@ -61,6 +61,7 @@ pipeline {
          lock(resource: ELOCK, inversePrecedence: true) {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
+            @echo Installing IBEX on node ${env.NODE_NAME}
             REM EPICS should always be a directory junction on build servers
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
@@ -115,11 +116,11 @@ pipeline {
                     @echo ERROR Unable to find config_env.bat in linked directory
                     exit /b 1
                 )
-                @echo Running system tests
+                @echo Running system tests on node ${env.NODE_NAME}
                 call clean_files.bat
                 call run_tests.bat
                 set errcode1=%errorlevel%
-                @echo Running IOC tests
+                @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
                 REM we need to pass -i to ignore build errors or we will stop on first test failure
@@ -129,6 +130,7 @@ pipeline {
                 popd
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
+                @echo Finished running tests on node ${env.NODE_NAME}
                 if %errcode1% NEQ 0 (
                     exit /b %errcode1%
                 )
@@ -145,6 +147,7 @@ pipeline {
     always {
         bat """
             set \"MYJOB=${env.JOB_NAME}\"
+            @echo Saving test output on node ${env.NODE_NAME}
             robocopy "C:\\Instrument\\Var\\logs\\ioc" "%WORKSPACE%\\ioc-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Var\\logs\\IOCTestFramework" "%WORKSPACE%\\ioctest-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Apps\\EPICS-%MYJOB%" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
@@ -157,6 +160,7 @@ pipeline {
     cleanup {
         bat """
             set \"MYJOB=${env.JOB_NAME}\"
+            @echo Started cleanup on node ${env.NODE_NAME}
             REM not ideal to call without lock, and retaking lock may be a potential race condition
             REM however the directory junction will only exist if the previous step times out      
             REM we do not remove or use a path with C:\\Instrument\\Apps\\EPICS as e.g. a build
@@ -166,6 +170,7 @@ pipeline {
             )
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             rd /q /s %WORKSPACE%\\my_venv>NUL
+            @echo Finished cleanup on node ${env.NODE_NAME}
             exit /b 0
         """
     }
