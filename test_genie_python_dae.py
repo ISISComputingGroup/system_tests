@@ -1,7 +1,7 @@
 import time
 import timeit
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import h5py
 import random
@@ -11,7 +11,9 @@ from time import sleep
 from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
     set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
     set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
-    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list
+    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode,\
+    parameterized_list, get_execution_time
+
 
 from parameterized import parameterized
 from contextlib import contextmanager
@@ -597,71 +599,108 @@ class TestDae(unittest.TestCase):
                 sleep(1)
         self.fail("dae period or number of periods read timed out")
 
-
     def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_seconds_returned_is_correct(self):
         """
         Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
-        :return:
         """
-        # Arrange
-        expected = 5
-        g.begin()
-        sleep(expected)
+        # Time interval between begin, pause and resume
+        sleep_time = 5
 
-        # Act
+        # Calculating execution time of begin() to add to expected runtime
+        begin_runtime = get_execution_time(g.begin)
+
+        # Running begin() before ending
+        sleep(sleep_time)
 
         actual = g.get_time_since_start()
 
-        # Assert
-        self.assertEqual(expected, actual)
+        # Calculating expected elapsed time it takes from start
+        expected = sleep_time + begin_runtime
+
+        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
+        self.assertTrue(abs(expected - actual) < 1)
 
     def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
         """
-        Checks if the seconds elapsed since the start, including paused time period, is the same as the expected elapsed second with the pause.
-        :return:
+        Checks if the seconds elapsed since the start, including pause time period,
+        is the same as the expected elapsed seconds.
         """
-        # Arrange
+        # Time interval between begin, pause and resume
         sleep_time = 5
-        expected = sleep_time*3
 
-        g.begin()
+        # Multiplying sleep time with 3 as it sleeps 3 times between pausing and resuming
+        total_sleep_time = sleep_time * 3
+
+        # Calculating execution time of begin() to add to expected runtime
+        begin_runtime = get_execution_time(g.begin)
+
+        # Pausing and resuming with 5 sec interval
         sleep(sleep_time)
         g.pause()
         sleep(sleep_time)
         g.resume()
         sleep(sleep_time)
-        g.end()
 
-        # Act
         actual = g.get_time_since_start()
 
-        # Assert
-        self.assertEqual(expected, actual)
+        # Calculating expected runtime with sleep_time between begin and end, and runtimes of begin() and end()
+        expected = total_sleep_time + begin_runtime
+
+        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
+        self.assertTrue(abs(expected - actual) < 1)
+
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_datetime_returned_is_correct(self):
+        """
+        Checks if the seconds elapsed since the start, including paused time period,
+        is the same as the expected elapsed second with the pause.
+        """
+        # Time interval between begin, pause and resume
+        sleep_time = 5
+
+        # Calculating execution time of begin() to add to expected runtime
+        begin_runtime = get_execution_time(g.begin)
+
+        # Running begin() before ending
+        sleep(sleep_time)
+
+        actual = g.get_time_since_start(True)
+
+        # Calculating expected runtime with sleep_time between begin and end, and runtime of begin()
+        # Also casting seconds to timedelta object as get_time_since_start is returning datetime object
+        expected = timedelta(seconds=sleep_time) + timedelta(seconds=begin_runtime)
+
+        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
+        self.assertTrue(abs(expected - actual) < timedelta(seconds=1))
 
     def test_GIVEN_time_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_datetime_returned_is_correct(self):
         """
-        Checks if the time elapsed since the start is the same as the expected elapsed time. Time is returned in optional choice, as a datetime object.
-        :return:
+        Checks if the time elapsed since the start is the same as the expected elapsed time.
+        Time is returned in optional choice, as a datetime object.
         """
-        # Arrange
+        # Time interval between begin, pause and resume
         sleep_time = 5
 
-        execution_time = timeit.timeit(g.begin)
-        # Adding time it took since start to the current datetime
-        expected = (sleep_time*3) + datetime.utcnow()
+        # Multiplying sleep time with 3 as it sleeps 3 times between pausing and resuming
+        total_sleep_time = sleep_time*3
 
-        g.begin()
+        # Calculating execution time of begin() to add to expected runtime
+        begin_runtime = get_execution_time(g.begin)
+
+        # Pausing and resuming with 5 sec interval
         sleep(sleep_time)
         g.pause()
         sleep(sleep_time)
         g.resume()
         sleep(sleep_time)
-        g.end()
 
-        # Act
-        actual = g.get_time_since_start(True) + execution_time
-        #Assert
-        self.assertEqual(expected, actual)
+        actual = g.get_time_since_start(True)
+
+        # Calculating expected runtime with sleep_time between begin and end, and runtime of begin()
+        # Also casting seconds to timedelta object as get_time_since_start is returning datetime object
+        expected = timedelta(seconds=total_sleep_time) + timedelta(seconds=begin_runtime)
+
+        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
+        self.assertTrue(abs(expected-actual) < timedelta(seconds=1))
 
 
 

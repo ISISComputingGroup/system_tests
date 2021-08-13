@@ -7,6 +7,7 @@ import os
 import six
 import unittest
 import copy
+import timeit
 from typing import Callable
 
 from time import sleep, time
@@ -225,7 +226,8 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
         sleep(1.0)
     if g.get_dae_simulation_mode() != mode:
         sim_val = g.get_pv("DAE:SIM_MODE", is_local=True)
-        raise AssertionError("Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode,sim_val))
+        raise AssertionError(
+            "Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode, sim_val))
 
 
 def set_wait_for_complete_callback_dae_settings(wait):
@@ -241,7 +243,8 @@ def temporarily_kill_icp():
     # Temporarily kills the ISIS ICP (ISIS DAE)
 
     return genie_api_setup.__api.dae.temporarily_kill_icp()
-  
+
+
 def as_seconds(time):
     """
     Convert a up time to seconds
@@ -403,6 +406,7 @@ def retry_on_failure(max_times):
     :param max_times: Maximum number of times to retry running the test
     :return: the decorator
     """
+
     def decorator(func):
         @six.wraps(func)
         def wrapper(*args, **kwargs):
@@ -414,11 +418,13 @@ def retry_on_failure(max_times):
                 except unittest.SkipTest:
                     raise
                 except Exception as e:
-                    print("\nTest failed (attempt {} of {}). Retrying...".format(attempt+1, max_times))
+                    print("\nTest failed (attempt {} of {}). Retrying...".format(attempt + 1, max_times))
                     err = e
             if err is not None:
                 raise err
+
         return wrapper
+
     return decorator
 
 
@@ -459,3 +465,22 @@ def retry_assert(retry_limit: int, func: Callable[[], None]):
         sleep(1)
     else:
         raise error
+
+
+def get_execution_time(method):
+    """
+    Takes a method and calculates its execution time.
+    Useful for tests that are time sensitive
+    (e.g. testing get_time_since_start, begin() and end() are adding extra time
+    to the time elapsed from the point of start)
+
+    :param method: the method which execution time is being calculated
+    :return: execution time of the method
+    """
+    start = timeit.default_timer()
+    method()
+    stop = timeit.default_timer()
+
+    execution_time = stop-start
+
+    return execution_time
