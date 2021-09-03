@@ -1,19 +1,18 @@
 import time
-import timeit
 import unittest
 from datetime import datetime, timedelta
 
 import h5py
 import random
 import os
+from threading import Thread
 from time import sleep
 
 from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
     set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
     set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
-    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode,\
+    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, \
     parameterized_list, get_execution_time
-
 
 from parameterized import parameterized
 from contextlib import contextmanager
@@ -60,7 +59,7 @@ class TestDae(unittest.TestCase):
 
     def setUp(self):
         g.set_instrument(None)
-        #self._adjust_icp_begin_delay(0)
+        self._adjust_icp_begin_delay(0)
 
         # all tests that interact with anything but genie should try to load a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
@@ -106,8 +105,8 @@ class TestDae(unittest.TestCase):
         width = float(random.randint(1, 1000))
         height = float(random.randint(1, 1000))
         l1 = float(random.randint(1, 1000))
-        beamstop = random.choice(['OUT','IN'])
-        filename = "{}\\test{}.nxs".format(os.getenv("TEMP"),random.randint(1, 1000))
+        beamstop = random.choice(['OUT', 'IN'])
+        filename = "{}\\test{}.nxs".format(os.getenv("TEMP"), random.randint(1, 1000))
         self._wait_for_sample_pars()
         g.change_title(title)
         g.change_sample_par("width", width)
@@ -118,7 +117,7 @@ class TestDae(unittest.TestCase):
         sleep(5)
         g.snapshot_crpt(filename)
         sleep(5)
-        with h5py.File(filename,  "r") as f:
+        with h5py.File(filename, "r") as f:
             saved_title = f['/raw_data_1/title'][0].decode()
             saved_width = f['/raw_data_1/sample/width'][0]
             saved_height = f['/raw_data_1/sample/height'][0]
@@ -197,7 +196,8 @@ class TestDae(unittest.TestCase):
             alarm_time = alarm_time[first_alarm_index:final_alarm_index]
 
             self.assertTrue(len(is_valid) == len(test_values) + 1, "Not enough values/value_valid items logged to file")
-            self.assertTrue(len(alarm_severity) == len(test_values) + 1, "Not enough alarm status/severity items logged to file")
+            self.assertTrue(len(alarm_severity) == len(test_values) + 1,
+                            "Not enough alarm status/severity items logged to file")
 
             self.assertListEqual(is_valid, [True, True, True, False])
             # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
@@ -277,7 +277,8 @@ class TestDae(unittest.TestCase):
             g.cset("LONG_BLOCK", long_test_val, wait=True)
             sleep(10)
 
-    def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(
+            self):
         set_wait_for_complete_callback_dae_settings(False)
         set_genie_python_raises_exceptions(True)
 
@@ -291,7 +292,8 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(self):
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(
+            self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -351,8 +353,8 @@ class TestDae(unittest.TestCase):
         self.assertRaises(Exception, g.change_tables, r"C:\Nonsense\Wibble\Wobble\jelly.txt")
         set_genie_python_raises_exceptions(False)
 
-
-    def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
+    def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(
+            self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -367,13 +369,17 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
-        self.assertEqual(g.get_detector_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector).lower())
-        self.assertEqual(g.get_wiring_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring).lower())
-        self.assertEqual(g.get_spectra_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra).lower())
+        self.assertEqual(g.get_detector_table().lower(),
+                         r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector).lower())
+        self.assertEqual(g.get_wiring_table().lower(),
+                         r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring).lower())
+        self.assertEqual(g.get_spectra_table().lower(),
+                         r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra).lower())
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_tables_called_WHEN_nonexisting_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
+    def test_GIVEN_change_tables_called_WHEN_nonexisting_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(
+            self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -407,7 +413,8 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
-    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_and_with_forward_slashes_THEN_filepath_is_accepted(self):
+    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_and_with_forward_slashes_THEN_filepath_is_accepted(
+            self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -431,7 +438,8 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(self):
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(
+            self):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
@@ -477,7 +485,7 @@ class TestDae(unittest.TestCase):
         begindelay_property = "isisicp.begindelay"
         config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
         if g.get_runstate() != "SETUP":
-            g.abort() # make sure not left in a funny state from e.g. previous aborted test
+            g.abort()  # make sure not left in a funny state from e.g. previous aborted test
         with temporarily_kill_icp():
             config_found = False
 
@@ -504,7 +512,8 @@ class TestDae(unittest.TestCase):
         time.sleep(15)
         g.waitfor_runstate("SETUP")
 
-    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(self):
+    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(
+            self):
 
         load_config_if_not_already_loaded("rcptt_simple")
 
@@ -599,33 +608,41 @@ class TestDae(unittest.TestCase):
                 sleep(1)
         self.fail("dae period or number of periods read timed out")
 
-    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_seconds_returned_is_correct(self):
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_time_returned_is_correct(
+            self):
         """
         Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
         """
-        # Time interval between begin, pause and resume
         sleep_time = 5
 
-        # Calculating execution time of begin() to add to expected runtime
-        begin_runtime = get_execution_time(g.begin)
+        def get_time_thread(return_value):
+            """
+            Runs on a thread to start timing as we enter the Running state.
+            The return values are appended to the provided list to pass them between threads.
+            """
+            g.waitfor_runstate("RUNNING")
+            sleep(sleep_time)
+            return_value.append(g.get_time_since_begin())
+            return_value.append(g.get_time_since_begin(True))
 
-        # Running begin() before ending
-        sleep(sleep_time)
+        time_taken = []
+        thread = Thread(target=get_time_thread, args=(time_taken,))
+        thread.start()
 
-        actual = g.get_time_since_start()
+        g.begin()
 
-        # Calculating expected elapsed time it takes from start
-        expected = sleep_time + begin_runtime
+        thread.join()
 
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertTrue(abs(expected - actual) < 1)
+        self.assertAlmostEqual(sleep_time, time_taken[0], delta=1)  # if this fails, then will print the two values
+        self.assertTrue(abs(timedelta(seconds=sleep_time) - time_taken[1]) < timedelta(seconds=1))
 
-    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(
+            self):
         """
         Checks if the seconds elapsed since the start, including pause time period,
         is the same as the expected elapsed seconds.
         """
-        # Time interval between begin, pause and resume
         sleep_time = 5
 
         # Multiplying sleep time with 3 as it sleeps 3 times between pausing and resuming
@@ -641,72 +658,12 @@ class TestDae(unittest.TestCase):
         g.resume()
         sleep(sleep_time)
 
-        actual = g.get_time_since_start()
+        actual_s = g.get_time_since_begin()
+        actual_timedelta = g.get_time_since_begin(True)
 
         # Calculating expected runtime with sleep_time between begin and end, and runtimes of begin() and end()
         expected = total_sleep_time + begin_runtime
 
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertTrue(abs(expected - actual) < 1)
-
-    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_datetime_returned_is_correct(self):
-        """
-        Checks if the seconds elapsed since the start, including paused time period,
-        is the same as the expected elapsed second with the pause.
-        """
-        # Time interval between begin, pause and resume
-        sleep_time = 5
-
-        # Calculating execution time of begin() to add to expected runtime
-        begin_runtime = get_execution_time(g.begin)
-
-        # Running begin() before ending
-        sleep(sleep_time)
-
-        actual = g.get_time_since_start(True)
-
-        # Calculating expected runtime with sleep_time between begin and end, and runtime of begin()
-        # Also casting seconds to timedelta object as get_time_since_start is returning datetime object
-        expected = timedelta(seconds=sleep_time) + timedelta(seconds=begin_runtime)
-
-        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertTrue(abs(expected - actual) < timedelta(seconds=1))
-
-    def test_GIVEN_time_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_datetime_returned_is_correct(self):
-        """
-        Checks if the time elapsed since the start is the same as the expected elapsed time.
-        Time is returned in optional choice, as a datetime object.
-        """
-        # Time interval between begin, pause and resume
-        sleep_time = 5
-
-        # Multiplying sleep time with 3 as it sleeps 3 times between pausing and resuming
-        total_sleep_time = sleep_time*3
-
-        # Calculating execution time of begin() to add to expected runtime
-        begin_runtime = get_execution_time(g.begin)
-
-        # Pausing and resuming with 5 sec interval
-        sleep(sleep_time)
-        g.pause()
-        sleep(sleep_time)
-        g.resume()
-        sleep(sleep_time)
-
-        actual = g.get_time_since_start(True)
-
-        # Calculating expected runtime with sleep_time between begin and end, and runtime of begin()
-        # Also casting seconds to timedelta object as get_time_since_start is returning datetime object
-        expected = timedelta(seconds=total_sleep_time) + timedelta(seconds=begin_runtime)
-
-        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertTrue(abs(expected-actual) < timedelta(seconds=1))
-
-
-
-
-
-
-
-
-
+        self.assertAlmostEqual(expected, actual_s, delta=1)  # if this fails, then will print the two values
+        self.assertTrue(abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=1))
