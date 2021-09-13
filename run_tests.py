@@ -62,29 +62,29 @@ if __name__ == '__main__':
     else:
         test_suite = unittest.TestLoader().discover(SCRIPT_DIRECTORY, pattern="test_*.py")
 
-    # config_dirs = [name for name in os.listdir(CONFIGS_DIRECTORY)
-    #                if os.path.isdir(os.path.join(CONFIGS_DIRECTORY, name))]
-    #
-    # for config_dir in config_dirs:
-    #     dest = os.path.join(PATH_TO_ICPCONFIGROOT, config_dir)
-    #     src = os.path.join(CONFIGS_DIRECTORY, config_dir)
-    #
-    #     for file_or_dir in os.listdir(src):
-    #         file_or_dir_dest = os.path.join(dest, file_or_dir)
-    #         file_or_dir_src = os.path.join(src, file_or_dir)
-    #         for _ in range(NUM_RETRY_DELETION):
-    #             try:
-    #                 if os.path.isdir(file_or_dir_src):
-    #                     shutil.rmtree(file_or_dir_dest, True)
-    #                 else:
-    #                     os.remove(file_or_dir_dest)
-    #             except OSError as e:
-    #                 print("Error deleting file {} exception message is {}".format(file_or_dir_dest, e))
-    #             time.sleep(2)
-    #         if os.path.isdir(file_or_dir_src):
-    #             shutil.copytree(file_or_dir_src, file_or_dir_dest)
-    #         else:
-    #             shutil.copy(file_or_dir_src, dest)
+    config_dirs = [name for name in os.listdir(CONFIGS_DIRECTORY)
+                   if os.path.isdir(os.path.join(CONFIGS_DIRECTORY, name))]
+
+    for config_dir in config_dirs:
+        dest = os.path.join(PATH_TO_ICPCONFIGROOT, config_dir)
+        src = os.path.join(CONFIGS_DIRECTORY, config_dir)
+
+        for file_or_dir in os.listdir(src):
+            file_or_dir_dest = os.path.join(dest, file_or_dir)
+            file_or_dir_src = os.path.join(src, file_or_dir)
+            for _ in range(NUM_RETRY_DELETION):
+                try:
+                    if os.path.isdir(file_or_dir_src):
+                        shutil.rmtree(file_or_dir_dest, True)
+                    else:
+                        os.remove(file_or_dir_dest)
+                except OSError as e:
+                    print("Error deleting file {} exception message is {}".format(file_or_dir_dest, e))
+                time.sleep(2)
+            if os.path.isdir(file_or_dir_src):
+                shutil.copytree(file_or_dir_src, file_or_dir_dest)
+            else:
+                shutil.copy(file_or_dir_src, dest)
 
     print("\n\n------ BEGINNING genie_python SYSTEM TESTS ------")
     ret_vals = list()

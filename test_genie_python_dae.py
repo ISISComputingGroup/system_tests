@@ -1,7 +1,6 @@
 import time
 import unittest
 from datetime import datetime, timedelta
-
 import h5py
 import random
 import os
@@ -10,9 +9,7 @@ from time import sleep
 
 from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
     set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
-    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
-    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, \
-    parameterized_list, get_execution_time
+    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list, get_execution_time
 
 from parameterized import parameterized
 from contextlib import contextmanager
@@ -196,8 +193,7 @@ class TestDae(unittest.TestCase):
             alarm_time = alarm_time[first_alarm_index:final_alarm_index]
 
             self.assertTrue(len(is_valid) == len(test_values) + 1, "Not enough values/value_valid items logged to file")
-            self.assertTrue(len(alarm_severity) == len(test_values) + 1,
-                            "Not enough alarm status/severity items logged to file")
+            self.assertTrue(len(alarm_severity) == len(test_values) + 1,"Not enough alarm status/severity items logged to file")
 
             self.assertListEqual(is_valid, [True, True, True, False])
             # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
@@ -277,8 +273,7 @@ class TestDae(unittest.TestCase):
             g.cset("LONG_BLOCK", long_test_val, wait=True)
             sleep(10)
 
-    def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(
-            self):
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
         set_wait_for_complete_callback_dae_settings(False)
         set_genie_python_raises_exceptions(True)
 
@@ -292,8 +287,7 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(
-            self):
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -353,8 +347,7 @@ class TestDae(unittest.TestCase):
         self.assertRaises(Exception, g.change_tables, r"C:\Nonsense\Wibble\Wobble\jelly.txt")
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(
-            self):
+    def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -369,17 +362,13 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
-        self.assertEqual(g.get_detector_table().lower(),
-                         r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector).lower())
-        self.assertEqual(g.get_wiring_table().lower(),
-                         r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring).lower())
-        self.assertEqual(g.get_spectra_table().lower(),
-                         r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra).lower())
+        self.assertEqual(g.get_detector_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector).lower())
+        self.assertEqual(g.get_wiring_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring).lower())
+        self.assertEqual(g.get_spectra_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra).lower())
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_tables_called_WHEN_nonexisting_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(
-            self):
+    def test_GIVEN_change_tables_called_WHEN_nonexisting_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -413,8 +402,7 @@ class TestDae(unittest.TestCase):
             spectra=spectra
         )
 
-    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_and_with_forward_slashes_THEN_filepath_is_accepted(
-            self):
+    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_and_with_forward_slashes_THEN_filepath_is_accepted(self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -438,8 +426,7 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(
-            self):
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(self):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
@@ -486,7 +473,8 @@ class TestDae(unittest.TestCase):
         config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
         if g.get_runstate() != "SETUP":
             g.abort()  # make sure not left in a funny state from e.g. previous aborted test
-        with temporarily_kill_icp():
+
+        with g._genie_api.dae.temporarily_kill_icp():
             config_found = False
 
             for filepath in icp_properties_files:
@@ -512,8 +500,7 @@ class TestDae(unittest.TestCase):
         time.sleep(15)
         g.waitfor_runstate("SETUP")
 
-    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(
-            self):
+    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(self):
 
         load_config_if_not_already_loaded("rcptt_simple")
 
@@ -608,8 +595,7 @@ class TestDae(unittest.TestCase):
                 sleep(1)
         self.fail("dae period or number of periods read timed out")
 
-    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_time_returned_is_correct(
-            self):
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_time_returned_is_correct(self):
         """
         Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
         """
@@ -637,8 +623,7 @@ class TestDae(unittest.TestCase):
         self.assertAlmostEqual(sleep_time, time_taken[0], delta=1)  # if this fails, then will print the two values
         self.assertTrue(abs(timedelta(seconds=sleep_time) - time_taken[1]) < timedelta(seconds=1))
 
-    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(
-            self):
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
         """
         Checks if the seconds elapsed since the start, including pause time period,
         is the same as the expected elapsed seconds.

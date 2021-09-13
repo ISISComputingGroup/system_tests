@@ -226,8 +226,7 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
         sleep(1.0)
     if g.get_dae_simulation_mode() != mode:
         sim_val = g.get_pv("DAE:SIM_MODE", is_local=True)
-        raise AssertionError(
-            "Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode, sim_val))
+        raise AssertionError("Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode, sim_val))
 
 
 def set_wait_for_complete_callback_dae_settings(wait):
@@ -238,12 +237,10 @@ def set_wait_for_complete_callback_dae_settings(wait):
     """
     genie_api_setup.__api.dae.wait_for_completion_callback_dae_settings = wait
 
-
 def temporarily_kill_icp():
     # Temporarily kills the ISIS ICP (ISIS DAE)
 
     return genie_api_setup.__api.dae.temporarily_kill_icp()
-
 
 def as_seconds(time):
     """
@@ -261,7 +258,6 @@ def as_seconds(time):
         seconds += int(bit)
 
     return seconds
-
 
 def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
     """
