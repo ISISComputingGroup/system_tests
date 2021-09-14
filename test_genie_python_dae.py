@@ -1,15 +1,15 @@
 import time
 import unittest
-
+from datetime import datetime, timedelta
 import h5py
 import random
 import os
+from threading import Thread
 from time import sleep
 
 from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
     set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
-    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, \
-    load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list
+    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list, get_execution_time
 
 from parameterized import parameterized
 from contextlib import contextmanager
@@ -102,8 +102,8 @@ class TestDae(unittest.TestCase):
         width = float(random.randint(1, 1000))
         height = float(random.randint(1, 1000))
         l1 = float(random.randint(1, 1000))
-        beamstop = random.choice(['OUT','IN'])
-        filename = "{}\\test{}.nxs".format(os.getenv("TEMP"),random.randint(1, 1000))
+        beamstop = random.choice(['OUT', 'IN'])
+        filename = "{}\\test{}.nxs".format(os.getenv("TEMP"), random.randint(1, 1000))
         self._wait_for_sample_pars()
         g.change_title(title)
         g.change_sample_par("width", width)
@@ -114,7 +114,7 @@ class TestDae(unittest.TestCase):
         sleep(5)
         g.snapshot_crpt(filename)
         sleep(5)
-        with h5py.File(filename,  "r") as f:
+        with h5py.File(filename, "r") as f:
             saved_title = f['/raw_data_1/title'][0].decode()
             saved_width = f['/raw_data_1/sample/width'][0]
             saved_height = f['/raw_data_1/sample/height'][0]
@@ -193,7 +193,7 @@ class TestDae(unittest.TestCase):
             alarm_time = alarm_time[first_alarm_index:final_alarm_index]
 
             self.assertTrue(len(is_valid) == len(test_values) + 1, "Not enough values/value_valid items logged to file")
-            self.assertTrue(len(alarm_severity) == len(test_values) + 1, "Not enough alarm status/severity items logged to file")
+            self.assertTrue(len(alarm_severity) == len(test_values) + 1,"Not enough alarm status/severity items logged to file")
 
             self.assertListEqual(is_valid, [True, True, True, False])
             # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
@@ -347,7 +347,6 @@ class TestDae(unittest.TestCase):
         self.assertRaises(Exception, g.change_tables, r"C:\Nonsense\Wibble\Wobble\jelly.txt")
         set_genie_python_raises_exceptions(False)
 
-
     def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
@@ -473,7 +472,8 @@ class TestDae(unittest.TestCase):
         begindelay_property = "isisicp.begindelay"
         config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
         if g.get_runstate() != "SETUP":
-            g.abort() # make sure not left in a funny state from e.g. previous aborted test
+            g.abort()  # make sure not left in a funny state from e.g. previous aborted test
+
         with g._genie_api.dae.temporarily_kill_icp():
             config_found = False
 
@@ -594,3 +594,63 @@ class TestDae(unittest.TestCase):
             else:
                 sleep(1)
         self.fail("dae period or number of periods read timed out")
+
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_time_returned_is_correct(self):
+        """
+        Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
+        """
+        sleep_time = 5
+        tolerance = 1
+
+        def get_time_thread(return_value):
+            """
+            Runs on a thread to start timing as we enter the Running state.
+            The return values are appended to the provided list to pass them between threads.
+            """
+            g.waitfor_runstate("RUNNING")
+            sleep(sleep_time)
+            return_value.append(g.get_time_since_begin())
+            return_value.append(g.get_time_since_begin(True))
+
+        time_taken = []
+        thread = Thread(target=get_time_thread, args=(time_taken,))
+        thread.start()
+
+        g.begin()
+
+        thread.join()
+
+        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
+        self.assertAlmostEqual(sleep_time, time_taken[0], delta=tolerance)  # if this fails, then will print the two values
+        self.assertTrue(abs(timedelta(seconds=sleep_time) - time_taken[1]) < timedelta(seconds=tolerance))
+
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
+        """
+        Checks if the seconds elapsed since the start, including pause time period,
+        is the same as the expected elapsed seconds.
+        """
+        sleep_time = 5
+        tolerance = 2
+
+        # Multiplying sleep time with 3 as it sleeps 3 times between pausing and resuming
+        total_sleep_time = sleep_time * 3
+
+        # Calculating execution time of begin() to add to expected runtime
+        begin_runtime = get_execution_time(g.begin)
+
+        # Pausing and resuming with 5 sec interval
+        sleep(sleep_time)
+        g.pause()
+        sleep(sleep_time)
+        g.resume()
+        sleep(sleep_time)
+
+        actual_s = g.get_time_since_begin()
+        actual_timedelta = g.get_time_since_begin(True)
+
+        # Calculating expected runtime with sleep_time between begin and end, and runtimes of begin() and end()
+        expected = total_sleep_time + begin_runtime
+
+        # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
+        self.assertAlmostEqual(expected, actual_s, delta=tolerance)  # if this fails, then will print the two values
+        self.assertTrue(abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=tolerance))
