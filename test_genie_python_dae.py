@@ -600,6 +600,7 @@ class TestDae(unittest.TestCase):
         Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
         """
         sleep_time = 5
+        tolerance = 1
 
         def get_time_thread(return_value):
             """
@@ -620,8 +621,8 @@ class TestDae(unittest.TestCase):
         thread.join()
 
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertAlmostEqual(sleep_time, time_taken[0], delta=1)  # if this fails, then will print the two values
-        self.assertTrue(abs(timedelta(seconds=sleep_time) - time_taken[1]) < timedelta(seconds=1))
+        self.assertAlmostEqual(sleep_time, time_taken[0], delta=tolerance)  # if this fails, then will print the two values
+        self.assertTrue(abs(timedelta(seconds=sleep_time) - time_taken[1]) < timedelta(seconds=tolerance))
 
     def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
         """
@@ -629,6 +630,7 @@ class TestDae(unittest.TestCase):
         is the same as the expected elapsed seconds.
         """
         sleep_time = 5
+        tolerance = 2
 
         # Multiplying sleep time with 3 as it sleeps 3 times between pausing and resuming
         total_sleep_time = sleep_time * 3
@@ -650,5 +652,5 @@ class TestDae(unittest.TestCase):
         expected = total_sleep_time + begin_runtime
 
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertAlmostEqual(expected, actual_s, delta=1)  # if this fails, then will print the two values
-        self.assertTrue(abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=1))
+        self.assertAlmostEqual(expected, actual_s, delta=tolerance)  # if this fails, then will print the two values
+        self.assertTrue(abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=tolerance))
