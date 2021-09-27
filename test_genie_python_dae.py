@@ -600,7 +600,7 @@ class TestDae(unittest.TestCase):
         Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
         """
         sleep_time = 5
-        tolerance = 1
+        tolerance = 2
 
         def get_time_thread(return_value):
             """
