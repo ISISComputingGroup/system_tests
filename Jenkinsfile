@@ -58,7 +58,7 @@ pipeline {
 
       stage("Install latest IBEX") {
         steps {
-         lock(resource: ELOCK, inversePrecedence: true) {
+         lock(resource: ELOCK, inversePrecedence: false) {
           bat """
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Installing IBEX on node ${env.NODE_NAME}
@@ -97,7 +97,7 @@ pipeline {
 
       stage("Run Tests") {
         steps {
-          lock(resource: ELOCK, inversePrecedence: true) {
+          lock(resource: ELOCK, inversePrecedence: false) {
            timeout(time: 1800, unit: 'MINUTES') {
               bat """
                 set \"MYJOB=${env.JOB_NAME}\"
