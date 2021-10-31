@@ -83,11 +83,11 @@ pipeline {
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             set moveerr=%errorlevel%
             IF %insterr% NEQ 0 (
-                @echo ERROR unable to install ibex
+                @echo ERROR unable to install ibex - error code %insterr% 
                 exit /b %insterr%
             )
             IF %moveerr% NEQ 0 (
-                @echo ERROR unable to rename directory
+                @echo ERROR unable to rename EPICS directory to EPICS-%MYJOB% - error code %moveerr%
                 exit /b %moveerr%
             )
             """
@@ -109,11 +109,11 @@ pipeline {
                 del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
                 mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
                 IF %errorlevel% NEQ 0 (
-                    @echo ERROR unable to make directory junction
+                    @echo ERROR unable to make EPICS directory junction link to EPICS-%MYJOB% - error %errorlevel%
                     exit /b %errorlevel%
                 )
                 if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
-                    @echo ERROR Unable to find config_env.bat in linked directory
+                    @echo ERROR Unable to find config_env.bat in linked EPICS directory
                     exit /b 1
                 )
                 @echo Running system tests on node ${env.NODE_NAME}
