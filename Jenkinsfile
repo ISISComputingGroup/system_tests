@@ -65,6 +65,7 @@ pipeline {
             REM EPICS should always be a directory junction on build servers
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
+                @echo Removing EPICS directory link
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
             if \"%MYJOB%\" == \"System_Tests_debug\" (
@@ -80,14 +81,27 @@ pipeline {
                 rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                 rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             )
+            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                echo ERROR Unable to remove EPICS-%MYJOB%
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+                exit /b 1
+            )
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             set moveerr=%errorlevel%
             IF %insterr% NEQ 0 (
-                @echo ERROR unable to install ibex - error code %insterr% 
+                @echo ERROR unable to install ibex - error code %insterr%
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
                 exit /b %insterr%
             )
             IF %moveerr% NEQ 0 (
                 @echo ERROR unable to rename EPICS directory to EPICS-%MYJOB% - error code %moveerr%
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
                 exit /b %moveerr%
             )
             """
@@ -168,6 +182,8 @@ pipeline {
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call "C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat"
             )
+            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             rd /q /s %WORKSPACE%\\my_venv>NUL
             @echo Finished cleanup on node ${env.NODE_NAME}
