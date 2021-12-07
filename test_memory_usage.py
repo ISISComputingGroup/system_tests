@@ -100,7 +100,7 @@ class TestMemoryUsage(unittest.TestCase):
             raise AssertionError(f"Expected commit size to be less than values: {process_cmdline_substrings_and_expected_max_commit_size}. Actually got: {commit_sizes_in_kb}")
 
     def test_GIVEN_standard_setup_THEN_commit_size_of_python_processes_are_reasonable(self):
-        process_cmdline_substrings_and_expected_max_commit_size = {"block_server.py": 600000, "database_server.py": 600000, "nicos-daemon": 900000}
+        process_cmdline_substrings_and_expected_max_commit_size = {"block_server.py": 900000, "database_server.py": 900000, "nicos-daemon": 1800000}
         commit_sizes_in_kb = self.get_commit_sizes_in_kb(process_cmdline_substrings_and_expected_max_commit_size.keys())
         # Assert all substrings have been found
         assert_that(len(commit_sizes_in_kb), is_(len(process_cmdline_substrings_and_expected_max_commit_size)))
