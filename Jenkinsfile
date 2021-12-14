@@ -88,6 +88,7 @@ pipeline {
                 rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
                 exit /b 1
             )
+            call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             set moveerr=%errorlevel%
             IF %insterr% NEQ 0 (
