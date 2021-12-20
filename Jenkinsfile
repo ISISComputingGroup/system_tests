@@ -38,11 +38,12 @@ pipeline {
                     url: "${env.MSTEAMS_URL}"
             ]]
     )
-    throttleJobProperty(
-          categories: ['system_tests'],
-          throttleEnabled: true,
-          throttleOption: 'category'
-    )
+    disableConcurrentBuilds()
+    //throttleJobProperty(
+    //      categories: ['system_tests'],
+    //      throttleEnabled: true,
+    //      throttleOption: 'category'
+    //)
   }
 
   stages {  
