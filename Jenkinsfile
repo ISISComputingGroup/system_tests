@@ -133,13 +133,13 @@ pipeline {
                     exit /b 1
                 )
                 @echo Running system tests on node ${env.NODE_NAME}
+                call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
                 call clean_files.bat
                 call run_tests.bat
                 set errcode1=%errorlevel%
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
-                call swap_galil.bat NEW
                 REM we need to pass -i to ignore build errors or we will stop on first test failure
                 REM overall build status will still fail due to junit
                 make -i ioctests
