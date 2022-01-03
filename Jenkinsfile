@@ -139,6 +139,7 @@ pipeline {
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
+                call swap_galil.bat NEW
                 REM we need to pass -i to ignore build errors or we will stop on first test failure
                 REM overall build status will still fail due to junit
                 make -i ioctests
