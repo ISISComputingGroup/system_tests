@@ -34,7 +34,7 @@ IOCS_TO_IGNORE_START_STOP = [
     'NANODAC_01',
     'OERCONE_02',
     'REFL_01',  # Won't run correctly without a config
-    'TWINCAT_01',
+    'TC_01',
     'MOTORSIM',  # Simulation ioc
     'PIXELMAN',
     'CHOPPERSIM',  # Simulation ioc
