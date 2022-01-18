@@ -73,6 +73,8 @@ pipeline {
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_static\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_STATIC
+            ) else if \"%MYJOB%\" == \"System_Tests_release\" (
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat RELEASE
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
@@ -135,7 +137,11 @@ pipeline {
                     exit /b 1
                 )
                 @echo Running system tests on node ${env.NODE_NAME}
-                call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
+                if \"%MYJOB%\" == \"System_Tests_release\" (
+                    call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
+				) else (
+                    call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
+				)
                 call clean_files.bat
                 call run_tests.bat
                 set errcode1=%errorlevel%
