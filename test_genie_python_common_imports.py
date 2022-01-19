@@ -8,7 +8,8 @@ import importlib
 IGNORED_MODULES = {
     "curses",  # Not supported on windows
     "dockerpty",  # Not supported on windows
-    "adodbapi"  # Not needed by users
+    "adodbapi",  # Not needed by users
+    "black"  # Not needed by users
 }
 
 
