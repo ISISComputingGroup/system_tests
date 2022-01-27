@@ -80,8 +80,9 @@ pipeline {
             )
             REM preserve error code as we need always need to rename EPICS directory
             set insterr=%errorlevel%
+	    REM call stop in case anything running from before e.g. just in time debug window
+            call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
-                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
                 REM Retry delete multiple times as sometimes fails
                 rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
                 rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
@@ -94,7 +95,6 @@ pipeline {
                 rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
                 exit /b 1
             )
-            call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
             set moveerr=%errorlevel%
             IF %insterr% NEQ 0 (
