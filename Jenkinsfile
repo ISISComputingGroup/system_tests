@@ -73,6 +73,8 @@ pipeline {
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_static\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_STATIC
+            ) else if \"%MYJOB%\" == \"System_Tests_static_debug\" (
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_STATIC_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_release\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat RELEASE
             ) else (
