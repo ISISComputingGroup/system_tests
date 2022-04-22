@@ -23,7 +23,6 @@ IOCS_TO_IGNORE_START_STOP = [
     'ASTRIUM_02',
     'BGRSCRPT_01',  # Won't keep running unless it has a config file
     'BGRSCRPT_02',
-    'BKHOFF_02',  # Complex build
     'ECLAB_01',
     'LSICORR_01',  # Needs vendor library in correct place to keep running
     'LSICORR_02',
