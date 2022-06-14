@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<iocs xmlns="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:ioc="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<ioc name="SIMPLE" autostart="true" restart="true" remotePvPrefix="" simlevel="none">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc name="AG3631A_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="PORT" value="" description="Serial COM Port" pattern="^COM[0-9]+$" hasDefault="no"/>
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+</iocs>
