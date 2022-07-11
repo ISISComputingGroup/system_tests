@@ -662,7 +662,6 @@ class TestDae(unittest.TestCase):
         and the DAE functions as expected without getting stuck.
         """
         timeout = 30
-        rb_number = "init"
 
         g.waitfor_runstate("SETUP", maxwaitsecs=timeout)
 
