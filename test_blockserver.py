@@ -87,9 +87,12 @@ class TestBlockserver(unittest.TestCase):
         else:
             raise err
 
-    @parameterized.expand(parameterized_list([("simple1", "simple2"), 
-                                              ("simple1","block_in_title")]))
-    def test_GIVEN_config_changes_by_ioc_and_one_ioc_has_same_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_not_restarted(self, _, old_config, new_config):
+    @parameterized.expand(parameterized_list([
+        ("simple1", "simple2"),  # Move IOC between 2 configs
+        ("simple_comp_macros", "simple_comp_macros_2"),  # Move IOC between two components
+        ("simple_with_macros", "simple_comp_macros"),  # Move IOC between config and component
+    ]))
+    def test_GIVEN_config_changes_by_ioc_and_ioc_has_same_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_not_restarted(self, _, old_config, new_config):
         utilities.load_config_if_not_already_loaded(old_config)
 
         utilities.wait_for_iocs_to_be_up(["SIMPLE"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
@@ -112,31 +115,34 @@ class TestBlockserver(unittest.TestCase):
         # Assert that SIMPLE start time has not changed, i.e. SIMPLE didn't restart as a result of the config change.
         self.assertEqual(simple_start_time, new_simple_start_time)
 
-## other test to add
-#    @parameterized.expand(parameterized_list([("simple1", "simple2"), 
-#                                              ("simple1","block_in_title")]))
-#    def test_GIVEN_config_changes_by_ioc_and_ioc_has_different_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_is_restarted(self, _, old_config, new_config):
-#        utilities.load_config_if_not_already_loaded(old_config)
-#
-#        utilities.wait_for_iocs_to_be_up(["SIMPLE"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
-#        time.sleep(30)  # Time for IOCs to fully boot etc
-#
-#        simple_start_time_pv = "CS:IOC:SIMPLE:DEVIOS:STARTTOD"
-#        simple_start_time = utilities.wait_for_string_pvs_to_not_be_empty(
-#            [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
-#        )[simple_start_time_pv]
-#
-#        # Load a config containing a different IOC, but still containing SIMPLE (with the same settings as before)
-#        utilities.load_config_if_not_already_loaded(new_config)
-#        utilities.wait_for_iocs_to_be_up(["SIMPLE"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
-#        time.sleep(30)  # Time for IOCs to fully boot etc
+    @parameterized.expand(parameterized_list([
+        ("simple1", "simple_with_macros"),  # Config -> config
+        ("simple_comp_no_macros", "simple_comp_macros"),  # Component -> component
+        ("simple1", "simple_comp_macros"),  # Config -> Component
+        ("simple_comp_macros", "simple1"),  # Component -> Config
+    ]))
+    def test_GIVEN_config_changes_by_ioc_and_ioc_has_different_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_is_restarted(self, _, old_config, new_config):
+        utilities.load_config_if_not_already_loaded(old_config)
 
-#        new_simple_start_time = utilities.wait_for_string_pvs_to_not_be_empty(
-#            [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
-#        )[simple_start_time_pv]
-#
-#        # Assert that SIMPLE start time has changed, i.e. SIMPLE didn't restart as a result of the config change.
-#        self.assertNotEqual(simple_start_time, new_simple_start_time)
+        utilities.wait_for_iocs_to_be_up(["SIMPLE"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
+        time.sleep(30)  # Time for IOCs to fully boot etc
+
+        simple_start_time_pv = "CS:IOC:SIMPLE:DEVIOS:STARTTOD"
+        simple_start_time = utilities.wait_for_string_pvs_to_not_be_empty(
+           [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+        )[simple_start_time_pv]
+
+        # Load a config containing a different IOC, but still containing SIMPLE (with the same settings as before)
+        utilities.load_config_if_not_already_loaded(new_config)
+        utilities.wait_for_iocs_to_be_up(["SIMPLE"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
+        time.sleep(30)  # Time for IOCs to fully boot etc
+
+        new_simple_start_time = utilities.wait_for_string_pvs_to_not_be_empty(
+           [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+        )[simple_start_time_pv]
+
+        # Assert that SIMPLE start time has changed, as the IOC has different settings in the new config
+        self.assertNotEqual(simple_start_time, new_simple_start_time)
 
     def test_GIVEN_config_changes_to_empty_and_back_again_THEN_runcontrol_settings_reset_to_config_defaults(self):
         utilities.load_config_if_not_already_loaded("rcptt_simple")
