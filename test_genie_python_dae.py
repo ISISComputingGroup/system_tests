@@ -666,8 +666,8 @@ class TestDae(unittest.TestCase):
         g.waitfor_runstate("SETUP", maxwaitsecs=timeout)
 
         # Turn off INSTETC
-        stop_ioc("INSTETC")
-        wait_for_ioc_start_stop(timeout, False, "INSTETC")
+        stop_ioc("INSTETC_01")
+        wait_for_ioc_start_stop(timeout, False, "INSTETC_01")
 
         # Try to get the RB number (should timeout)
         self.assertRaises(Exception, g.get_rb())
@@ -677,7 +677,7 @@ class TestDae(unittest.TestCase):
         g.waitfor_runstate("RUNNING", maxwaitsecs=timeout)
 
         # Start INSTETC and try get_rb again
-        start_ioc("INSTETC")
+        start_ioc("INSTETC_01")
         self._wait_for_method(g.get_rb, self.TIMEOUT, "get_rb did not return")
 
         g.end()
