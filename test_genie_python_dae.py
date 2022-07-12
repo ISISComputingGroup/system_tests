@@ -670,7 +670,7 @@ class TestDae(unittest.TestCase):
         wait_for_ioc_start_stop(timeout, False, "INSTETC_01")
 
         # Try to get the RB number (should timeout)
-        self.assertRaises(Exception, g.get_rb())
+        self.assertRaises(Exception, g.get_rb)
 
         # Start run and check DEA is in running state
         g.begin()
