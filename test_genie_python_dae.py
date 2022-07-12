@@ -669,10 +669,13 @@ class TestDae(unittest.TestCase):
         stop_ioc("INSTETC_01")
         wait_for_ioc_start_stop(timeout, False, "INSTETC_01")
 
-        # Try to get the RB number (should timeout)
-        self.assertRaises(Exception, g.get_rb())
+        # Enable Genie exceptions and try to get the RB number (should timeout as INSTETC is down), restore Genie
+        # exceptions to default afterwards
+        set_genie_python_raises_exceptions(True)
+        self.assertRaises(Exception, g.get_rb)
+        set_genie_python_raises_exceptions(False)
 
-        # Start run and check DEA is in running state
+        # Start run and check DAE is in running state
         g.begin()
         g.waitfor_runstate("RUNNING", maxwaitsecs=timeout)
 
@@ -682,3 +685,4 @@ class TestDae(unittest.TestCase):
 
         g.end()
         g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
+
