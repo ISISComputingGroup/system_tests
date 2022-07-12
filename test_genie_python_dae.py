@@ -9,7 +9,8 @@ from time import sleep
 
 from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
     set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
-    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, load_config_if_not_already_loaded, _wait_for_and_assert_dae_simulation_mode, parameterized_list, get_execution_time
+    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, load_config_if_not_already_loaded,\
+    _wait_for_and_assert_dae_simulation_mode, parameterized_list, get_execution_time
 
 from parameterized import parameterized
 from contextlib import contextmanager
@@ -104,7 +105,7 @@ class TestDae(unittest.TestCase):
         l1 = float(random.randint(1, 1000))
         beamstop = random.choice(['OUT', 'IN'])
         filename = "{}\\test{}.nxs".format(os.getenv("TEMP"), random.randint(1, 1000))
-        self._wait_for_sample_pars()
+        self._wait_for_method(g.get_sample_pars, self.TIMEOUT, "get_sample_pars did not return")
         g.change_title(title)
         g.change_sample_par("width", width)
         g.change_sample_par("height", height)
@@ -212,7 +213,7 @@ class TestDae(unittest.TestCase):
         Sets the title to test title, performs a run (yielding during the run)
         and confirms that the saved title is expected_title.
         """
-        self._wait_for_sample_pars()
+        self._wait_for_method(g.get_sample_pars, self.TIMEOUT, "get_sample_pars did not return")
         g.change_title(test_title)
         set_genie_python_raises_exceptions(True)
         g.begin()
@@ -564,14 +565,14 @@ class TestDae(unittest.TestCase):
         finally:
             self._adjust_icp_begin_delay(0)
 
-    def _wait_for_sample_pars(self):
-        for _ in range(self.TIMEOUT):
+    def _wait_for_method(self, method, timeout=300, fail_message="Method did not return"):
+        for _ in range(timeout):
             try:
-                g.get_sample_pars()
+                method()
                 return
             except Exception:
                 sleep(1)
-        self.fail("sample pars did not return")
+        self.fail(fail_message)
 
     def _wait_for_dae_period_change(self, expected_value, get_function):
         """
@@ -654,3 +655,35 @@ class TestDae(unittest.TestCase):
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
         self.assertAlmostEqual(expected, actual_s, delta=tolerance)  # if this fails, then will print the two values
         self.assertTrue(abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=tolerance))
+
+    def test_GIVEN_no_instetc_WHEN_get_rb_and_begin_run_THEN_dae_state_is_running(self):
+        """
+        Checks that if INSTECT is down and methods like get_rb_number timeout/fail, then a user can begin a run
+        and the DAE functions as expected without getting stuck.
+        """
+        timeout = 30
+
+        g.waitfor_runstate("SETUP", maxwaitsecs=timeout)
+
+        # Turn off INSTETC
+        stop_ioc("INSTETC_01")
+        wait_for_ioc_start_stop(timeout, False, "INSTETC_01")
+
+        # Enable Genie exceptions and try to get the RB number (should timeout as INSTETC is down), restore Genie
+        # exceptions to default afterwards
+        set_genie_python_raises_exceptions(True)
+        self.assertRaises(Exception, g.get_rb)
+        set_genie_python_raises_exceptions(False)
+
+        # Start run and check DAE is in running state
+        g.begin()
+        g.waitfor_runstate("RUNNING", maxwaitsecs=timeout)
+        self.assertEqual(g.get_runstate(), "RUNNING")
+
+        # Start INSTETC and try get_rb again
+        start_ioc("INSTETC_01")
+        self._wait_for_method(g.get_rb, self.TIMEOUT, "get_rb did not return")
+
+        g.end()
+        g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
+
