@@ -678,6 +678,7 @@ class TestDae(unittest.TestCase):
         # Start run and check DAE is in running state
         g.begin()
         g.waitfor_runstate("RUNNING", maxwaitsecs=timeout)
+        self.assertEqual(g.get_runstate(), "RUNNING")
 
         # Start INSTETC and try get_rb again
         start_ioc("INSTETC_01")
