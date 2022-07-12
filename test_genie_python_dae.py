@@ -672,7 +672,7 @@ class TestDae(unittest.TestCase):
         # Try to get the RB number (should timeout)
         self.assertRaises(Exception, g.get_rb)
 
-        # Start run and check DEA is in running state
+        # Start run and check DAE is in running state
         g.begin()
         g.waitfor_runstate("RUNNING", maxwaitsecs=timeout)
 
