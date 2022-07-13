@@ -138,19 +138,17 @@ class TestProcControl(unittest.TestCase):
         self.assertTrue(any(item in iocs for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
         initial_num = len(iocs)
         # Check IOC 1 and IOC2, but not other IOCs as they should follow the same format as IOC 2.
-        # iocs = [ioc for ioc in iocs if ("_01" in ioc or "_02" in ioc) and not any(iocname in ioc for iocname in IOCS_TO_IGNORE_START_STOP)]
+        iocs = [ioc for ioc in iocs if ("_01" in ioc or "_02" in ioc) and not any(ioc.startswith(iocname) for iocname in IOCS_TO_IGNORE_START_STOP)]
         errored_iocs = []
         iocs_checked = 0
+
+
         for ioc in iocs:
             # Skip Iocs in the list to skip, or where the first IOC of this type has already failed.
             if errored_iocs:
-                print("here")
                 if errored_iocs[-1].split("_", 1)[0] in ioc:
                     print(f"skipping {ioc}")
                     continue
-            if any(iocname in ioc for iocname in IOCS_TO_IGNORE_START_STOP):
-                print(f"skipping {ioc}")
-                continue
             print(f"testing {ioc}, which is {iocs.index(ioc)} of {len(iocs)}.")
             # Start/stop ioc also waits for the ioc to start/stop respectively or errors after a 30 second timeout
             try:
