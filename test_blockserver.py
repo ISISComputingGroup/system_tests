@@ -144,6 +144,19 @@ class TestBlockserver(unittest.TestCase):
         # Assert that SIMPLE start time has changed, as the IOC has different settings in the new config
         self.assertNotEqual(simple_start_time, new_simple_start_time)
 
+    def test_GIVEN_manually_started_ioc_WHEN_changing_to_config_containing_ioc_but_without_autostart_THEN_ioc_stopped(self):
+        utilities.load_config_if_not_already_loaded("empty_for_system_tests")
+
+        assert_with_timeout(lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), False), timeout=30)
+
+        utilities.start_ioc("SIMPLE")
+
+        assert_with_timeout(lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), True), timeout=30)
+
+        utilities.load_config_if_not_already_loaded("simple_without_autostart")
+
+        assert_with_timeout(lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), False), timeout=30)
+
     def test_GIVEN_config_changes_to_empty_and_back_again_THEN_runcontrol_settings_reset_to_config_defaults(self):
         utilities.load_config_if_not_already_loaded("rcptt_simple")
 
