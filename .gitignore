@@ -17,3 +17,4 @@ relPaths.sh
 .project
 /test-reports
 base_line_memory.txt
+/my_venv/

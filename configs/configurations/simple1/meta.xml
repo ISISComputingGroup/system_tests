@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<meta>
+	<description>config with nicos 1</description>
+	<synoptic>-- NONE --</synoptic>
+	<edits>
+		<edit>2022-06-14 15:16:16</edit>
+	</edits>
+	<isProtected>false</isProtected>
+	<isDynamic>false</isDynamic>
+	<configuresBlockGWAndArchiver>false</configuresBlockGWAndArchiver>
+</meta>
