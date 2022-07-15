@@ -148,11 +148,10 @@ class TestProcControl(unittest.TestCase):
             start_time = time()
             failed = bulk_start_ioc(chunk)
             failed.extend(bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed]))
-            print(f"Check from {chunk[0]} to {chunk[-1]}.")
             for ioc in failed:
                 self._retry_in_recsim(error_iocs, ioc)
             count = time() - start_time
-            print(f"checked {number_to_run} iocs in {count} seconds.")
+            print(f"Check from {chunk[0]} to {chunk[-1]} ({number_to_run} iocs), in {count} seconds.")
 
         g.toggle.exceptions_raised(False)
         self.assertEqual(error_iocs, [], "IOCs failed: {}".format(error_iocs))

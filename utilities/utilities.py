@@ -237,10 +237,12 @@ def set_wait_for_complete_callback_dae_settings(wait):
     """
     genie_api_setup.__api.dae.wait_for_completion_callback_dae_settings = wait
 
+
 def temporarily_kill_icp():
     # Temporarily kills the ISIS ICP (ISIS DAE)
 
     return genie_api_setup.__api.dae.temporarily_kill_icp()
+
 
 def as_seconds(time):
     """
@@ -284,8 +286,9 @@ def bulk_start_ioc(ioc_list):
     :return: a list of IOCs that failed to start after IOCS_START_STOP_TIMEOUT seconds
     """
     failed_to_start = []
+
     for ioc_name in ioc_list:
-        if not is_ioc_up(ioc_name):
+        if quick_is_ioc_down(ioc_name):
             g.set_pv("CS:PS:{}:{}".format(ioc_name, "START"), 1, is_local=True)
     for ioc_name in ioc_list:
         try:
@@ -303,7 +306,7 @@ def bulk_stop_ioc(ioc_list):
     """
     failed_to_stop = []
     for ioc_name in ioc_list:
-        if is_ioc_up(ioc_name):
+        if not quick_is_ioc_down(ioc_name):
             g.set_pv("CS:PS:{}:{}".format(ioc_name, "STOP"), 1, is_local=True)
     for ioc_name in ioc_list:
         try:
@@ -359,6 +362,17 @@ def wait_for_ioc_start_stop(timeout, is_start, ioc_name):
         sleep(1.0)
     else:
         raise IOError("IOC {} is not {}".format(ioc_name, "started" if is_start else "stopped"))
+
+
+def quick_is_ioc_down(ioc_name):
+    """
+    Determine if IOC is up by checking proc serv, cannot be used to make sure a PV has been started, but is
+    good enough for checks before attempting to start/stop
+    :param ioc_name:  The IOC to check
+    :return:  True if IOC is up; False otherwise
+    """
+    running = g.get_pv(f"CS:PS:{ioc_name}:STATUS", is_local=True)
+    return True if running == "Shutdown" else False
 
 
 def is_ioc_up(ioc_name):
