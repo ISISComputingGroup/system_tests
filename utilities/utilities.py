@@ -276,6 +276,22 @@ def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
     wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=is_a_start, ioc_name=ioc_name)
 
 
+def bulk_start_ioc(ioc_list):
+    for ioc_name in ioc_list:
+        if is_ioc_up(ioc_name) != True:
+            g.set_pv("CS:PS:{}:{}".format(ioc_name, "START"), 1, is_local=True)
+    for ioc_name in ioc_list:
+        wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=True, ioc_name=ioc_name)
+
+
+def bulk_stop_ioc(ioc_list):
+    for ioc_name in ioc_list:
+        if is_ioc_up(ioc_name) != False:
+            g.set_pv("CS:PS:{}:{}".format(ioc_name, "STOP"), 1, is_local=True)
+    for ioc_name in ioc_list:
+        wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=False, ioc_name=ioc_name)
+
+
 def start_ioc(ioc_name):
     """
     Start the ioc
@@ -314,11 +330,12 @@ def wait_for_ioc_start_stop(timeout, is_start, ioc_name):
     start_time = time()
     count = 0
     while count < timeout:
-        sleep(1.0)
         count = time() - start_time
-        print("Waited {}s for IOC to {}".format(count, "start" if is_start else "stop"))
         if is_ioc_up(ioc_name) == is_start:
+            if count > 0:
+                print("Waited {}s for IOC to {}".format(count, "start" if is_start else "stop"))
             break
+        sleep(1.0)
     else:
         raise IOError("IOC {} is not {}".format(ioc_name, "started" if is_start else "stopped"))
 
