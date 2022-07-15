@@ -352,7 +352,7 @@ def wait_for_ioc_start_stop(timeout, is_start, ioc_name):
         count = time() - start_time
         if is_ioc_up(ioc_name) == is_start:
             if count > 0:
-                print(f"Waited {count}s for IOC to {'start' if is_start else 'stop'}")
+                print(f"Waited {count}s for {ioc_name} to {'start' if is_start else 'stop'}")
             break
         sleep(1.0)
     else:
