@@ -147,7 +147,7 @@ class TestProcControl(unittest.TestCase):
         for chunk in self._chunk_iocs(iocs, number_to_run):
             start_time = time()
             failed = bulk_start_ioc(chunk)
-            bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed])
+            failed.extend(bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed]))
             print(f"Check from {chunk[0]} to {chunk[-1]}.")
             for ioc in failed:
                 self._retry_in_recsim(error_iocs, ioc)

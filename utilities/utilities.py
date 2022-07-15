@@ -259,6 +259,7 @@ def as_seconds(time):
 
     return seconds
 
+
 def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
     """
     Start or stop and ioc dependent on whether it "is_a_start"
@@ -277,6 +278,11 @@ def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
 
 
 def bulk_start_ioc(ioc_list):
+    """
+    start a list of IOCs in bulk
+    :param ioc_list: a list of the names of the IOCs to start
+    :return: a list of IOCs that failed to start after IOCS_START_STOP_TIMEOUT seconds
+    """
     failed_to_start = []
     for ioc_name in ioc_list:
         if not is_ioc_up(ioc_name):
@@ -290,11 +296,21 @@ def bulk_start_ioc(ioc_list):
 
 
 def bulk_stop_ioc(ioc_list):
+    """
+    Stops a list of IOCs in bulk
+    :param ioc_list: a list of the names of the IOCs to stop
+    :raises: IOError if IOC does not stop after IOCS_START_STOP_TIMEOUT seconds
+    """
+    failed_to_stop = []
     for ioc_name in ioc_list:
         if is_ioc_up(ioc_name):
             g.set_pv("CS:PS:{}:{}".format(ioc_name, "STOP"), 1, is_local=True)
     for ioc_name in ioc_list:
-        wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=False, ioc_name=ioc_name)
+        try:
+            wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=False, ioc_name=ioc_name)
+        except IOError:
+            failed_to_stop.append(ioc_name)
+    return failed_to_stop
 
 
 def start_ioc(ioc_name):
