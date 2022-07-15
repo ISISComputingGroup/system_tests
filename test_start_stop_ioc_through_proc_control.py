@@ -1,15 +1,14 @@
+import os
 import unittest
-from typing import List
+import xml.etree.ElementTree as ET
 from time import time
-from hamcrest import *
+from typing import List
+
+from hamcrest import assert_that, less_than
+from six.moves import range
 
 from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop, \
     load_config_if_not_already_loaded, bulk_start_ioc, bulk_stop_ioc
-from six.moves import range
-
-import xml.etree.ElementTree as ET
-import os
-
 
 # The following iocs are ignored in the test which starts/stops all iocs
 # This is usually because they don't build by default, or have some complex dependency,
@@ -136,12 +135,11 @@ class TestProcControl(unittest.TestCase):
         self.assertGreater(len(iocs), 100)
         # Check there's at least one known ioc in the list
         self.assertTrue(any(item in iocs for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
-        initial_num = len(iocs)
         # Check IOC 1 and IOC2, but not other IOCs as they should follow the same format as IOC 2.
-        iocs = [ioc for ioc in iocs if ("_01" in ioc or "_02" in ioc) and not any(ioc.startswith(iocname) for iocname in IOCS_TO_IGNORE_START_STOP)]
+        iocs = [ioc for ioc in iocs if ("_01" in ioc or "_02" in ioc)
+                and not any(ioc.startswith(iocname) for iocname in IOCS_TO_IGNORE_START_STOP)]
         iocs.sort()
         error_iocs = []
-        current_ioc = 0
         number_to_run = 40
         g.toggle.exceptions_raised(True)
         for chunk in self._chunk_iocs(iocs, number_to_run):
@@ -154,12 +152,12 @@ class TestProcControl(unittest.TestCase):
             print(f"Check from {chunk[0]} to {chunk[-1]} ({number_to_run} iocs), in {count} seconds.")
 
         g.toggle.exceptions_raised(False)
-        self.assertEqual(error_iocs, [], "IOCs failed: {}".format(error_iocs))
+        self.assertEqual(error_iocs, [], f"IOCs failed: {error_iocs}")
 
     @staticmethod
     def _chunk_iocs(ioc_list, chunk_size):
         for i in range(0, len(ioc_list), chunk_size):
-            yield ioc_list[i:i+chunk_size]
+            yield ioc_list[i:i + chunk_size]
 
     @staticmethod
     def _retry_in_recsim(errored_iocs: List[str], ioc: str):
