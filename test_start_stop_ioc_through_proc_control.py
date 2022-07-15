@@ -1,10 +1,10 @@
 import unittest
 from typing import List
-
+from time import time
 from hamcrest import *
 
 from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop, \
-    load_config_if_not_already_loaded
+    load_config_if_not_already_loaded, bulk_start_ioc, bulk_stop_ioc
 from six.moves import range
 
 import xml.etree.ElementTree as ET
@@ -141,23 +141,35 @@ class TestProcControl(unittest.TestCase):
         iocs = [ioc for ioc in iocs if ("_01" in ioc or "_02" in ioc) and not any(ioc.startswith(iocname) for iocname in IOCS_TO_IGNORE_START_STOP)]
         errored_iocs = []
         iocs_checked = 0
-
-
-        for ioc in iocs:
-            # Skip Iocs in the list to skip, or where the first IOC of this type has already failed.
-            if errored_iocs:
-                if errored_iocs[-1].split("_", 1)[0] in ioc:
-                    print(f"skipping {ioc}")
+        currentIoc = 0
+        number_to_run = 20
+        g.toggle.exceptions_raised(True)
+        while currentIoc < len(iocs):
+            twentyIocs = currentIoc + number_to_run
+            start_time = time()
+            if twentyIocs < len(iocs):
+                try:
+                    bulk_start_ioc(iocs[currentIoc:twentyIocs])
+                    bulk_stop_ioc(iocs[currentIoc:twentyIocs])
+                    print(f"Checked IOC {currentIoc} through to {twentyIocs}.")
+                except IOError as e:
+                    self._retry_in_recsim(errored_iocs, e)
+                    currentIoc = iocs.index(e)+1
                     continue
-            print(f"testing {ioc}, which is {iocs.index(ioc)} of {len(iocs)}.")
-            # Start/stop ioc also waits for the ioc to start/stop respectively or errors after a 30 second timeout
-            try:
-                iocs_checked += 1
-                start_ioc(ioc_name=ioc)
-                stop_ioc(ioc_name=ioc)
-            except IOError:
-                self._retry_in_recsim(errored_iocs, ioc)
-        print(f"tested {iocs_checked} of {initial_num}. The rest were skipped, or were IOC numbers greater than 2.")
+            else:
+                try:
+                    bulk_start_ioc(iocs[currentIoc:])
+                    bulk_stop_ioc(iocs[currentIoc:])
+                    print(f"Checked IOC {currentIoc} through to end.")
+                except IOError as e:
+                    self._retry_in_recsim(errored_iocs, e)
+                    currentIoc = iocs.index(e) + 1
+                    continue
+            count = time() - start_time
+            currentIoc = twentyIocs
+
+            print(f"checked {number_to_run} iocs in {count} seconds.")
+        g.toggle.exceptions_raised(False)
         self.assertEqual(errored_iocs, [], "IOCs failed: {}".format(errored_iocs))
 
     @staticmethod
