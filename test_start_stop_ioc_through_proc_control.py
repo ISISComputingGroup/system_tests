@@ -139,38 +139,28 @@ class TestProcControl(unittest.TestCase):
         initial_num = len(iocs)
         # Check IOC 1 and IOC2, but not other IOCs as they should follow the same format as IOC 2.
         iocs = [ioc for ioc in iocs if ("_01" in ioc or "_02" in ioc) and not any(ioc.startswith(iocname) for iocname in IOCS_TO_IGNORE_START_STOP)]
-        errored_iocs = []
-        iocs_checked = 0
-        currentIoc = 0
-        number_to_run = 20
+        iocs.sort()
+        error_iocs = []
+        current_ioc = 0
+        number_to_run = 40
         g.toggle.exceptions_raised(True)
-        while currentIoc < len(iocs):
-            twentyIocs = currentIoc + number_to_run
+        for chunk in self._chunk_iocs(iocs, number_to_run):
             start_time = time()
-            if twentyIocs < len(iocs):
-                try:
-                    bulk_start_ioc(iocs[currentIoc:twentyIocs])
-                    bulk_stop_ioc(iocs[currentIoc:twentyIocs])
-                    print(f"Checked IOC {currentIoc} through to {twentyIocs}.")
-                except IOError as e:
-                    self._retry_in_recsim(errored_iocs, e)
-                    currentIoc = iocs.index(e)+1
-                    continue
-            else:
-                try:
-                    bulk_start_ioc(iocs[currentIoc:])
-                    bulk_stop_ioc(iocs[currentIoc:])
-                    print(f"Checked IOC {currentIoc} through to end.")
-                except IOError as e:
-                    self._retry_in_recsim(errored_iocs, e)
-                    currentIoc = iocs.index(e) + 1
-                    continue
+            failed = bulk_start_ioc(chunk)
+            bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed])
+            print(f"Check from {chunk[0]} to {chunk[-1]}.")
+            for ioc in failed:
+                self._retry_in_recsim(error_iocs, ioc)
             count = time() - start_time
-            currentIoc = twentyIocs
-
             print(f"checked {number_to_run} iocs in {count} seconds.")
+
         g.toggle.exceptions_raised(False)
-        self.assertEqual(errored_iocs, [], "IOCs failed: {}".format(errored_iocs))
+        self.assertEqual(error_iocs, [], "IOCs failed: {}".format(error_iocs))
+
+    @staticmethod
+    def _chunk_iocs(ioc_list, chunk_size):
+        for i in range(0, len(ioc_list), chunk_size):
+            yield ioc_list[i:i+chunk_size]
 
     @staticmethod
     def _retry_in_recsim(errored_iocs: List[str], ioc: str):

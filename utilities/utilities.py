@@ -277,16 +277,21 @@ def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
 
 
 def bulk_start_ioc(ioc_list):
+    failed_to_start = []
     for ioc_name in ioc_list:
-        if is_ioc_up(ioc_name) != True:
+        if not is_ioc_up(ioc_name):
             g.set_pv("CS:PS:{}:{}".format(ioc_name, "START"), 1, is_local=True)
     for ioc_name in ioc_list:
-        wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=True, ioc_name=ioc_name)
+        try:
+            wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=True, ioc_name=ioc_name)
+        except IOError:
+            failed_to_start.append(ioc_name)
+    return failed_to_start
 
 
 def bulk_stop_ioc(ioc_list):
     for ioc_name in ioc_list:
-        if is_ioc_up(ioc_name) != False:
+        if is_ioc_up(ioc_name):
             g.set_pv("CS:PS:{}:{}".format(ioc_name, "STOP"), 1, is_local=True)
     for ioc_name in ioc_list:
         wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=False, ioc_name=ioc_name)
