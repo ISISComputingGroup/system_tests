@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<iocs xmlns="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:ioc="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<ioc name="GALIL_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="GALILADDR" value="127.0.0.1"/>
+			<macro name="MTRCTRL" value="1"/>
+			<macro name="GALILCONFIGDIR" value="C:/Instrument/Apps/EPICS/support/motionSetPoints/master/settings/setting_for_system_tests/instrument_scripts/loq" />
+		</macros>
+		<pvs>
+			<pv name="IN:LOQ:LKUP:SAMPLE:COORD0:OFFSET:SP.PREC" value="2"/>
+			<pv name="IN:LOQ:LKUP:HEIGHT:COORD0:OFFSET:SP.PREC" value="2"/>
+			<pv name="IN:LOQ:LKUP:HEIGHT:COORD0:OFFSET.PREC" value="2"/>
+			<pv name="IN:LOQ:LKUP:SAMPLE:COORD0:OFFSET.PREC" value="2"/>
+		</pvs>
+		<pvsets/>
+	</ioc>
+	<ioc name="MOXA12XX_02" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="CHAN0NAME" value="HV"/>
+			<macro name="IP_ADDR" value="127.0.0.1"/>
+			<macro name="ADDR" value="127.0.0.1"/>
+			<macro name="CHAN1UNITS" value="mV"/>
+			<macro name="CHAN1NAME" value="Discriminator"/>
+			<macro name="CHAN1HILIMIT" value="155"/>
+			<macro name="CHAN0LOWLIMIT" value="2100"/>
+			<macro name="CHAN1LOWLIMIT" value="145"/>
+			<macro name="CHAN1SCLEFACTR" value="1000"/>
+			<macro name="MODELNO" value="1240"/>
+			<macro name="CHAN0SCLEFACTR" value="1000"/>
+			<macro name="CHAN0HILIMIT" value="2200"/>
+			<macro name="CHAN0UNITS" value="V"/>
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+</iocs>
