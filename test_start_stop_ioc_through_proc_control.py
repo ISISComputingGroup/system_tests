@@ -140,19 +140,24 @@ class TestProcControl(unittest.TestCase):
                 and not any(ioc.startswith(iocname) for iocname in IOCS_TO_IGNORE_START_STOP)]
         iocs.sort()
         error_iocs = []
+        failed_to_start = []
+        failed_to_stop = []
         number_to_run = 40
         g.toggle.exceptions_raised(True)
         for chunk in self._chunk_iocs(iocs, number_to_run):
             start_time = time()
-            failed = bulk_start_ioc(chunk)
-            failed.extend(bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed]))
-            for ioc in failed:
+            failed_to_start = bulk_start_ioc(chunk)
+            failed_to_stop = bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed_to_start])
+            for ioc in failed_to_start + failed_to_stop:
                 self._retry_in_recsim(error_iocs, ioc)
             count = time() - start_time
             print(f"Check from {chunk[0]} to {chunk[-1]} ({len(chunk)} iocs), in {count} seconds.")
 
         g.toggle.exceptions_raised(False)
-        self.assertEqual(error_iocs, [], f"IOCs failed: {error_iocs}")
+        failed_to_start = [ioc for ioc in failed_to_start if ioc in error_iocs]
+        failed_to_stop = [ioc for ioc in failed_to_stop if ioc in error_iocs]
+        self.assertEqual(error_iocs, [], f"IOCs failed to start: {failed_to_start}")
+        self.assertEqual(error_iocs, [], f"IOCs failed to start: {failed_to_stop}")
 
     @staticmethod
     def _chunk_iocs(ioc_list, chunk_size):
