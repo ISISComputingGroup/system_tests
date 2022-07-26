@@ -279,18 +279,24 @@ def bulk_start_ioc(ioc_list):
     start a list of IOCs in bulk
     :param ioc_list: a list of the names of the IOCs to start
     :return: a list of IOCs that failed to start after IOCS_START_STOP_TIMEOUT seconds
+            and a list of any IOCs that were not present in proc serv (this should be a very rare case)
     """
     failed_to_start = []
-
+    not_in_proc_serv = []
     for ioc_name in ioc_list:
-        if quick_is_ioc_down(ioc_name):
-            g.set_pv(f"CS:PS:{ioc_name}:START", 1, is_local=True)
+        try:
+            if quick_is_ioc_down(ioc_name):
+                g.set_pv(f"CS:PS:{ioc_name}:START", 1, is_local=True)
+        except UnableToConnectToPVException:
+            not_in_proc_serv.append(ioc_name)
+            print(f"{ioc_name} not found in proc serv, should this be added to the list of iocs to skip?")
+    ioc_list = [ioc for ioc in ioc_list if ioc not in not_in_proc_serv]
     for ioc_name in ioc_list:
         try:
             wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=True, ioc_name=ioc_name)
         except IOError:
             failed_to_start.append(ioc_name)
-    return failed_to_start
+    return failed_to_start, not_in_proc_serv
 
 
 def bulk_stop_ioc(ioc_list):

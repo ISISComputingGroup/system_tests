@@ -39,7 +39,7 @@ IOCS_TO_IGNORE_START_STOP = [
     'SECI2IBEX',  # requires labview
     'SEPRTR',  # relies on daqMX
     'TC_01',  # relies on twincat
-    'ZFMAGFIELD'  # relies on daqMX
+    'ZFMAGFLD'  # relies on daqMX
 ]
 
 GLOBALS_FILENAME = os.path.join(os.environ['ICPCONFIGROOT'], "globals.txt")
@@ -149,8 +149,9 @@ class TestProcControl(unittest.TestCase):
         g.toggle.exceptions_raised(True)
         for chunk in self._chunk_iocs(iocs, number_to_run):
             start_time = time()
-            failed_to_start = bulk_start_ioc(chunk)
-            failed_to_stop = bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed_to_start])
+            failed_to_start, not_in_proc_serv = bulk_start_ioc(chunk)
+            failed_to_stop = bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed_to_start
+                                            and ioc not in not_in_proc_serv])
             for ioc in failed_to_start + failed_to_stop:
                 self._retry_in_recsim(error_iocs, ioc)
             count = time() - start_time
@@ -161,6 +162,7 @@ class TestProcControl(unittest.TestCase):
         failed_to_stop = [ioc for ioc in failed_to_stop if ioc in error_iocs]
         self.assertEqual(failed_to_start, [], f"IOCs failed to start: {failed_to_start}")
         self.assertEqual(failed_to_stop, [], f"IOCs failed to start: {failed_to_stop}")
+        self.assertEqual(not_in_proc_serv, [], f"IOCs not in proc serv: {not_in_proc_serv}")
 
     @staticmethod
     def _chunk_iocs(ioc_list, chunk_size):
