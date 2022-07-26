@@ -1,3 +1,6 @@
+"""
+System tests for starting or stopping iocs through Proc server
+"""
 import os
 import unittest
 import xml.etree.ElementTree as ET
@@ -47,7 +50,7 @@ GLOBALS_FILENAME = os.path.join(os.environ['ICPCONFIGROOT'], "globals.txt")
 
 class TestProcControl(unittest.TestCase):
     """
-
+    Test class for tests on proc control.
     """
 
     def setUp(self):
@@ -121,6 +124,12 @@ class TestProcControl(unittest.TestCase):
         # A test to check all IOCs start and stop correctly
         # Implemented to test for the error we encountered where we met our procserv limit and some iocs didn't start
 
+        iocs_to_test = []
+        error_iocs = []
+        failed_to_start = []
+        failed_to_stop = []
+        number_to_run = 40
+
         tree = ET.parse(os.path.join("C:\\", "Instrument", "Apps", "EPICS", "iocstartup", "config.xml"))
         root = tree.getroot()
 
@@ -130,24 +139,22 @@ class TestProcControl(unittest.TestCase):
             "{http://epics.isis.rl.ac.uk/schema/ioc_configs/1.0}"
         )
 
-        iocs = []
         for schema in schemas:
-            iocs.extend([ioc_config.attrib["name"] for ioc_config in root.iter(f"{schema}ioc_config")])
+            iocs_to_test.extend([ioc_config.attrib["name"] for ioc_config in root.iter(f"{schema}ioc_config")])
 
+        # Fairly long test so error out early if IOCs aren't in a sensible state
         # Check parsed IOCs are a sensible length
-        self.assertGreater(len(iocs), 100)
+        self.assertGreater(len(iocs_to_test), 100)
         # Check there's at least one known ioc in the list
-        self.assertTrue(any(item in iocs for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
+        self.assertTrue(any(item in iocs_to_test for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
+
         # Check IOC 1 and IOC2, but not other IOCs as they should follow the same format as IOC 2.
-        iocs = [ioc for ioc in iocs if ("_01" in ioc or "_02" in ioc)
-                and not any(ioc.startswith(iocname) for iocname in IOCS_TO_IGNORE_START_STOP)]
-        iocs.sort()
-        error_iocs = []
-        failed_to_start = []
-        failed_to_stop = []
-        number_to_run = 40
+        iocs_to_test = [ioc for ioc in iocs_to_test if self._skip_high_ioc_nums(ioc) and not self._ignore_ioc(ioc)]
+        iocs_to_test.sort()
+
+        # Test handles Channel access exceptions, so set us to handle it to reduce prints.
         g.toggle.exceptions_raised(True)
-        for chunk in self._chunk_iocs(iocs, number_to_run):
+        for chunk in self._chunk_iocs(iocs_to_test, number_to_run):
             start_time = time()
             failed_to_start, not_in_proc_serv = bulk_start_ioc(chunk)
             failed_to_stop = bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed_to_start
@@ -161,11 +168,19 @@ class TestProcControl(unittest.TestCase):
         failed_to_start = [ioc for ioc in failed_to_start if ioc in error_iocs]
         failed_to_stop = [ioc for ioc in failed_to_stop if ioc in error_iocs]
         self.assertEqual(failed_to_start, [], f"IOCs failed to start: {failed_to_start}")
-        self.assertEqual(failed_to_stop, [], f"IOCs failed to start: {failed_to_stop}")
+        self.assertEqual(failed_to_stop, [], f"IOCs failed to stop: {failed_to_stop}")
         self.assertEqual(not_in_proc_serv, [], f"IOCs not in proc serv: {not_in_proc_serv}")
 
     @staticmethod
-    def _chunk_iocs(ioc_list, chunk_size):
+    def _ignore_ioc(ioc: str):
+        return any(ioc.startswith(ioc_name) for ioc_name in IOCS_TO_IGNORE_START_STOP)
+
+    @staticmethod
+    def _skip_high_ioc_nums(ioc: str):
+        return "_01" in ioc or "_02" in ioc
+
+    @staticmethod
+    def _chunk_iocs(ioc_list: List[str], chunk_size: int):
         for i in range(0, len(ioc_list), chunk_size):
             yield ioc_list[i:i + chunk_size]
 
