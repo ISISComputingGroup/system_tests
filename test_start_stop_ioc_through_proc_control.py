@@ -158,8 +158,8 @@ class TestProcControl(unittest.TestCase):
         g.toggle.exceptions_raised(False)
         failed_to_start = [ioc for ioc in failed_to_start if ioc in error_iocs]
         failed_to_stop = [ioc for ioc in failed_to_stop if ioc in error_iocs]
-        self.assertEqual(error_iocs, [], f"IOCs failed to start: {failed_to_start}")
-        self.assertEqual(error_iocs, [], f"IOCs failed to start: {failed_to_stop}")
+        self.assertEqual(failed_to_start, [], f"IOCs failed to start: {failed_to_start}")
+        self.assertEqual(failed_to_stop, [], f"IOCs failed to start: {failed_to_stop}")
 
     @staticmethod
     def _chunk_iocs(ioc_list, chunk_size):
