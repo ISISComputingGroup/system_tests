@@ -20,8 +20,6 @@ If you want to run these tests on a developer machine, some files will need to b
     1. memory_usage
     1. rcptt_simple
 
-The datastreaming tests also require an installation of [docker for windows](https://docs.docker.com/docker-for-windows/install/#install-docker-desktop-on-windows). 
-If you get an error like `pywintypes.error: (2, 'CreateFile', 'The system cannot find the file specified.')` when running the tests you should make sure you have docker for windows running.
 
 Once these files are in place, run the tests with `run_tests.bat`
 
