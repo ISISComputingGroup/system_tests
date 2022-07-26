@@ -14,29 +14,31 @@ from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc
 # This is usually because they don't build by default, or have some complex dependency,
 # or are special in some way (e.g. psctrl).
 IOCS_TO_IGNORE_START_STOP = [
-    "PSCTRL",  # Special, controls other IOCs
-    "DELFTDCMAG_01",  # Delft iocs have a weird build/run process?
-    "DELFTDCMAG_02",
-    'DELFTSHEAR_01',
     'ASTRIUM_01',
     'ASTRIUM_02',
     'BGRSCRPT_01',  # Won't keep running unless it has a config file
     'BGRSCRPT_02',
+    'CHOPPERSIM',  # Simulation ioc
+    'CAENMCA',  # currently fails to start, and is not used so skip
+    "DELFTDCMAG_01",  # Delft iocs have a weird build/run process?
+    "DELFTDCMAG_02",
+    'DELFTSHEAR_01',
     'ECLAB_01',
     'LSICORR_01',  # Needs vendor library in correct place to keep running
     'LSICORR_02',
+    'MOTORSIM',  # Simulation ioc
     'MOXA12XX_01',
     'MOXA12XX_02',
     'MOXA12XX_03',
     'MK3CHOPR_01',
     'NANODAC_01',
     'OERCONE_02',
-    'REFL_01',  # Won't run correctly without a config
-    'TC_01',
-    'MOTORSIM',  # Simulation ioc
     'PIXELMAN',
-    'CHOPPERSIM',  # Simulation ioc
-    'CAENMCA'  # currently fails to start, and is not used so skip
+    "PSCTRL",  # Special, controls other IOCs
+    'REFL_01',  # Won't run correctly without a config
+    'SEPRTR',  # relies on daqMX
+    'TC_01',  # relies on twincat
+    'ZFMAGFIELD'  # relies on daqMX
 ]
 
 GLOBALS_FILENAME = os.path.join(os.environ['ICPCONFIGROOT'], "globals.txt")
