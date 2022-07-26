@@ -36,6 +36,7 @@ IOCS_TO_IGNORE_START_STOP = [
     'PIXELMAN',
     "PSCTRL",  # Special, controls other IOCs
     'REFL_01',  # Won't run correctly without a config
+    'SECI2IBEX',  # requires labview
     'SEPRTR',  # relies on daqMX
     'TC_01',  # relies on twincat
     'ZFMAGFIELD'  # relies on daqMX
