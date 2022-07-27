@@ -124,12 +124,40 @@ class TestProcControl(unittest.TestCase):
         # A test to check all IOCs start and stop correctly
         # Implemented to test for the error we encountered where we met our procserv limit and some iocs didn't start
 
-        iocs_to_test = []
         error_iocs = []
         failed_to_start = []
         failed_to_stop = []
         number_to_run = 40
 
+        iocs_to_test = self._prepare_ioc_list()
+
+        # Test handles Channel access exceptions, so set us to handle it to reduce prints.
+        g.toggle.exceptions_raised(True)
+        for chunk in self._chunk_iocs(iocs_to_test, number_to_run):
+            start_time = time()
+            failed_to_start, not_in_proc_serv = bulk_start_ioc(chunk)
+            failed_to_stop = bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed_to_start
+                                            and ioc not in not_in_proc_serv])
+            for ioc in failed_to_start + failed_to_stop:
+                if not self._retry_in_recsim(ioc):
+                    error_iocs.append(ioc)
+            count = time() - start_time
+            print(f"Check from {chunk[0]} to {chunk[-1]} ({len(chunk)} iocs), in {count} seconds.")
+
+        g.toggle.exceptions_raised(False)
+        failed_to_start = [ioc for ioc in failed_to_start if ioc in error_iocs]
+        failed_to_stop = [ioc for ioc in failed_to_stop if ioc in error_iocs]
+        self.assertEqual(failed_to_start, [], f"IOCs failed to start: {failed_to_start}")
+        self.assertEqual(failed_to_stop, [], f"IOCs failed to stop: {failed_to_stop}")
+        self.assertEqual(not_in_proc_serv, [], f"IOCs not in proc serv: {not_in_proc_serv}")
+
+    def _prepare_ioc_list(self):
+        """
+        Helper method to prepare the list of IOCs for testing.
+        Gets all IOCs, checks the list is sensible, removes those that should be skipped.
+        :return: The list of IOCs to test, sorted alphanumerically.
+        """
+        iocs_to_test = []
         tree = ET.parse(os.path.join("C:\\", "Instrument", "Apps", "EPICS", "iocstartup", "config.xml"))
         root = tree.getroot()
 
@@ -142,50 +170,53 @@ class TestProcControl(unittest.TestCase):
         for schema in schemas:
             iocs_to_test.extend([ioc_config.attrib["name"] for ioc_config in root.iter(f"{schema}ioc_config")])
 
-        # Fairly long test so error out early if IOCs aren't in a sensible state
-        # Check parsed IOCs are a sensible length
-        self.assertGreater(len(iocs_to_test), 100)
-        # Check there's at least one known ioc in the list
-        self.assertTrue(any(item in iocs_to_test for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]))
-
+        # Check parsed IOCs are a sensible length check there's at least one known ioc in the list
+        if not len(iocs_to_test) > 100:
+            if not any(item in iocs_to_test for item in ["SIMPLE", "AMINT2L_01", "EUROTHRM_01", "INSTETC_01"]):
+                # Fairly long test so error out early if IOCs aren't in a sensible state
+                raise ValueError("List of IOCs not in a sensible state. Have you run IOC startups?")
         # Check IOC 1 and IOC2, but not other IOCs as they should follow the same format as IOC 2.
         iocs_to_test = [ioc for ioc in iocs_to_test if self._skip_high_ioc_nums(ioc) and not self._ignore_ioc(ioc)]
         iocs_to_test.sort()
-
-        # Test handles Channel access exceptions, so set us to handle it to reduce prints.
-        g.toggle.exceptions_raised(True)
-        for chunk in self._chunk_iocs(iocs_to_test, number_to_run):
-            start_time = time()
-            failed_to_start, not_in_proc_serv = bulk_start_ioc(chunk)
-            failed_to_stop = bulk_stop_ioc([ioc for ioc in chunk if ioc not in failed_to_start
-                                            and ioc not in not_in_proc_serv])
-            for ioc in failed_to_start + failed_to_stop:
-                self._retry_in_recsim(error_iocs, ioc)
-            count = time() - start_time
-            print(f"Check from {chunk[0]} to {chunk[-1]} ({len(chunk)} iocs), in {count} seconds.")
-
-        g.toggle.exceptions_raised(False)
-        failed_to_start = [ioc for ioc in failed_to_start if ioc in error_iocs]
-        failed_to_stop = [ioc for ioc in failed_to_stop if ioc in error_iocs]
-        self.assertEqual(failed_to_start, [], f"IOCs failed to start: {failed_to_start}")
-        self.assertEqual(failed_to_stop, [], f"IOCs failed to stop: {failed_to_stop}")
-        self.assertEqual(not_in_proc_serv, [], f"IOCs not in proc serv: {not_in_proc_serv}")
+        return iocs_to_test
 
     @staticmethod
     def _ignore_ioc(ioc: str):
+        """
+        Helper method to check if a given IOC should be skipped
+        :param ioc: The IOC to check
+        :return: true if the IOC should be skipped otherwise false
+        """
         return any(ioc.startswith(ioc_name) for ioc_name in IOCS_TO_IGNORE_START_STOP)
 
     @staticmethod
     def _skip_high_ioc_nums(ioc: str):
+        """
+        Helper method to check if an IOC is of number greater than 1 or 2 to allow skipping of higher duplicates.
+        :param ioc: The IOC to check.
+        :return: True if the IOC is 2 or 2, otherwise False.
+        """
         return "_01" in ioc or "_02" in ioc
 
     @staticmethod
     def _chunk_iocs(ioc_list: List[str], chunk_size: int):
+        """
+        Generator to break list into equally sized chunks.
+        :param ioc_list:  The list to break up.
+        :param chunk_size: The size of each chunk.
+        :return: an iterator that gives the next chunk of the list.
+        """
         for i in range(0, len(ioc_list), chunk_size):
             yield ioc_list[i:i + chunk_size]
 
     @staticmethod
-    def _retry_in_recsim(errored_iocs: List[str], ioc: str):
+    def _retry_in_recsim(ioc: str):
+        """
+        Helper method to retry starting and stopping an IOC in rec sim
+        :param ioc: The IOC to test.
+        :return: True if the retry succeeded, else false.
+        """
+        succeeded = True
         # open with w flag and overwrite - we don't need to
         with open(GLOBALS_FILENAME, "w", encoding="ascii") as globals_file:
             globals_file.write(f"{ioc}__RECSIM=1")
@@ -194,6 +225,7 @@ class TestProcControl(unittest.TestCase):
                 start_ioc(ioc_name=ioc)
                 stop_ioc(ioc_name=ioc)
             except IOError:
-                errored_iocs.append(ioc)
+                succeeded = False
             finally:
                 globals_file.truncate(0)
+        return succeeded
