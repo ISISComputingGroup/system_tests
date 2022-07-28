@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<iocs xmlns="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:ioc="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<ioc name="SIMPLE" autostart="true" restart="true" remotePvPrefix="" simlevel="none">
+		<macros>
+			<macro name="MACRO1" value="1" description="1" pattern=".*$" hasDefault="no"/>
+			<macro name="MACRO2" value="2" description="1" pattern=".*$" hasDefault="no"/>
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+</iocs>
