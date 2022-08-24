@@ -30,6 +30,15 @@ def assert_with_timeout(assertion: Callable, timeout: int):
     else:
         raise err
 
+def wait_for_server():
+    status_was_busy = False
+    for _ in range(utilities.WAIT_FOR_SERVER_TIMEOUT):
+        status = utilities.get_server_status()
+        if status_was_busy and status == "":
+            break
+        if status is not None and status != "":
+            status_was_busy = True
+        time.sleep(1)
 
 
 class TestBlockserver(unittest.TestCase):
@@ -276,3 +285,21 @@ class TestBlockserver(unittest.TestCase):
         with open(self.rc_settings_file, "r") as rc_settings:
             file_content = rc_settings.read()
             assert_that(file_content, contains_string("$(MYPVPREFIX)CS:SB:A"))
+
+    def test_WHEN_block_is_added_to_active_config_via_save_new_config_pv_THEN_block_added(self):
+        CONFIGURATION_NAME = "test_blockserver_save_active_config"
+        BLOCK_NAME = "TEST_BLOCK"
+        utilities.load_config_if_not_already_loaded(CONFIGURATION_NAME)
+        
+        data = {}
+        data["name"] = CONFIGURATION_NAME
+        data["blocks"] = [
+            {
+                "name": BLOCK_NAME,
+                "pv": "TEST_PV",
+            }
+        ]
+        
+        g.set_pv("CS:BLOCKSERVER:SAVE_NEW_CONFIG", compress_and_hex(json.dumps(data)), wait=True, is_local=True)
+        wait_for_server()
+        self.assertTrue(utilities.check_block_exists(BLOCK_NAME))
