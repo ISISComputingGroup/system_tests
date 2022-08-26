@@ -22,7 +22,6 @@ class TestArchiverAccess(unittest.TestCase):
         time.sleep(populate_wait_time)
         g.set_pv("INSTRON_01:LOG:RECORD:SP", value=0, wait=True, is_local=True)
         time.sleep(write_wait_time)
-        utilities.stop_ioc(IOC_NAME)
 
         logs = glob.glob(os.path.join(LOGS_PATH, "*"))
         logs = sorted(logs, key=os.path.getctime, reverse=True)
@@ -37,7 +36,7 @@ class TestArchiverAccess(unittest.TestCase):
             log_continuous = logs[0]
 
         print(f"Archiver Access Full log:\n{logs[0]}\nArchiver Access Continuous log:\n{logs[1]}")
-        
+
         self.assertTrue(log_full.strip(".dat") in log_continuous.strip(".dat"), "Logs(s) not generated.")
 
         log_full_lines = open(os.path.join(LOGS_PATH, log_full)).readlines()
@@ -58,3 +57,15 @@ class TestArchiverAccess(unittest.TestCase):
         log_full, log_continuous = self._create_logs()
         self.assertEqual(len(log_full), len(set(log_full)), "Full log has duplicate entries.")
         self.assertEqual(len(log_continuous), len(set(log_continuous)), "Continuous log has duplicate entries.")
+
+    def test_WHEN_logs_created_THEN_no_missing_values(self):
+        log_full, log_continuous = self._create_logs()
+
+        log_full_entries = log_full[5:]
+        log_continuous_entries = log_continuous[5:]
+
+        log_full_num_measurements_per_entry = [len(x.split()) for x in log_full_entries]
+        log_continuous_num_measurements_per_entry = [len(x.split()) for x in log_continuous_entries]
+
+        self.assertEqual(len(set(log_full_num_measurements_per_entry)), 1)
+        self.assertEqual(len(set(log_continuous_num_measurements_per_entry)), 1)
