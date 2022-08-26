@@ -3,7 +3,9 @@ import glob
 import unittest
 import time
 
+from parameterized import parameterized
 from utilities import utilities
+from utilities.utilities import parameterized_list
 from genie_python import genie as g
 
 
@@ -28,14 +30,16 @@ class TestArchiverAccess(unittest.TestCase):
 
         self.assertGreaterEqual(len(logs), 2, "Logs(s) not generated.")
         
-        if len(logs[0]) < len(logs[1]):
-            log_full = logs[0]
-            log_continuous = logs[1]
-        else:
-            log_full = logs[1]
+        if logs[0].endswith("continuous.dat"):
             log_continuous = logs[0]
+            log_full = logs[1]
+        elif logs[1].endswith("continuous.dat"):
+            log_continuous = logs[1]
+            log_full = logs[0]
+        else:
+            self.fail("Continuos Log not generated.")
 
-        print(f"Archiver Access Full log:\n{logs[0]}\nArchiver Access Continuous log:\n{logs[1]}")
+        print(f"Archiver Access Full Log: {logs[0]}\nArchiver Access Continuous Log: {logs[1]}")
 
         self.assertTrue(log_full.strip(".dat") in log_continuous.strip(".dat"), "Logs(s) not generated.")
 
@@ -49,20 +53,24 @@ class TestArchiverAccess(unittest.TestCase):
         g.set_instrument(None, import_instrument_init=False)
 
 
-    def test_WHEN_logs_created_THEN_full_and_continuous_logs_sizes_equal(self):
-        log_full, log_continuous = self._create_logs()
+    @parameterized.expand(parameterized_list([5, 30, 60]))
+    def test_WHEN_logs_created_THEN_full_and_continuous_logs_sizes_equal(self, _, wait_time):
+        log_full, log_continuous = self._create_logs(populate_wait_time=wait_time)
         self.assertEqual(len(log_full), len(log_continuous), "Logs are different sizes.")
 
-    def test_WHEN_logs_created_THEN_no_duplicate_entries_in_logs(self):
-        log_full, log_continuous = self._create_logs()
-        self.assertEqual(len(log_full), len(set(log_full)), "Full log has duplicate entries.")
-        self.assertEqual(len(log_continuous), len(set(log_continuous)), "Continuous log has duplicate entries.")
+    @parameterized.expand(parameterized_list([5, 30, 60]))
+    def test_WHEN_logs_created_THEN_no_duplicate_entries_in_logs(self, _, wait_time):
+        log_full, log_continuous = self._create_logs(populate_wait_time=wait_time)
+        self.assertEqual(len(log_full), len(set(log_full)), "Full Log has duplicate entries.")
+        self.assertEqual(len(log_continuous), len(set(log_continuous)), "Continuous Log has duplicate entries.")
 
-    def test_WHEN_logs_created_THEN_no_missing_values(self):
-        log_full, log_continuous = self._create_logs()
+    @parameterized.expand(parameterized_list([5, 30, 60]))
+    def test_WHEN_logs_created_THEN_no_missing_values(self, _, wait_time):
+        NUM_HEADER_LINES = 5
+        log_full, log_continuous = self._create_logs(populate_wait_time=wait_time)
 
-        log_full_entries = log_full[5:]
-        log_continuous_entries = log_continuous[5:]
+        log_full_entries = log_full[NUM_HEADER_LINES:]
+        log_continuous_entries = log_continuous[NUM_HEADER_LINES:]
 
         log_full_num_measurements_per_entry = [len(x.split()) for x in log_full_entries]
         log_continuous_num_measurements_per_entry = [len(x.split()) for x in log_continuous_entries]
