@@ -5,7 +5,7 @@ import time
 
 from parameterized import parameterized
 from utilities import utilities
-from utilities.utilities import parameterized_list
+from utilities.utilities import parameterized_list, load_config_if_not_already_loaded
 from genie_python import genie as g
 
 
@@ -18,7 +18,6 @@ class TestArchiverAccess(unittest.TestCase):
     Tests for top-level functionality of Archiver Access.
     """
     def _create_logs(self, populate_wait_time=60, write_wait_time=60):
-        utilities.start_ioc(IOC_NAME)
         self.assertTrue(utilities.is_ioc_up(IOC_NAME))
         g.set_pv("INSTRON_01:LOG:RECORD:SP", value=1, wait=True, is_local=True)
         time.sleep(populate_wait_time)
@@ -51,20 +50,21 @@ class TestArchiverAccess(unittest.TestCase):
 
     def setUp(self) -> None:
         g.set_instrument(None, import_instrument_init=False)
+        load_config_if_not_already_loaded("test_archiveraccess")
 
 
-    @parameterized.expand(parameterized_list([5, 30, 60]))
+    @parameterized.expand(parameterized_list([10, 90]))
     def test_WHEN_logs_created_THEN_full_and_continuous_logs_sizes_equal(self, _, wait_time):
         log_full, log_continuous = self._create_logs(populate_wait_time=wait_time)
         self.assertEqual(len(log_full), len(log_continuous), "Logs are different sizes.")
 
-    @parameterized.expand(parameterized_list([5, 30, 60]))
+    @parameterized.expand(parameterized_list([10, 90]))
     def test_WHEN_logs_created_THEN_no_duplicate_entries_in_logs(self, _, wait_time):
         log_full, log_continuous = self._create_logs(populate_wait_time=wait_time)
         self.assertEqual(len(log_full), len(set(log_full)), "Full Log has duplicate entries.")
         self.assertEqual(len(log_continuous), len(set(log_continuous)), "Continuous Log has duplicate entries.")
 
-    @parameterized.expand(parameterized_list([5, 30, 60]))
+    @parameterized.expand(parameterized_list([10, 90]))
     def test_WHEN_logs_created_THEN_no_missing_values(self, _, wait_time):
         NUM_HEADER_LINES = 5
         log_full, log_continuous = self._create_logs(populate_wait_time=wait_time)
