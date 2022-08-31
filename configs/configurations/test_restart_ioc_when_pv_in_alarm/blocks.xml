@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<blocks xmlns="http://epics.isis.rl.ac.uk/schema/blocks/1.0" xmlns:blk="http://epics.isis.rl.ac.uk/schema/blocks/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<block>
+		<name>TEST_BLOCK</name>
+		<read_pv>SIMPLE:MBBI</read_pv>
+		<local>True</local>
+		<visible>True</visible>
+		<rc_enabled>True</rc_enabled>
+		<rc_suspend_on_invalid>False</rc_suspend_on_invalid>
+		<log_periodic>True</log_periodic>
+		<log_rate>5</log_rate>
+		<log_deadband>0.0</log_deadband>
+	</block>
+</blocks>
