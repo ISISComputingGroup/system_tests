@@ -19,6 +19,7 @@ class TestRestartIocWhenPvInAlarm(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.thread.stop()
+        self.thread.join()
 
     def test_WHEN_ioc_in_alarm_THEN_ioc_restarted(self):
         g.cset(BLOCK_NAME, 0)
