@@ -5,6 +5,9 @@ from six.moves import range
 import requests
 
 
+MAX_FIGURES = 3
+
+
 class TestPlotting(unittest.TestCase):
     """
     It is very hard to write "comprehensive" unit tests for our integration layer with matplotlib
@@ -30,7 +33,7 @@ class TestPlotting(unittest.TestCase):
         load_config_if_not_already_loaded("empty_for_system_tests")
 
         import matplotlib
-        matplotlib.use('module://genie_python.matplotlib_backend.ibex_web_backend')
+        matplotlib.use('module://genie_python.matplotlib_backend.ibex_websocket_backend')
         import matplotlib.pyplot as pyplot
         TestPlotting.PYPLOT = pyplot
 
@@ -75,7 +78,7 @@ class TestPlotting(unittest.TestCase):
             for i in range(7):
                 g.plot_spectrum(1)
 
-            self.assertEqual(6, len(p.get_fignums()))
+            self.assertEqual(MAX_FIGURES, len(p.get_fignums()))
         finally:
             g.end()
 
@@ -87,7 +90,7 @@ class TestPlotting(unittest.TestCase):
             for i in range(7):
                 p.figure(i)
 
-            self.assertEqual(6, len(p.get_fignums()))
+            self.assertEqual(MAX_FIGURES, len(p.get_fignums()))
         finally:
             g.end()
 
@@ -99,6 +102,6 @@ class TestPlotting(unittest.TestCase):
             for i in range(8, 0, -1):
                 p.figure(i)
 
-            self.assertEqual([1, 2, 3, 4, 5, 6], p.get_fignums())
+            self.assertEqual([1, 2, 3], p.get_fignums())
         finally:
             g.end()
