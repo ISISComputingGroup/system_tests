@@ -1,11 +1,11 @@
 <?xml version="1.0" ?>
 <iocs xmlns="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:ioc="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
-	<ioc name="ARACCESS" autostart="true" restart="false" remotePvPrefix="" simlevel="devsim">
+	<ioc name="ARACCESS" autostart="true" restart="true" remotePvPrefix="" simlevel="devsim">
 		<macros/>
 		<pvs/>
 		<pvsets/>
 	</ioc>
-	<ioc name="INSTRON_01" autostart="true" restart="false" remotePvPrefix="" simlevel="devsim">
+	<ioc name="INSTRON_01" autostart="true" restart="true" remotePvPrefix="" simlevel="devsim">
 		<macros>
 			<macro name="GPIBSTR" value=""/>
 		</macros>
