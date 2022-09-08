@@ -4,7 +4,7 @@ System tests of IBEX and genie_python
 
 ## Setup
 
-If you want to run these tests on a developer machine, some files will need to be copied from the settings directory of a build machine.
+If you want to run these tests on a developer machine, clone this repo into `C:\Instrument\Dev`. Some files will need to be copied from the settings directory of a build machine.
 
 * Copy these files from `system_tests/configs/tables` into your `C:/Instrument/settings/<machine name>/tables/` directory:
     1. RCPTT_detector128.dat
