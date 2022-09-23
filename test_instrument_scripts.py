@@ -1,23 +1,30 @@
-from logging import info
-import shutil
-from typing import Callable
-
-from numpy import histogram
-
-from utilities import utilities
-
-from select import select
 import unittest
 import os, sys
-from time import sleep
+
+from utilities import utilities
 from genie_python import genie as g
 
 sys.path.append(os.path.join("C:\\", "Instrument", "scripts"))
 
 
+def assert_tables(cls : unittest.TestCase, detector : str, wiring : str, spectra : str) -> None:
+    """
+    Utility function for asserting that all of the tables are correct.
+    
+    Args:
+        cls (unittest.TestCase): test class instance
+        detector (str): detector table file name
+        wiring (str): wiring table file name
+        spectra (str): spectra table file name
+    """
+    cls.assertIn(detector, g.get_detector_table())
+    cls.assertIn(wiring, g.get_wiring_table())
+    cls.assertIn(spectra, g.get_spectra_table())
+
+
 # Tests for the scanning instrument scripts. They are mainly testing
 # the do_sans and do_trans methods and each of their parameters. For
-# each instrument we are testing that it can into sans mode, trans
+# each instrument we are testing that it can go into sans mode, trans
 # mode and switch between them. Testing each parameter is spread
 # out over each instrument depending on what the simulation allows.
 
@@ -47,69 +54,56 @@ class TestInstrumentScriptsSans2d(unittest.TestCase):
         g.set_pv("MOT:SAMP:Y:MTR.VELO", 15, is_local=True)
 
     def test_WHEN_do_sans_is_called_instrument_is_in_sans_mode(self):
-        print("SANS TEST")
         self.instr.do_sans()
-        self.assertEqual("OUT", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True))
-        utilities.assert_with_timeout(lambda: self.assertEqual("sans", self.instr.measurement_type), timeout=60)
-        self.assertIn("detector_gastubes_01.dat", g.get_detector_table())
-        self.assertIn("wiring_gastubes_01_event.dat", g.get_wiring_table())
-        self.assertIn("spectrum_gastubes_01.dat", g.get_spectra_table())
+        utilities.assert_with_timeout(lambda: self.assertEqual("OUT", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True)), timeout=30)
+        self.assertEqual("sans", self.instr.measurement_type)
+        assert_tables(self, "detector_gastubes_01.dat", "wiring_gastubes_01_event.dat", "spectrum_gastubes_01.dat")
 
     def test_WHEN_do_trans_is_called_instrument_is_in_trans_mode(self):
-        print("TRANS TEST")
         self.instr.do_trans()
-        self.assertEqual("IN", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True))
+        utilities.assert_with_timeout(lambda: self.assertEqual("IN", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True)), timeout=30)
         self.assertEqual("transmission", self.instr.measurement_type)
-        self.assertIn("detector_trans8.dat", g.get_detector_table())
-        self.assertIn("wiring_trans8.dat", g.get_wiring_table())
-        self.assertIn("spectra_trans8.dat", g.get_spectra_table())
+        assert_tables(self, "detector_trans8.dat", "wiring_trans8.dat", "spectra_trans8.dat")
 
     def test_WHEN_after_calling_do_trans_calling_do_sans_puts_instrument_is_in_sans_mode(self):
         self.instr.do_trans()
 
         self.instr.do_sans()
-        self.assertEqual("OUT", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True))
-        utilities.assert_with_timeout(lambda: self.assertEqual("sans", self.instr.measurement_type), timeout=30)
-        self.assertIn("detector_gastubes_01.dat", g.get_detector_table())
-        self.assertIn("wiring_gastubes_01_event.dat", g.get_wiring_table())
-        self.assertIn("spectrum_gastubes_01.dat", g.get_spectra_table())
+        utilities.assert_with_timeout(lambda: self.assertEqual("OUT", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True)), timeout=30)
+        self.assertEqual("sans", self.instr.measurement_type)
+        assert_tables(self, "detector_gastubes_01.dat", "wiring_gastubes_01_event.dat", "spectrum_gastubes_01.dat")
 
     def test_WHEN_after_calling_do_sans_calling_do_trans_puts_instrument_is_in_trans_mode(self):
         self.instr.do_sans()
 
         self.instr.do_trans()
-        self.assertEqual("IN", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True))
+        utilities.assert_with_timeout(lambda: self.assertEqual("IN", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True)), timeout=30)
         self.assertEqual("transmission", self.instr.measurement_type)
-        print(g.get_detector_table())
-        self.assertIn("detector_trans8.dat", g.get_detector_table())
-        self.assertIn("wiring_trans8.dat", g.get_wiring_table())
-        self.assertIn("spectra_trans8.dat", g.get_spectra_table())
+        assert_tables(self, "detector_trans8.dat", "wiring_trans8.dat", "spectra_trans8.dat")
 
     def test_WHEN_do_sans_large_is_called_instrument_is_in_sans_mode_with_correct_aperture(self):
         self.instr.do_sans_large()
-        self.assertEqual("OUT", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True))
-        utilities.assert_with_timeout(lambda: self.assertEqual("sans", self.instr.measurement_type), timeout=60)
-        self.assertEqual("LARGE", g.get_pv("LKUP:SCRAPER:POSN:SP", is_local=True))
-        self.assertIn("detector_gastubes_01.dat", g.get_detector_table())
-        self.assertIn("wiring_gastubes_01_event.dat", g.get_wiring_table())
-        self.assertIn("spectrum_gastubes_01.dat", g.get_spectra_table())
+        utilities.assert_with_timeout(lambda: self.assertEqual("OUT", g.get_pv("FINS_VAC:MONITOR3:STATUS:SP", is_local=True)), timeout=30)
+        self.assertEqual("sans", self.instr.measurement_type)
+        utilities.assert_with_timeout(lambda: self.assertEqual("LARGE", g.get_pv("LKUP:SCRAPER:POSN:SP", is_local=True)), timeout=30)
+        assert_tables(self, "detector_gastubes_01.dat", "wiring_gastubes_01_event.dat", "spectrum_gastubes_01.dat")
 
-    def test_WHEN_calling_do_sans_trans_with_time_starts_a_run(self):
-        run_num = g.get_runnumber()
+    def test_WHEN_calling_do_sans_trans_with_all_valid_time_parameters_THEN_run_starts(self):
+        initial_run_num = g.get_runnumber()
         self.instr.do_sans(title="TEST_RUN", time=10)
         g.waitfor_runstate("SETUP", maxwaitsecs=30)
-        self.assertEquals(g.get_runstate(), "SETUP")
-        self.assertEquals(int(run_num) + 1, int(g.get_runnumber()))
+        self.assertEqual(g.get_runstate(), "SETUP")
+        self.assertEqual(int(initial_run_num) + 1, int(g.get_runnumber()))
 
         self.instr.do_sans(title="TEST_RUN", seconds=10)
         g.waitfor_runstate("SETUP", maxwaitsecs=30)
-        self.assertEquals(g.get_runstate(), "SETUP")
-        self.assertEquals(int(run_num) + 2, int(g.get_runnumber()))
+        self.assertEqual(g.get_runstate(), "SETUP")
+        self.assertEqual(int(initial_run_num) + 2, int(g.get_runnumber()))
 
         self.instr.do_trans(title="TEST_RUN", uamps=1)
         g.waitfor_runstate("SETUP", maxwaitsecs=30)
-        self.assertEquals(g.get_runstate(), "SETUP")
-        self.assertEquals(int(run_num) + 3, int(g.get_runnumber()))
+        self.assertEqual(g.get_runstate(), "SETUP")
+        self.assertEqual(int(initial_run_num) + 3, int(g.get_runnumber()))
 
     def test_WHEN_calling_do_sans_do_trans_sets_title_correctly(self):
         self.instr.do_sans(title="SANS_TEST")
@@ -138,19 +132,18 @@ class TestInstrumentScriptsSans2d(unittest.TestCase):
 
     def test_WHEN_do_sans_with_aperture_sets_aperture_correctly(self):
         self.instr.do_sans(aperture="LARGE")
-        self.assertEqual(g.get_pv("LKUP:SCRAPER:POSN:SP", is_local=True).upper(), "LARGE")
+        utilities.assert_with_timeout(lambda: self.assertEqual(g.get_pv("LKUP:SCRAPER:POSN:SP", is_local=True).upper(), "LARGE"), timeout=30)
 
     def test_WHEN_do_sans_with_period_sets_period_correctly(self):
         self.instr.do_sans(period=1)
         self.assertEqual(1, g.get_period())
 
 
-# Test zoom but don't need to tests parts of the instrument base class done in sans2d
+# Test zoom but don't need to test parts of the instrument base class done in sans2d
 class TestInstrumentScriptsZOOM(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        info("ZOOM tests")
         g.set_instrument(None)
         utilities.load_config_if_not_already_loaded("instrument_scripts_zoom")
 
@@ -162,75 +155,50 @@ class TestInstrumentScriptsZOOM(unittest.TestCase):
             g.set_pv(f"CAEN:hv0:4:SIM:{i}:status", "On", is_local=True)
 
     def test_WHEN_do_sans_is_called_instrument_is_in_sans_mode(self):
-        print("SANS TEST")
         self.instr.do_sans()
-        self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True))
+        utilities.assert_with_timeout(lambda: self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
         self.assertEqual("sans", self.instr.measurement_type)
-        print(g.get_detector_table())
-        self.assertIn("detector_1det_1dae3card.dat", g.get_detector_table())
-        self.assertIn("wiring1det_event_200218.dat", g.get_wiring_table())
-        self.assertIn("spec2det_280318_to_test_18_1.txt", g.get_spectra_table())
+        assert_tables(self, "detector_1det_1dae3card.dat", "wiring1det_event_200218.dat", "spec2det_280318_to_test_18_1.txt")
 
     def test_WHEN_do_trans_is_called_instrument_is_in_trans_mode(self):
-        print("TRANS TEST")
         self.instr.do_trans()
-        self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True))
+        utilities.assert_with_timeout(lambda: self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
         self.assertEqual("transmission", self.instr.measurement_type)
-        self.assertIn("detector_8mon_1dae3card_00.dat", g.get_detector_table())
-        self.assertIn("wiring_8mon_1dae3card_00_hist.dat", g.get_wiring_table())
-        self.assertIn("spectrum_8mon_1dae3card_00.dat", g.get_spectra_table())
+        assert_tables(self, "detector_8mon_1dae3card_00.dat", "wiring_8mon_1dae3card_00_hist.dat", "spectrum_8mon_1dae3card_00.dat")
 
     def test_WHEN_after_calling_do_trans_calling_do_sans_puts_instrument_is_in_sans_mode(self):
         self.instr.do_trans()
 
         self.instr.do_sans()
-        self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True))
+        utilities.assert_with_timeout(lambda: self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
         self.assertEqual("sans", self.instr.measurement_type)
-        self.assertIn("detector_1det_1dae3card.dat", g.get_detector_table())
-        self.assertIn("wiring1det_event_200218.dat", g.get_wiring_table())
-        self.assertIn("spec2det_280318_to_test_18_1.txt", g.get_spectra_table())
+        assert_tables(self, "detector_1det_1dae3card.dat", "wiring1det_event_200218.dat", "spec2det_280318_to_test_18_1.txt")
 
     def test_WHEN_after_calling_do_sans_calling_do_trans_puts_instrument_is_in_trans_mode(self):
         self.instr.do_sans()
 
         self.instr.do_trans()
-        self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True))
+        utilities.assert_with_timeout(lambda: self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
         self.assertEqual("transmission", self.instr.measurement_type)
-        self.assertIn("detector_8mon_1dae3card_00.dat", g.get_detector_table())
-        self.assertIn("wiring_8mon_1dae3card_00_hist.dat", g.get_wiring_table())
-        self.assertIn("spectrum_8mon_1dae3card_00.dat", g.get_spectra_table())
+        assert_tables(self, "detector_8mon_1dae3card_00.dat", "wiring_8mon_1dae3card_00_hist.dat", "spectrum_8mon_1dae3card_00.dat")
 
-    def test_WHEN_calling_do_sans_with_a_custom_daes_are_set_correctly(self):
+    def test_WHEN_calling_do_sans_with_custom_daes_THEN_daes_are_set_correctly(self):
         self.instr.do_sans(dae="histogram")
-        self.assertIn("detector_1det_1dae3card.dat", g.get_detector_table())
-        self.assertIn("wiring1det_histogram_200218.dat", g.get_wiring_table())
-        self.assertIn("spec2det_130218.txt", g.get_spectra_table())
+        assert_tables(self, "detector_1det_1dae3card.dat", "wiring1det_histogram_200218.dat", "spec2det_130218.txt")
 
         self.instr.do_trans()
         self.instr.do_sans()
-        self.assertIn("detector_1det_1dae3card.dat", g.get_detector_table())
-        self.assertIn("wiring1det_histogram_200218.dat", g.get_wiring_table())
-        self.assertIn("spec2det_130218.txt", g.get_spectra_table())
+        assert_tables(self, "detector_1det_1dae3card.dat", "wiring1det_histogram_200218.dat", "spec2det_130218.txt")
 
         self.instr.set_default_dae(mode="event")
         self.instr.do_sans()
-        self.assertIn("detector_1det_1dae3card.dat", g.get_detector_table())
-        self.assertIn("wiring1det_event_200218.dat", g.get_wiring_table())
-        self.assertIn("spec2det_280318_to_test_18_1.txt", g.get_spectra_table())
-
-    def test_WHEN_calling_do_sans_trans_with_time_starts_a_run(self):
-        run_num = g.get_runnumber()
-        self.instr.do_sans(title="TEST_RUN", time=10)
-        g.waitfor_runstate("SETUP", maxwaitsecs=30)
-        self.assertEquals(g.get_runstate(), "SETUP")
-        self.assertEquals(int(run_num) + 1, int(g.get_runnumber()))
+        assert_tables(self, "detector_1det_1dae3card.dat", "wiring1det_event_200218.dat", "spec2det_280318_to_test_18_1.txt")
 
 
 class TestInstrumentScriptsLOQ(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        info("LOQ")
         g.set_instrument(None)
         utilities.load_config_if_not_already_loaded("instrument_scripts_loq")
 
@@ -243,25 +211,19 @@ class TestInstrumentScriptsLOQ(unittest.TestCase):
         g.set_pv("MOT:MTR0104.VELO", 5, is_local=True)
 
     def test_WHEN_do_sans_is_called_instrument_is_in_sans_mode(self):
-        print("SANS TEST")
         # No recsim for loq detector
         self.instr.detector_lock(True)
         self.instr.do_sans()
         self.assertEqual("OUT", g.cget("Tx_Mon")["value"])
         self.assertEqual("sans", self.instr.measurement_type)
-        self.assertIn("detector35576_M4.dat", g.get_detector_table())
-        self.assertIn("wiring35576_M4.dat", g.get_wiring_table())
-        self.assertIn("spectra35576_M4.dat", g.get_spectra_table())
+        assert_tables(self, "detector35576_M4.dat", "wiring35576_M4.dat", "spectra35576_M4.dat")
 
     def test_WHEN_do_trans_is_called_instrument_is_in_trans_mode(self):
-        print("TRANS TEST")
         self.instr.detector_lock(True)
         self.instr.do_trans()
         self.assertEqual("IN", g.cget("Tx_Mon")["value"])
         self.assertEqual("transmission", self.instr.measurement_type)
-        self.assertIn("detector8.dat", g.get_detector_table())
-        self.assertIn("wiring8.dat", g.get_wiring_table())
-        self.assertIn("spectra8.dat", g.get_spectra_table())
+        assert_tables(self, "detector8.dat", "wiring8.dat", "spectra8.dat")
 
     def test_WHEN_after_calling_do_trans_calling_do_sans_puts_instrument_is_in_sans_mode(self):
         self.instr.do_trans()
@@ -269,9 +231,7 @@ class TestInstrumentScriptsLOQ(unittest.TestCase):
         self.instr.do_sans()
         self.assertEqual("OUT", g.cget("Tx_Mon")["value"])
         self.assertEqual("sans", self.instr.measurement_type)
-        self.assertIn("detector35576_M4.dat", g.get_detector_table())
-        self.assertIn("wiring35576_M4.dat", g.get_wiring_table())
-        self.assertIn("spectra35576_M4.dat", g.get_spectra_table())
+        assert_tables(self, "detector35576_M4.dat", "wiring35576_M4.dat", "spectra35576_M4.dat")
 
     def test_WHEN_after_calling_do_sans_calling_do_trans_puts_instrument_is_in_trans_mode(self):
         self.instr.do_sans()
@@ -279,17 +239,7 @@ class TestInstrumentScriptsLOQ(unittest.TestCase):
         self.instr.do_trans()
         self.assertEqual("IN", g.cget("Tx_Mon")["value"])
         self.assertEqual("transmission", self.instr.measurement_type)
-        print(g.get_detector_table())
-        self.assertIn("detector8.dat", g.get_detector_table())
-        self.assertIn("wiring8.dat", g.get_wiring_table())
-        self.assertIn("spectra8.dat", g.get_spectra_table())
-
-    def test_WHEN_calling_do_sans_trans_with_time_starts_a_run(self):
-        run_num = g.get_runnumber()
-        self.instr.do_sans(title="TEST_RUN", time=10)
-        g.waitfor_runstate("SETUP", maxwaitsecs=30)
-        self.assertEquals(g.get_runstate(), "SETUP")
-        self.assertEquals(int(run_num) + 1, int(g.get_runnumber()))
+        assert_tables(self, "detector8.dat", "wiring8.dat", "spectra8.dat")
 
     def test_WHEN_calling_do_sans_with_a_custom_block_sets_block_correctly(self):
         # Use monitor block in absence of other block
@@ -302,7 +252,6 @@ class TestInstrumentScriptsLarmor(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        info("Larmor tests")
         g.set_instrument(None)
         utilities.load_config_if_not_already_loaded("instrument_scripts_larmor")
 
@@ -319,22 +268,16 @@ class TestInstrumentScriptsLarmor(unittest.TestCase):
         g.set_pv("MOT:MTR0507.VELO", 5, is_local=True)
 
     def test_WHEN_do_sans_is_called_instrument_is_in_sans_mode(self):
-        print("SANS TEST")
         self.instr.do_sans()
         self.assertEqual(200.0, g.cget("m4trans")["value"])
         self.assertEqual("sans", self.instr.measurement_type)
-        self.assertIn("detector.dat", g.get_detector_table())
-        self.assertIn("wiring_dae3_event.dat", g.get_wiring_table())
-        self.assertIn("spectra_1To1.dat", g.get_spectra_table())
+        assert_tables(self, "detector.dat", "wiring_dae3_event.dat", "spectra_1To1.dat")
 
     def test_WHEN_do_trans_is_called_instrument_is_in_trans_mode(self):
-        print("TRANS TEST")
         self.instr.do_trans()
         self.assertEqual(0.0, g.cget("m4trans")["value"])
         self.assertEqual("transmission", self.instr.measurement_type)
-        self.assertIn("detector_monitors_only.dat", g.get_detector_table())
-        self.assertIn("wiring_dae3_monitors_only.dat", g.get_wiring_table())
-        self.assertIn("spectra_monitors_only.dat", g.get_spectra_table())
+        assert_tables(self, "detector_monitors_only.dat", "wiring_dae3_monitors_only.dat", "spectra_monitors_only.dat")
 
     def test_WHEN_after_calling_do_trans_calling_do_sans_puts_instrument_is_in_sans_mode(self):
         self.instr.do_trans()
@@ -342,9 +285,7 @@ class TestInstrumentScriptsLarmor(unittest.TestCase):
         self.instr.do_sans()
         self.assertEqual(200.0, g.cget("m4trans")["value"])
         self.assertEqual("sans", self.instr.measurement_type)
-        self.assertIn("detector.dat", g.get_detector_table())
-        self.assertIn("wiring_dae3_event.dat", g.get_wiring_table())
-        self.assertIn("spectra_1To1.dat", g.get_spectra_table())
+        assert_tables(self, "detector.dat", "wiring_dae3_event.dat", "spectra_1To1.dat")
 
     def test_WHEN_after_calling_do_sans_calling_do_trans_puts_instrument_is_in_trans_mode(self):
         self.instr.do_sans()
@@ -352,13 +293,4 @@ class TestInstrumentScriptsLarmor(unittest.TestCase):
         self.instr.do_trans()
         self.assertEqual(0.0, g.cget("m4trans")["value"])
         self.assertEqual("transmission", self.instr.measurement_type)
-        self.assertIn("detector_monitors_only.dat", g.get_detector_table())
-        self.assertIn("wiring_dae3_monitors_only.dat", g.get_wiring_table())
-        self.assertIn("spectra_monitors_only.dat", g.get_spectra_table())
-
-    def test_WHEN_calling_do_sans_trans_with_time_starts_a_run(self):
-        run_num = g.get_runnumber()
-        self.instr.do_sans(title="TEST_RUN", time=10)
-        g.waitfor_runstate("SETUP", maxwaitsecs=30)
-        self.assertEquals(g.get_runstate(), "SETUP")
-        self.assertEquals(int(run_num) + 1, int(g.get_runnumber()))
+        assert_tables(self, "detector_monitors_only.dat", "wiring_dae3_monitors_only.dat", "spectra_monitors_only.dat")
