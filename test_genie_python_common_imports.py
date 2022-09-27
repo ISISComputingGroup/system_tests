@@ -24,7 +24,7 @@ class TestGeniePythonImports(unittest.TestCase):
         :return: None if no error on import, String describing error if there was an error.
         """
 
-        if module_name in IGNORED_MODULES:
+        if module_name in IGNORED_MODULES or module_name.startswith("_"):
             return None
 
         try:

@@ -4,25 +4,20 @@ Utilities for genie python system tests.
 
 import json
 import os
-import six
-import unittest
-import copy
 import timeit
+import unittest
+from time import sleep, time
 from typing import Callable
 
-from time import sleep, time
-
+import six
 # import genie either from the local project in pycharm or from virtual env
 from genie_python.channel_access_exceptions import UnableToConnectToPVException
-from mock import patch
 
 try:
     from source import genie_api_setup
     from source import genie as g
-    from source import genie_dae
 except ImportError:
     from genie_python import genie as g
-    from genie_python import genie_dae
     from genie_python import genie_api_setup
 
 # import genie utilities either from the local project in pycharm or from virtual env
@@ -94,15 +89,15 @@ def load_config_if_not_already_loaded(config_name):
         status = get_server_status()
         if status_was_busy and status == "":
             break
-        elif status is not None and status != "":
+        if status is not None and status != "":
             status_was_busy = True
         sleep(1)
-        print("Waiting for server: count {}".format(i))
+        print(f"Waiting for server: count {i}")
 
     current_config = _get_config_name()
     if current_config != config_name:
-        raise AssertionError("Couldn't change config to '{}' it is '{}'."
-                             "(Is this because that configs schema is invalid?)".format(config_name, current_config))
+        raise AssertionError(f"Couldn't change config to '{config_name}' it is '{current_config}'."
+                             "(Is this because that configs schema is invalid?)")
 
 
 def _get_config_name():
@@ -132,7 +127,7 @@ def get_config_details():
             return current_config
         except Exception as ex:
             sleep(1)
-            print("Waiting for config pv: count {}".format(i))
+            print(f"Waiting for config pv: count {i}")
             final_exception = ex
 
     raise final_exception
@@ -226,21 +221,23 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
         sleep(1.0)
     if g.get_dae_simulation_mode() != mode:
         sim_val = g.get_pv("DAE:SIM_MODE", is_local=True)
-        raise AssertionError("Could not set DAE simulation mode to {} - current SIM_MODE PV value is {}".format(mode, sim_val))
+        raise AssertionError(f"Could not set DAE simulation mode to {mode} - current SIM_MODE PV value is {sim_val}")
 
 
 def set_wait_for_complete_callback_dae_settings(wait):
     """ Sets the wait for completion callback attribute of the DAE
 
-    @param wait: Boolean value, True if you want the DAE to wait for the operation 
+    @param wait: Boolean value, True if you want the DAE to wait for the operation
     to complete before returning
     """
     genie_api_setup.__api.dae.wait_for_completion_callback_dae_settings = wait
+
 
 def temporarily_kill_icp():
     # Temporarily kills the ISIS ICP (ISIS DAE)
 
     return genie_api_setup.__api.dae.temporarily_kill_icp()
+
 
 def as_seconds(time):
     """
@@ -259,6 +256,7 @@ def as_seconds(time):
 
     return seconds
 
+
 def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
     """
     Start or stop and ioc dependent on whether it "is_a_start"
@@ -271,9 +269,52 @@ def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
 
     """
     if is_ioc_up(ioc_name) != is_a_start:
-        g.set_pv("CS:PS:{}:{}".format(ioc_name, "START" if is_a_start else "STOP"), 1, is_local=True)
+        g.set_pv(f"CS:PS:{ioc_name}:{'START' if is_a_start else 'STOP'}", 1, is_local=True)
 
     wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=is_a_start, ioc_name=ioc_name)
+
+
+def bulk_start_ioc(ioc_list):
+    """
+    start a list of IOCs in bulk
+    :param ioc_list: a list of the names of the IOCs to start
+    :return: a list of IOCs that failed to start after IOCS_START_STOP_TIMEOUT seconds
+            and a list of any IOCs that were not present in proc serv (this should be a very rare case)
+    """
+    failed_to_start = []
+    not_in_proc_serv = []
+    for ioc_name in ioc_list:
+        try:
+            if quick_is_ioc_down(ioc_name):
+                g.set_pv(f"CS:PS:{ioc_name}:START", 1, is_local=True)
+        except UnableToConnectToPVException:
+            not_in_proc_serv.append(ioc_name)
+            print(f"{ioc_name} not found in proc serv, should this be added to the list of iocs to skip?")
+    ioc_list = [ioc for ioc in ioc_list if ioc not in not_in_proc_serv]
+    for ioc_name in ioc_list:
+        try:
+            wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=True, ioc_name=ioc_name)
+        except IOError:
+            failed_to_start.append(ioc_name)
+    return failed_to_start, not_in_proc_serv
+
+
+def bulk_stop_ioc(ioc_list):
+    """
+    Stops a list of IOCs in bulk
+    :param ioc_list: a list of the names of the IOCs to stop
+    :raises: IOError if IOC does not stop after IOCS_START_STOP_TIMEOUT seconds
+    """
+    failed_to_stop = []
+    for ioc_name in ioc_list:
+        if not quick_is_ioc_down(ioc_name):
+            g.set_pv(f"CS:PS:{ioc_name}:STOP", 1, is_local=True)
+    for ioc_name in ioc_list:
+        try:
+            wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=False, ioc_name=ioc_name)
+        except IOError:
+            failed_to_stop.append(ioc_name)
+    return failed_to_stop
 
 
 def start_ioc(ioc_name):
@@ -314,13 +355,25 @@ def wait_for_ioc_start_stop(timeout, is_start, ioc_name):
     start_time = time()
     count = 0
     while count < timeout:
-        sleep(1.0)
         count = time() - start_time
-        print("Waited {}s for IOC to {}".format(count, "start" if is_start else "stop"))
         if is_ioc_up(ioc_name) == is_start:
+            if count > 0:
+                print(f"Waited {count}s for {ioc_name} to {'start' if is_start else 'stop'}")
             break
+        sleep(1.0)
     else:
-        raise IOError("IOC {} is not {}".format(ioc_name, "started" if is_start else "stopped"))
+        raise IOError(f"IOC {ioc_name} is not {'started' if is_start else 'stopped'}")
+
+
+def quick_is_ioc_down(ioc_name):
+    """
+    Determine if IOC is up by checking proc serv, cannot be used to make sure a PV has been started, but is
+    good enough for checks before attempting to start/stop
+    :param ioc_name:  The IOC to check
+    :return:  True if IOC is up; False otherwise
+    """
+    running = g.get_pv(f"CS:PS:{ioc_name}:STATUS", is_local=True)
+    return running == "Shutdown"
 
 
 def is_ioc_up(ioc_name):
@@ -332,7 +385,7 @@ def is_ioc_up(ioc_name):
     Returns: True if IOC is up; False otherwise
     """
     try:
-        heartbeat = g.get_pv("CS:IOC:{}:DEVIOS:HEARTBEAT".format(ioc_name), is_local=True)
+        heartbeat = g.get_pv(f"CS:IOC:{ioc_name}:DEVIOS:HEARTBEAT", is_local=True)
     except UnableToConnectToPVException:
         return False
     return heartbeat is not None
@@ -356,11 +409,10 @@ def wait_for_iocs_to_be_up(ioc_names, seconds_to_wait):
     while time() - start_time < seconds_to_wait:
         if all(is_ioc_up(ioc_name) for ioc_name in ioc_names):
             break
-        else:
-            sleep(1)
+        sleep(1)
     else:
         raise AssertionError(
-            "IOCs: {} could not be started.".format([ioc_name for ioc_name in ioc_names if not is_ioc_up(ioc_name)])
+            f"IOCs: {[ioc_name for ioc_name in ioc_names if not is_ioc_up(ioc_name)]} could not be started."
         )
 
 
@@ -389,10 +441,9 @@ def wait_for_string_pvs_to_not_be_empty(pvs, seconds_to_wait, is_local=True):
                 pv_values[pv] = new_value
         if all(pv_values.values()):
             break
-        else:
-            sleep(1)
+        sleep(1)
     else:
-        raise AssertionError("{} not available".format([pv for pv, value in pv_values.items() if not value]))
+        raise AssertionError(f"{[pv for pv, value in pv_values.items() if not value]} not available")
     return pv_values
 
 
@@ -413,9 +464,9 @@ def retry_on_failure(max_times):
                     return
                 except unittest.SkipTest:
                     raise
-                except Exception as e:
-                    print("\nTest failed (attempt {} of {}). Retrying...".format(attempt + 1, max_times))
-                    err = e
+                except Exception as exception:
+                    print(f"\nTest failed (attempt {attempt + 1} of {max_times}). Retrying...")
+                    err = exception
             if err is not None:
                 raise err
 
@@ -452,12 +503,12 @@ def retry_assert(retry_limit: int, func: Callable[[], None]):
         AssertionError: If the function fails in every retry.
     """
     error = None
-    for i in range(retry_limit):
+    for _ in range(retry_limit):
         try:
             func()
             break
-        except AssertionError as newError:
-            error = newError
+        except AssertionError as new_error:
+            error = new_error
         sleep(1)
     else:
         raise error
@@ -477,7 +528,7 @@ def get_execution_time(method):
     method()
     stop = timeit.default_timer()
 
-    execution_time = stop-start
+    execution_time = stop - start
 
     return execution_time
 
