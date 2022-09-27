@@ -6,7 +6,7 @@ from typing import Callable
 from genie_python.utilities import compress_and_hex
 
 from utilities import utilities
-from utilities.utilities import parameterized_list
+from utilities.utilities import parameterized_list, assert_with_timeout
 import time
 from genie_python import genie as g
 import requests
@@ -17,18 +17,6 @@ from parameterized import parameterized
 
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
 
-
-def assert_with_timeout(assertion: Callable, timeout: int):
-    err = None
-    for _ in range(timeout):
-        try:
-            assertion()
-            break
-        except AssertionError as e:
-            err = e
-            time.sleep(1)
-    else:
-        raise err
 
 def wait_for_server():
     status_was_busy = False

@@ -25,6 +25,8 @@ import unittest
 import shutil
 import xmlrunner
 import argparse
+from utilities import utilities
+from genie_python import genie as g
 
 
 SCRIPT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__)))
@@ -72,19 +74,31 @@ if __name__ == '__main__':
         for file_or_dir in os.listdir(src):
             file_or_dir_dest = os.path.join(dest, file_or_dir)
             file_or_dir_src = os.path.join(src, file_or_dir)
+
             for _ in range(NUM_RETRY_DELETION):
                 try:
                     if os.path.isdir(file_or_dir_src):
                         shutil.rmtree(file_or_dir_dest, True)
-                    else:
+                        # If we don't break it will attempt delete what it just deleted
+                        break
+                    elif os.path.isfile(file_or_dir_dest):
                         os.remove(file_or_dir_dest)
+                        break
+                    else:
+                        print(f"File {file_or_dir_dest} does not exist")
+                        break
                 except OSError as e:
-                    print("Error deleting file {} exception message is {}".format(file_or_dir_dest, e))
+                    print(f"Error deleting file {file_or_dir_dest} exception message is {e}")
                 time.sleep(2)
             if os.path.isdir(file_or_dir_src):
                 shutil.copytree(file_or_dir_src, file_or_dir_dest)
             else:
                 shutil.copy(file_or_dir_src, dest)
+
+    g.set_instrument(None)
+    utilities.wait_for_iocs_to_be_up(["ISISDAE_01"], 300)
+    utilities.load_config_if_not_already_loaded("empty_for_system_tests")
+
 
     print("\n\n------ BEGINNING genie_python SYSTEM TESTS ------")
     ret_vals = list()

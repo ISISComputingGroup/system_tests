@@ -531,3 +531,16 @@ def get_execution_time(method):
     execution_time = stop - start
 
     return execution_time
+
+
+def assert_with_timeout(assertion: Callable, timeout: int):
+    err = None
+    for _ in range(timeout):
+        try:
+            assertion()
+            break
+        except AssertionError as e:
+            err = e
+            sleep(1)
+    else:
+        raise err
