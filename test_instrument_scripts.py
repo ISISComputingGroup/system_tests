@@ -112,11 +112,11 @@ class TestInstrumentScriptsSans2d(unittest.TestCase):
         utilities.assert_with_timeout(lambda: self.assertEqual(g.get_title(), "TRANS_TEST_TRANS"), timeout=30)
 
     def test_WHEN_calling_do_sans_with_position_sets_position_correctly(self):
-        self.instr.do_sans(position="BT")
+        self.instr.do_sans(pos="BT")
         utilities.assert_with_timeout(lambda: self.assertEqual(self.instr.changer_pos, "BT"), timeout=30)
 
         with self.assertRaises(RuntimeError):
-            self.instr.do_sans(position="BAD_POSITION")
+            self.instr.do_sans(pos="BAD_POSITION")
         utilities.assert_with_timeout(lambda: self.assertEqual(self.instr.changer_pos, "BT"), timeout=30)
 
     def test_WHEN_calling_do_sans_with_thickness_set_thickness_correctly(self):
@@ -124,10 +124,10 @@ class TestInstrumentScriptsSans2d(unittest.TestCase):
         self.assertEqual(2.0, g.get_sample_pars()['THICK'])
 
     def test_WHEN_calling_do_sans_with_dls_sample_changer_sets_position_correctly(self):
-        self.instr.do_sans(position="DLS2", dls_sample_changer=True)
+        self.instr.do_sans(pos="DLS2", dls_sample_changer=True)
         utilities.assert_with_timeout(lambda: self.assertEqual(self.instr.changer_pos_dls, "DLS2"), timeout=30)
         with self.assertRaises(RuntimeError):
-            self.instr.do_sans(position="BAD_POSITION", dls_sample_changer=True)
+            self.instr.do_sans(pos="BAD_POSITION", dls_sample_changer=True)
         utilities.assert_with_timeout(lambda: self.assertEqual(self.instr.changer_pos_dls, "DLS2"), timeout=30)
 
     def test_WHEN_do_sans_with_aperture_sets_aperture_correctly(self):
@@ -156,13 +156,13 @@ class TestInstrumentScriptsZOOM(unittest.TestCase):
 
     def test_WHEN_do_sans_is_called_instrument_is_in_sans_mode(self):
         self.instr.do_sans()
-        utilities.assert_with_timeout(lambda: self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
+        utilities.assert_with_timeout(lambda: self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4", is_local=True)), timeout=30)
         self.assertEqual("sans", self.instr.measurement_type)
         assert_tables(self, "detector_1det_1dae3card.dat", "wiring1det_event_200218.dat", "spec2det_280318_to_test_18_1.txt")
 
     def test_WHEN_do_trans_is_called_instrument_is_in_trans_mode(self):
         self.instr.do_trans()
-        utilities.assert_with_timeout(lambda: self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
+        utilities.assert_with_timeout(lambda: self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4", is_local=True)), timeout=30)
         self.assertEqual("transmission", self.instr.measurement_type)
         assert_tables(self, "detector_8mon_1dae3card_00.dat", "wiring_8mon_1dae3card_00_hist.dat", "spectrum_8mon_1dae3card_00.dat")
 
@@ -170,7 +170,7 @@ class TestInstrumentScriptsZOOM(unittest.TestCase):
         self.instr.do_trans()
 
         self.instr.do_sans()
-        utilities.assert_with_timeout(lambda: self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
+        utilities.assert_with_timeout(lambda: self.assertEqual("EXTRACTED", g.get_pv("VACUUM:MONITOR:4", is_local=True)), timeout=30)
         self.assertEqual("sans", self.instr.measurement_type)
         assert_tables(self, "detector_1det_1dae3card.dat", "wiring1det_event_200218.dat", "spec2det_280318_to_test_18_1.txt")
 
@@ -178,7 +178,7 @@ class TestInstrumentScriptsZOOM(unittest.TestCase):
         self.instr.do_sans()
 
         self.instr.do_trans()
-        utilities.assert_with_timeout(lambda: self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4:SP", is_local=True)), timeout=30)
+        utilities.assert_with_timeout(lambda: self.assertEqual("INSERTED", g.get_pv("VACUUM:MONITOR:4", is_local=True)), timeout=30)
         self.assertEqual("transmission", self.instr.measurement_type)
         assert_tables(self, "detector_8mon_1dae3card_00.dat", "wiring_8mon_1dae3card_00_hist.dat", "spectrum_8mon_1dae3card_00.dat")
 
