@@ -78,7 +78,7 @@ pipeline {
             ) else if \"%MYJOB%\" == \"System_Tests_release\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat RELEASE
             ) else if \"%MYJOB%\" == \"System_Tests_win32\" (
-                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN x86
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS x86
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
