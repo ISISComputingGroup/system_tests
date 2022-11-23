@@ -148,7 +148,9 @@ pipeline {
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
 				)
                 call clean_files.bat
-                call run_tests.bat
+				if \"%MYJOB%\" != \"System_Tests_win32\" (
+					call run_tests.bat
+				)
                 set errcode1=%errorlevel%
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
