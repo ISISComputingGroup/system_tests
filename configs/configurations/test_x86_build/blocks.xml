@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <blocks xmlns="http://epics.isis.rl.ac.uk/schema/blocks/1.0" xmlns:blk="http://epics.isis.rl.ac.uk/schema/blocks/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
 	<block>
-		<name>NEW_BLOCK</name>
+		<name>SIMPLE_BLOCK_1</name>
 		<read_pv>SIMPLE:VALUE1</read_pv>
 		<local>True</local>
 		<visible>True</visible>
