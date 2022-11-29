@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<meta>
+	<description>config for testing 32 bit builds</description>
+	<synoptic>-- NONE --</synoptic>
+	<edits>
+		<edit>2022-11-29 11:01:49</edit>
+		<edit>2022-11-29 11:05:13</edit>
+		<edit>2022-11-29 11:22:06</edit>
+	</edits>
+	<isProtected>false</isProtected>
+	<isDynamic>false</isDynamic>
+	<configuresBlockGWAndArchiver>false</configuresBlockGWAndArchiver>
+</meta>
