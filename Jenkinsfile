@@ -148,7 +148,9 @@ pipeline {
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
 				)
                 call clean_files.bat
-				if not \"%MYJOB%\" == \"System_Tests_win32\" (
+				if \"%MYJOB%\" == \"System_Tests_win32\" (
+					call run_tests.bat -t test_x86_build
+				) else (
 					call run_tests.bat
 				)
                 set errcode1=%errorlevel%
