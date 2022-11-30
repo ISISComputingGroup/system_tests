@@ -96,7 +96,7 @@ if __name__ == '__main__':
                 shutil.copy(file_or_dir_src, dest)
 
     g.set_instrument(None)
-    utilities.wait_for_iocs_to_be_up(["ISISDAE_01"], 300)
+    utilities.wait_for_iocs_to_be_up(["INSTETC_01"], 300)
     utilities.load_config_if_not_already_loaded("empty_for_system_tests")
 
 

@@ -385,7 +385,7 @@ def is_ioc_up(ioc_name):
     Returns: True if IOC is up; False otherwise
     """
     try:
-        heartbeat = g.get_pv(f"CS:IOC:{ioc_name}:DEVIOS:HEARTBEAT", is_local=True)
+        heartbeat = g.get_pv(f"CS:IOC:{ioc_name}:DEVIOS:TOD", is_local=True)
     except UnableToConnectToPVException:
         return False
     return heartbeat is not None
