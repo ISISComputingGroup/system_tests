@@ -47,6 +47,7 @@ class Testx86Builds(unittest.TestCase):
         BLOCK_NAME = "SIMPLE_BLOCK_1"
         BLOCK_PV = "SIMPLE:HELLO"
         LOCAL_CAGET_EXE = "caget.exe"
+        LOCAL_x86_CAGET = os.path.join(r"C:\\", "Instrument", "Apps", "EPICS", "base", "master", "bin", "win32-x86", "caget.exe")
 
         utilities.load_config_if_not_already_loaded("test_x86_build")
 
@@ -54,11 +55,17 @@ class Testx86Builds(unittest.TestCase):
         CAGET_PATH = self._get_latest_static_build()
         shutil.copyfile(CAGET_PATH, LOCAL_CAGET_EXE)
         
-        # get and parse value from caget
+        # get and parse value from x64 caget
         result = subprocess.run([LOCAL_CAGET_EXE, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
         result = self._parse_caget_output(result.stdout.decode())
-       
+        
         # remove the local x64 caget file
         os.remove(LOCAL_CAGET_EXE)
+
+        self.assertEqual(result.strip(), g.cget(BLOCK_NAME)["value"])
+
+        # get and parse value from x32 caget
+        result = subprocess.run([LOCAL_x86_CAGET, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
+        result = self._parse_caget_output(result.stdout.decode())
 
         self.assertEqual(result.strip(), g.cget(BLOCK_NAME)["value"])
