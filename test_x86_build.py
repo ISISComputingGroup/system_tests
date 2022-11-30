@@ -6,6 +6,13 @@ from genie_python import genie as g
 
 from utilities import utilities
 
+
+
+BLOCK_NAME = "SIMPLE_BLOCK_1"
+BLOCK_PV = "SIMPLE:HELLO"
+LOCAL_CAGET_EXE = "caget.exe"
+LOCAL_x86_CAGET = os.path.join(r"C:\\", "Instrument", "Apps", "EPICS", "base", "master", "bin", "win32-x86", "caget.exe")
+
 class Testx86Builds(unittest.TestCase):
     """
     Tests to test the 32 bit builds
@@ -44,28 +51,40 @@ class Testx86Builds(unittest.TestCase):
         return out_string[-index:]
 
     def test_GIVEN_a_x86_IOC_and_gateway_THEN_a_x64_client_can_read_from_them(self):
-        BLOCK_NAME = "SIMPLE_BLOCK_1"
-        BLOCK_PV = "SIMPLE:HELLO"
-        LOCAL_CAGET_EXE = "caget.exe"
-        LOCAL_x86_CAGET = os.path.join(r"C:\\", "Instrument", "Apps", "EPICS", "base", "master", "bin", "win32-x86", "caget.exe")
-
         utilities.load_config_if_not_already_loaded("test_x86_build")
+
+        result = ""
 
         # copy the x64 caget file locally
         CAGET_PATH = self._get_latest_static_build()
-        shutil.copyfile(CAGET_PATH, LOCAL_CAGET_EXE)
+        try:
+            shutil.copyfile(CAGET_PATH, LOCAL_CAGET_EXE)
+        except Exception as e:
+            print("Failed to copy x64 caget file from share")
+            raise e
         
         # get and parse value from x64 caget
-        result = subprocess.run([LOCAL_CAGET_EXE, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
-        result = self._parse_caget_output(result.stdout.decode())
+        try:
+            result = subprocess.run([LOCAL_CAGET_EXE, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
+            result = self._parse_caget_output(result.stdout.decode())
+        except Exception as e:
+            print(f"A local copy of the command {CAGET_PATH} {g.prefix_pv_name(BLOCK_PV)} failed to execute: {e}")
         
         # remove the local x64 caget file
         os.remove(LOCAL_CAGET_EXE)
 
         self.assertEqual(result.strip(), g.cget(BLOCK_NAME)["value"])
 
-        # get and parse value from x32 caget
-        result = subprocess.run([LOCAL_x86_CAGET, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
-        result = self._parse_caget_output(result.stdout.decode())
+    def test_GIVEN_a_x86_IOC_and_gateway_THEN_a_x86_client_can_read_from_them(self):
+        utilities.load_config_if_not_already_loaded("test_x86_build")
 
+        result = ""
+
+        # get and parse value from x32 caget
+        try:
+            result = subprocess.run([LOCAL_x86_CAGET, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
+            result = self._parse_caget_output(result.stdout.decode())
+        except Exception as e:
+            print(f"The command {LOCAL_x86_CAGET} {g.prefix_pv_name(BLOCK_PV)} failed to execute: {e}")
+            
         self.assertEqual(result.strip(), g.cget(BLOCK_NAME)["value"])
