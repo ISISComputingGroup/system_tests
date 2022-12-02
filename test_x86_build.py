@@ -10,29 +10,28 @@ from utilities import utilities
 
 BLOCK_NAME = "SIMPLE_BLOCK_1"
 BLOCK_PV = "SIMPLE:HELLO"
-LOCAL_CAGET_EXE = "caget.exe"
-LOCAL_x86_CAGET = os.path.join(r"C:\\", "Instrument", "Apps", "EPICS", "base", "master", "bin", "win32-x86", "caget.exe")
+CAGET_EXE = "caget.exe"
 
 class Testx86Builds(unittest.TestCase):
     """
     Tests to test the 32 bit builds
     """
-    
-    def _get_latest_static_build(self):
+        
+    def _get_local_caget_path(self):
         """
-        Helper function to get the path of caget from the latest static x64 EPICS build
+        Helper function to get the caget path from the current build
         """
-        INST_SHARE_AREA = os.path.join(r"\\isis.cclrc.ac.uk", "inst$", "Kits$", "CompGroup", "ICP", "EPICS", 
-                "EPICS_STATIC_CLEAN_win7_x64")
-        CAGET_PATH = os.path.join("EPICS", "base", "master", "bin", "windows-x64-static", "caget.exe")
-        BUILD_DIR = "BUILD-"
+        BIN_PATH = os.path.join(r"C:\\", "Instrument", "Apps", "EPICS", "base", "master", "bin")
+        # give a default EPICS build of windows 64 bit
+        host_arch = "windows-x64" 
 
-        latest_build = os.path.join(INST_SHARE_AREA, "LATEST_BUILD.txt")
-        with open(latest_build, 'r') as file:
-            content = file.read().strip()
+        if 'EPICS_HOST_ARCH' in os.environ:
+            host_arch = os.environ['EPICS_HOST_ARCH']
+        else:
+            print(f"Warning: EPICS_HOST_ARCH not set. Using default value of '{host_arch}'")
         
-        return os.path.join(INST_SHARE_AREA, BUILD_DIR + content, CAGET_PATH)
-        
+        return os.path.join(BIN_PATH, host_arch, CAGET_EXE)
+
     def _parse_caget_output(self, out_string):
         """
         Helper function to the parse output of a caget to get just the value
@@ -50,41 +49,35 @@ class Testx86Builds(unittest.TestCase):
         
         return out_string[-index:]
 
-    def test_GIVEN_a_x86_IOC_and_gateway_THEN_a_x64_client_can_read_from_them(self):
+    # This test will run on both build architectures but is implemented to check x86 IOCs can communicate with a x64 client
+    def test_GIVEN_a_local_IOC_and_gateway_THEN_a_x64_client_can_read_from_them(self):
         utilities.load_config_if_not_already_loaded("test_x86_build")
 
         result = ""
 
-        # copy the x64 caget file locally
-        CAGET_PATH = self._get_latest_static_build()
-        try:
-            shutil.copyfile(CAGET_PATH, LOCAL_CAGET_EXE)
-        except Exception as e:
-            print("Failed to copy x64 caget file from share")
-            raise e
-        
         # get and parse value from x64 caget
         try:
-            result = subprocess.run([LOCAL_CAGET_EXE, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
+            result = subprocess.run([CAGET_EXE, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
             result = self._parse_caget_output(result.stdout.decode())
         except Exception as e:
-            print(f"A local copy of the command {CAGET_PATH} {g.prefix_pv_name(BLOCK_PV)} failed to execute: {e}")
+            print(f"The command {os.path.join(os.getcwd(), CAGET_EXE)} {g.prefix_pv_name(BLOCK_PV)} failed to execute.")
+            print(e)
         
-        # remove the local x64 caget file
-        os.remove(LOCAL_CAGET_EXE)
-
         self.assertEqual(result.strip(), g.cget(BLOCK_NAME)["value"])
 
-    def test_GIVEN_a_x86_IOC_and_gateway_THEN_a_x86_client_can_read_from_them(self):
+    # This test will run on both build architectures but is implemented to check x86 IOCs can communicate with a x86 client
+    def test_GIVEN_a_local_IOC_and_gateway_THEN_the_local_client_can_read_from_them(self):
         utilities.load_config_if_not_already_loaded("test_x86_build")
 
+        LOCAL_CAGET = self._get_local_caget_path()
         result = ""
 
-        # get and parse value from x32 caget
+        # get and parse value from local caget
         try:
-            result = subprocess.run([LOCAL_x86_CAGET, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
+            result = subprocess.run([LOCAL_CAGET, g.prefix_pv_name(BLOCK_PV)], capture_output=True)
             result = self._parse_caget_output(result.stdout.decode())
         except Exception as e:
-            print(f"The command {LOCAL_x86_CAGET} {g.prefix_pv_name(BLOCK_PV)} failed to execute: {e}")
+            print(f"The command {LOCAL_CAGET} {g.prefix_pv_name(BLOCK_PV)} failed to execute.")
+            print(e)
             
         self.assertEqual(result.strip(), g.cget(BLOCK_NAME)["value"])
