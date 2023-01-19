@@ -42,6 +42,20 @@ class TestBlockserver(unittest.TestCase):
         self.config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs", "configurations")
         self.block_archive_blocks_url = "http://localhost:4813/group?name=BLOCKS&format=json"
 
+    def test_GIVEN_config_changes_THEN_dae_and_instetc_come_back_with_autorestart_reapplied(self):
+        g.reload_current_config()
+        iocs_to_check = ["ISISDAE_01", "INSTETC_01"]
+        utilities.wait_for_iocs_to_be_up(iocs_to_check, SECONDS_TO_WAIT_FOR_IOC_STARTS)
+
+        # give the blockserver some time to reapply autorestart
+        time.sleep(10)
+
+        for ioc in iocs_to_check:
+            status = g.get_pv(f"CS:PS:{ioc}:STATUS", is_local=True)
+            autorestart = g.get_pv(f"CS:PS:{ioc}:AUTORESTART", is_local=True)
+            self.assertEqual(status.lower(), "running")
+            self.assertEqual(autorestart.lower(), "on")
+
     def test_GIVEN_config_changes_by_block_THEN_iocs_do_not_restart_except_for_caenv895(self):
         utilities.load_config_if_not_already_loaded("test_blockserver")
 
