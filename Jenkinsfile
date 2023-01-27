@@ -201,7 +201,7 @@ pipeline {
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
             rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            rd /q /s %WORKSPACE:/=\%\\my_venv>NUL
+            rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL
             @echo Finished cleanup on node ${env.NODE_NAME}
             exit /b 0
         """
