@@ -75,8 +75,9 @@ pipeline {
             )
             if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
                 call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+            ) else (
+                md C:\\Instrument\\Apps\\EPICS-%MYJOB%
             )
-            md C:\\Instrument\\Apps\\EPICS-%MYJOB%
             if not exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
                 @echo unable to create C:\\Instrument\\Apps\\EPICS-%MYJOB%
                 exit /b 1
