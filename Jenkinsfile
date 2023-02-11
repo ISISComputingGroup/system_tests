@@ -103,6 +103,7 @@ pipeline {
             IF %errorlevel% NEQ 0 (
                 @echo ERROR unable to install ibex - error code %errorlevel%
                 call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+                rmdir "C:\\Instrument\\Apps\\EPICS"
                 exit /b 1
             )
             """
@@ -184,6 +185,7 @@ pipeline {
             REM stop ibex server will already have been called if needed
             REM we could try and cleanup EPICS-%MYJOB% but unless we are short of disk space
             REM leaving it gives us a stop_ibex_server there for next job run
+            rmdir "C:\\Instrument\\Apps\\EPICS"
             rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL
             @echo Finished cleanup on node ${env.NODE_NAME}
             exit /b 0
