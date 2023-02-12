@@ -153,8 +153,10 @@ pipeline {
                 rmdir "C:\\Instrument\\Apps\\EPICS"
                 @echo Finished running tests on node ${env.NODE_NAME}
                 if %errcode1% NEQ 0 (
+                    @echo FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
                     exit /b %errcode1%
                 )
+                @echo FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
                 exit /b %errcode2%
              """
           }
