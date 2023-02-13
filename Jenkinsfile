@@ -87,6 +87,7 @@ pipeline {
                 @echo unable to create junction from C:\\Instrument\\Apps\\EPICS to C:\\Instrument\\Apps\\EPICS-%MYJOB%
                 exit /b 1
             )
+            dir C:\\Instrument\\Apps
             if \"%MYJOB%\" == \"System_Tests_debug\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_static\" (
@@ -106,6 +107,7 @@ pipeline {
                 rmdir "C:\\Instrument\\Apps\\EPICS"
                 exit /b 1
             )
+            dir C:\\Instrument\\Apps
             """
          }
         }
