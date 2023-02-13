@@ -69,6 +69,24 @@ pipeline {
                 @echo Removing EPICS directory link
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
+            if exist "C:\\Instrument\\Apps\\EPICS" (
+                echo ERROR Unable to remove EPICS
+                exit /b 1
+            )
+            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+            ) else (
+                md C:\\Instrument\\Apps\\EPICS-%MYJOB%
+            )
+            if not exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                @echo unable to create C:\\Instrument\\Apps\\EPICS-%MYJOB%
+                exit /b 1
+            )
+            mklink /j C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
+            if %errorlevel% NEQ 0 (
+                @echo unable to create junction from C:\\Instrument\\Apps\\EPICS to C:\\Instrument\\Apps\\EPICS-%MYJOB%
+                exit /b 1
+            )
             if \"%MYJOB%\" == \"System_Tests_debug\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_static\" (
@@ -82,38 +100,11 @@ pipeline {
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
-            REM preserve error code as we need always need to rename EPICS directory
-            set insterr=%errorlevel%
-	    REM call stop in case anything running from before e.g. just in time debug window
-            call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
-            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
-                REM Retry delete multiple times as sometimes fails
-                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            )
-            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
-                echo ERROR Unable to remove EPICS-%MYJOB%
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+            IF %errorlevel% NEQ 0 (
+                @echo ERROR unable to install ibex - error code %errorlevel%
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+                rmdir "C:\\Instrument\\Apps\\EPICS"
                 exit /b 1
-            )
-            move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
-            set moveerr=%errorlevel%
-            IF %insterr% NEQ 0 (
-                @echo ERROR unable to install ibex - error code %insterr%
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                exit /b %insterr%
-            )
-            IF %moveerr% NEQ 0 (
-                @echo ERROR unable to rename EPICS directory to EPICS-%MYJOB% - error code %moveerr%
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                exit /b %moveerr%
             )
             """
          }
@@ -126,8 +117,8 @@ pipeline {
            timeout(time: 1800, unit: 'MINUTES') {
               bat """
                 set \"MYJOB=${env.JOB_NAME}\"
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
                 if exist "C:\\Instrument\\Apps\\EPICS" (
-                    call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                     rmdir "C:\\Instrument\\Apps\\EPICS"
                 )
                 del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
@@ -144,9 +135,9 @@ pipeline {
                 @echo Running system tests on node ${env.NODE_NAME}
                 if \"%MYJOB%\" == \"System_Tests_release\" (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
-				) else (
+                ) else (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
-				)
+                )
                 call clean_files.bat
                 call run_tests.bat
                 set errcode1=%errorlevel%
@@ -163,10 +154,10 @@ pipeline {
                 rmdir "C:\\Instrument\\Apps\\EPICS"
                 @echo Finished running tests on node ${env.NODE_NAME}
                 if %errcode1% NEQ 0 (
-		    @echo FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
+                    @echo FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
                     exit /b %errcode1%
                 )
-		@echo FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
+                @echo FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
                 exit /b %errcode2%
              """
           }
@@ -194,16 +185,10 @@ pipeline {
         bat """
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Started cleanup on node ${env.NODE_NAME}
-            REM not ideal to call without lock, and retaking lock may be a potential race condition
-            REM however the directory junction will only exist if the previous step times out      
-            REM we do not remove or use a path with C:\\Instrument\\Apps\\EPICS as e.g. a build
-            REM may have started and changed it
-            if exist "C:\\Instrument\\Apps\\EPICS" (
-                call "C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat"
-            )
-            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
+            REM stop ibex server will already have been called if needed
+            REM we could try and cleanup EPICS-%MYJOB% but unless we are short of disk space
+            REM leaving it gives us a stop_ibex_server there for next job run
+            rmdir "C:\\Instrument\\Apps\\EPICS"
             rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL
             @echo Finished cleanup on node ${env.NODE_NAME}
             exit /b 0
