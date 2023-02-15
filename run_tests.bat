@@ -6,16 +6,16 @@ set /P BASE_MEMORY_USAGE=<base_line_memory.txt
 call %EPICS_ROOT%\start_ibex_server.bat
 set "PYTHONUNBUFFERED=1"
 set "exitcode=0"
-python "%~dp0run_tests.py" %*
+python -u "%~dp0run_tests.py" %*
 IF %errorlevel% NEQ 0 (
-	set exitcode=%errorlevel%
-    echo "running base tests failed."
-	goto finish
+    set exitcode=%errorlevel%
+    echo ERROR - Running base tests failed with code %errorlevel%
+    goto finish
 )
 call %EPICS_ROOT%\ISIS\JournalParser\master\test\run_tests.bat
 IF %errorlevel% NEQ 0 (
     set exitcode=%errorlevel%
-    echo "running journal tests failed."
+    echo ERROR - running journal tests failed with code %errorlevel%
     goto finish
 )
 
