@@ -141,8 +141,11 @@ pipeline {
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
                 )
                 call clean_files.bat
+                @echo FIRST PART OF TESTS STARTED
                 call run_tests.bat
                 set errcode1=%errorlevel%
+                @echo FIRST PART OF TESTS FINISHED WITH CODE %errcode1%
+                @echo SECOND PART OF TESTS STARTED
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
@@ -151,6 +154,7 @@ pipeline {
                 make -i ioctests
                 set errcode2=%errorlevel%
                 popd
+                @echo SECOND PART OF TESTS FINISHED WITH CODE %errcode2%
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
                 @echo Finished running tests on node ${env.NODE_NAME}
