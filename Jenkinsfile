@@ -149,9 +149,10 @@ pipeline {
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
-                REM we need to pass -i to ignore build errors or we will stop on first test failure
-                REM overall build status will still fail due to junit
-                make -i ioctests
+                REM make will stop on first test failure as python will return an error. We can pass -i to make to ignore
+		REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
+		REM the case when python crashes with no XML output. So we will move back to not using -i for now
+                make ioctests
                 set errcode2=%errorlevel%
                 popd
                 @echo SECOND PART OF TESTS FINISHED WITH CODE %errcode2%
