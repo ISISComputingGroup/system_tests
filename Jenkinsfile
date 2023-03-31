@@ -108,7 +108,7 @@ pipeline {
                 exit /b 1
             )
             dir C:\\Instrument\\Apps
-			call \\isis.cclrc.ac.uk\inst$\Kits$\CompGroup\ICP\genie_python_3\branches\update_cachannel_epics\BUILD-15\genie_python_install.bat
+			call \\\\isis.cclrc.ac.uk\\inst$\\Kits$\\CompGroup\\ICP\\genie_python_3\\branches\\update_cachannel_epics\\BUILD-15\\genie_python_install.bat
             """
          }
         }
