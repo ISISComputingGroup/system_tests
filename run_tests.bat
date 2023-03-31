@@ -12,14 +12,13 @@ for /D %%I in ( "C:\Program Files (x86)\Windows Kits\*" ) do (
     if exist "%%I\Debuggers\x64\cdb.exe" SET "WINDBG=%%I\Debuggers\x64\cdb.exe"
 )
 
-REM disable windbg as non-interactive jenkins
-if not "%WINDBG%" == "" (
-    REM we use the python3 executable rather than python as this allows us to
-    REM configure the applicatrion verifier for python3.exe and we don't get
-    REM a lot of logs every time tests spawn python.exe for e.g. emulators
+REM we use the python3 executable rather than python as this allows us to
+REM configure the applicatrion verifier for python3.exe and we don't get
+REM a lot of logs every time tests spawn python.exe for e.g. emulators
+if not "%yyyWINDBG%" == "" (
     "%WINDBG%" -g -xd av -xd ch -xd sov "c:\instrument\Apps\python3\python3.exe" -u "%~dp0run_tests.py" %*
 ) else (
-    "%PYTHON3%" -u "%~dp0run_tests.py" %*
+    "c:\instrument\Apps\python3\python3.exe" -u "%~dp0run_tests.py" %*
 )
 IF %errorlevel% NEQ 0 (
     set exitcode=%errorlevel%
