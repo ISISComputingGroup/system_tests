@@ -18,7 +18,8 @@ REM a lot of logs every time tests spawn python.exe for e.g. emulators
 if not "%yyyWINDBG%" == "" (
     "%WINDBG%" -g -xd av -xd ch -xd sov "c:\instrument\Apps\python3\python3.exe" -u "%~dp0run_tests.py" %*
 ) else (
-    "c:\instrument\Apps\python3\python3.exe" -u "%~dp0run_tests.py" %*
+REM    "c:\instrument\Apps\python3\python3.exe" -u "%~dp0run_tests.py" %*
+    "%PYTHON3%" -u "%~dp0run_tests.py" %*
 )
 IF %errorlevel% NEQ 0 (
     set exitcode=%errorlevel%
