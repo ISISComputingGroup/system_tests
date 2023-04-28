@@ -108,6 +108,7 @@ pipeline {
                 exit /b 1
             )
             dir C:\\Instrument\\Apps
+            call \\\\isis.cclrc.ac.uk\\inst\$\\Kits\$\\CompGroup\\ICP\\genie_python_3\\branches\\update_cachannel_epics\\BUILD-22\\genie_python_install.bat
             """
          }
         }
@@ -150,8 +151,8 @@ pipeline {
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
                 REM make will stop on first test failure as python will return an error. We can pass -i to make to ignore
-		REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
-		REM the case when python crashes with no XML output. So we will move back to not using -i for now
+                REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
+                REM the case when python crashes with no XML output. So we will move back to not using -i for now
                 make ioctests
                 set errcode2=%errorlevel%
                 popd
