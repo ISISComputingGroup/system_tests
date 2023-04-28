@@ -180,6 +180,8 @@ class TestDae(unittest.TestCase):
 
             # There could be some samples at the beginning/end but we only care about the ones we've set
             first_value_index = values.index(test_values[0])
+            print(f"first_value_index={first_value_index}, len(values)={len(values)}")
+            self.assertTrue((first_value_index + len(test_values) + 1) <= len(values), "Not enough value/value_valid items logged to file")
 
             # Only care about test values and the final invalid one
             is_valid = is_valid[first_value_index:first_value_index + len(test_values) + 1]
@@ -192,6 +194,8 @@ class TestDae(unittest.TestCase):
             alarm_severity = alarm_severity[first_alarm_index:final_alarm_index]
             alarm_status = alarm_status[first_alarm_index:final_alarm_index]
             alarm_time = alarm_time[first_alarm_index:final_alarm_index]
+
+            print(f"len(is_valid)={len(is_valid)} first_alarm_index={first_alarm_index} len(alarm_severity)={len(alarm_severity)}")
 
             self.assertTrue(len(is_valid) == len(test_values) + 1, "Not enough values/value_valid items logged to file")
             self.assertTrue(len(alarm_severity) == len(test_values) + 1,"Not enough alarm status/severity items logged to file")
