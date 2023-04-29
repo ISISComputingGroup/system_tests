@@ -656,6 +656,8 @@ class TestDae(unittest.TestCase):
         # Calculating expected runtime with sleep_time between begin and end, and runtimes of begin() and end()
         expected = total_sleep_time + begin_runtime
 
+        print(f"Time since begin {actual_s} expected {expected}")
+
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
         self.assertAlmostEqual(expected, actual_s, delta=tolerance)  # if this fails, then will print the two values
         self.assertTrue(abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=tolerance))
