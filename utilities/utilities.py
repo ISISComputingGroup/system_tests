@@ -196,7 +196,9 @@ def setup_simulated_wiring_tables(event_data=False):
     g.change_tcb(0, 10000, 100)
     if event_data:
         g.change_tcb(0, 10000, 100, regime=2)
+    g.change_number_soft_periods(1)
     g.change_finish()
+    g.change_period(1)
     set_genie_python_raises_exceptions(False)
 
 
@@ -384,8 +386,9 @@ def is_ioc_up(ioc_name):
 
     Returns: True if IOC is up; False otherwise
     """
+    pv = f"CS:IOC:{ioc_name}:DEVIOS:HEARTBEAT"
     try:
-        heartbeat = g.get_pv(f"CS:IOC:{ioc_name}:DEVIOS:HEARTBEAT", is_local=True)
+        heartbeat = g.get_pv(pv, is_local=True)
     except UnableToConnectToPVException:
         return False
     return heartbeat is not None

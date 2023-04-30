@@ -156,13 +156,17 @@ class TestDae(unittest.TestCase):
         # Wait for alarm
         for _ in range(5):
             in_alarm = g.cget(test_block_name)["alarm"] == "INVALID"
-            if in_alarm:
+            connected = g.cget(test_block_name)["connected"] == True
+            zero_value = g.cget(test_block_name)["value"] == 0
+            block_ok = in_alarm and connected and zero_value
+            if block_ok:
                 break
-            sleep(1)
-        self.assertTrue(in_alarm, "Block never went invalid when IOC stopped")
+            sleep(2)
+        self.assertTrue(block_ok, "Block never went invalid when IOC stopped")
 
         # blocks are on a 5 second flush write from archive
-        sleep(15)
+        # also give time for archive engine to pick up alarmed block
+        sleep(30)
 
         run_number = g.get_runnumber()
         g.end()
@@ -649,9 +653,9 @@ class TestDae(unittest.TestCase):
         sleep(sleep_time)
         g.resume()
         sleep(sleep_time)
-
         actual_s = g.get_time_since_begin()
         actual_timedelta = g.get_time_since_begin(True)
+        self.assertTrue(actual_s is not None)
 
         # Calculating expected runtime with sleep_time between begin and end, and runtimes of begin() and end()
         expected = total_sleep_time + begin_runtime
