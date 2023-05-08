@@ -171,6 +171,7 @@ class TestBlockserver(unittest.TestCase):
     def test_GIVEN_config_changes_to_empty_and_back_again_THEN_runcontrol_settings_reset_to_config_defaults(self):
         utilities.load_config_if_not_already_loaded("rcptt_simple")
         time.sleep(60)
+        self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
 
         # Settings different than config default
         g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
@@ -178,6 +179,7 @@ class TestBlockserver(unittest.TestCase):
         self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"])
 
         utilities.load_config_if_not_already_loaded("empty_for_system_tests")
+        time.sleep(60)
         utilities.load_config_if_not_already_loaded("rcptt_simple")
         time.sleep(60)
 
