@@ -494,7 +494,7 @@ def check_block_exists(block_name):
     return block_name in blocks
 
 
-def retry_assert(retry_limit: int, func: Callable[[], None]):
+def retry_assert(retry_limit: int, func: Callable[[], None], retry_time: float = 1.0):
     """
     Take a function (func) that makes assertions. Try to call the function and catch any AssertionErrors if raised.
     Repeat this until either the function does not raise an AssertionError or the retry_limit is reached.
@@ -503,6 +503,7 @@ def retry_assert(retry_limit: int, func: Callable[[], None]):
     Args:
         retry_limit (int): The limit of times to retry.
         func (Callable): A callable that makes assertions.
+        retry_time (float): The time to sleep between retries.
 
     Raises:
         AssertionError: If the function fails in every retry.
@@ -514,7 +515,7 @@ def retry_assert(retry_limit: int, func: Callable[[], None]):
             break
         except AssertionError as new_error:
             error = new_error
-        sleep(1)
+        sleep(retry_time)
     else:
         raise error
 

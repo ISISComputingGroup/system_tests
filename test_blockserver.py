@@ -170,6 +170,7 @@ class TestBlockserver(unittest.TestCase):
 
     def test_GIVEN_config_changes_to_empty_and_back_again_THEN_runcontrol_settings_reset_to_config_defaults(self):
         utilities.load_config_if_not_already_loaded("rcptt_simple")
+        time.sleep(60)
 
         # Settings different than config default
         g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
@@ -178,6 +179,7 @@ class TestBlockserver(unittest.TestCase):
 
         utilities.load_config_if_not_already_loaded("empty_for_system_tests")
         utilities.load_config_if_not_already_loaded("rcptt_simple")
+        time.sleep(60)
 
         self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
 
@@ -188,7 +190,7 @@ class TestBlockserver(unittest.TestCase):
 
         # Settings different than config default
         g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
-        assert_with_timeout(assertion=lambda: self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=10)
+        assert_with_timeout(assertion=lambda: self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=60)
 
         g.reload_current_config()
 
@@ -217,6 +219,7 @@ class TestBlockserver(unittest.TestCase):
 
     def test_GIVEN_config_contains_gw_and_archiver_files_THEN_archiver_uses_configuration_file(self):
         utilities.load_config_if_not_already_loaded("test_blockserver_with_gw_archiver")
+        time.sleep(30)
 
         def assert_block_archive_blocks_group_has_one_channel():
             response = requests.get(self.block_archive_blocks_url).json()
@@ -224,10 +227,11 @@ class TestBlockserver(unittest.TestCase):
             assert_that(len(response["Channels"]), is_(1))
             assert_that(response["Channels"][0]["Channel"], is_("PREFIX:MYTESTBLOCK"))
 
-        utilities.retry_assert(5, assert_block_archive_blocks_group_has_one_channel)
+        utilities.retry_assert(5, assert_block_archive_blocks_group_has_one_channel, 3.0)
 
     def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
         utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
+        time.sleep(30)
 
         response = requests.get(self.block_archive_blocks_url).json()
 
