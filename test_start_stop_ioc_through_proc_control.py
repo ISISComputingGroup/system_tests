@@ -16,6 +16,9 @@ from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc
 # The following iocs are ignored in the test which starts/stops all iocs
 # This is usually because they don't build by default, or have some complex dependency,
 # or are special in some way (e.g. psctrl).
+# we also ignore ISISDAE, INSTETC and RUNCTRL as testing them here messed up subsequent tests
+# by leaving these IOCs permanently stopped. We could re-enable testing them if this test was either
+# always ran last or could re-enabel autostart on these ioc afterwards    
 IOCS_TO_IGNORE_START_STOP = [
     'ASTRIUM_01',
     'ASTRIUM_02',
@@ -23,10 +26,12 @@ IOCS_TO_IGNORE_START_STOP = [
     'BGRSCRPT_02',
     'CHOPPERSIM',  # Simulation ioc
     'CAENMCA',  # currently fails to start, and is not used so skip
-    "DELFTDCMAG_01",  # Delft iocs have a weird build/run process?
-    "DELFTDCMAG_02",
+    'DELFTDCMAG_01',  # Delft iocs have a weird build/run process?
+    'DELFTDCMAG_02',
     'DELFTSHEAR_01',
     'ECLAB_01',
+    'INSTETC',
+    'ISISDAE',
     'LSICORR_01',  # Needs vendor library in correct place to keep running
     'LSICORR_02',
     'MOTORSIM',  # Simulation ioc
@@ -37,8 +42,9 @@ IOCS_TO_IGNORE_START_STOP = [
     'NANODAC_01',
     'OERCONE_02',
     'PIXELMAN',
-    "PSCTRL",  # Special, controls other IOCs
+    'PSCTRL',  # Special, controls other IOCs
     'REFL_01',  # Won't run correctly without a config
+    'RUNCTRL',
     'SECI2IBEX',  # requires labview
     'SEPRTR',  # relies on daqMX
     'TC_01',  # relies on twincat
