@@ -133,6 +133,7 @@ class TestProcControl(unittest.TestCase):
         error_iocs = []
         failed_to_start = []
         failed_to_stop = []
+        not_in_proc_serv = []
         number_to_run = 40
 
         ## disable for moment
