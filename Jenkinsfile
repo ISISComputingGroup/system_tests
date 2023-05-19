@@ -163,7 +163,11 @@ pipeline {
                     @echo ERROR - FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
                     exit /b %errcode1%
                 )
-                @echo ERROR - FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
+                if %errcode2% NEQ 0 (
+                    @echo ERROR - FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
+		) else (
+                    @echo SUCCESS - BOTH FIRST AND SECOND PARTS OF TESTS SUCCEEDED
+		)
                 exit /b %errcode2%
              """
           }
