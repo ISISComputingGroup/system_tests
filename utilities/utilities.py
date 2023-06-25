@@ -270,8 +270,11 @@ def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
         IOError error if IOC does not start/stop after IOCS_START_STOP_TIMEOUT seconds
 
     """
+    command = 'START' if is_a_start else 'STOP'
     if is_ioc_up(ioc_name) != is_a_start:
-        g.set_pv(f"CS:PS:{ioc_name}:{'START' if is_a_start else 'STOP'}", 1, is_local=True)
+        g.set_pv(f"CS:PS:{ioc_name}:{command}", 1, is_local=True)
+    else:
+        print(f"IOC {ioc_name} is already in correct state - no need to issue PSCTRL {command}")
 
     wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=is_a_start, ioc_name=ioc_name)
 
