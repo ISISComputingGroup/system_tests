@@ -124,6 +124,12 @@ pipeline {
                     rmdir "C:\\Instrument\\Apps\\EPICS"
                 )
                 del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
+                del /q C:\\Instrument\\Var\\logs\\conserver\\*.*
+                del /q C:\\Instrument\\Var\\logs\\gateway\\blockserver\\*.*
+                del /q C:\\Instrument\\Var\\logs\\gateway\\external\\*.*
+                del /q C:\\Instrument\\Var\\logs\\genie_python\\*.*
+                del /q C:\\Instrument\\Var\\logs\\deploy\\*.*
+                del /q C:\\Instrument\\Var\\logs\\ibex_server\\*.*
                 del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
                 mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
                 IF %errorlevel% NEQ 0 (
@@ -184,6 +190,10 @@ pipeline {
             @echo Saving test output on node ${env.NODE_NAME}
             robocopy "C:\\Instrument\\Var\\logs\\ioc" "%WORKSPACE%\\ioc-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Var\\logs\\IOCTestFramework" "%WORKSPACE%\\ioctest-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\gateway" "%WORKSPACE%\\gateway-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\genie_python" "%WORKSPACE%\\genie_python-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\deploy" "%WORKSPACE%\\deploy-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\ibex_server" "%WORKSPACE%\\ibex_server-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Apps\\EPICS-%MYJOB%" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             exit /b 0
         """
