@@ -155,10 +155,11 @@ pipeline {
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
-                REM make will stop on first test failure as python will return an error. We can pass -i to make to ignore
+                REM make will usually stop on first test failure as python will return an error. We can pass -i to make to ignore
 		REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
-		REM the case when python crashes with no XML output. So we will move back to not using -i for now
-                make ioctests
+		REM the case when python crashes with no XML output. So we will try using -k which looks to "keep going"
+                REM but still return an overall failure code
+                make -k ioctests
                 set errcode2=%errorlevel%
                 popd
                 @echo SECOND PART OF TESTS FINISHED WITH CODE %errcode2%
