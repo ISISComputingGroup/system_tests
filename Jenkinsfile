@@ -116,7 +116,7 @@ pipeline {
       stage("Run Tests") {
         steps {
           lock(resource: ELOCK, inversePrecedence: false) {
-           timeout(time: 1800, unit: 'MINUTES') {
+           timeout(time: 18, unit: 'HOURS') {
               bat """
                 set \"MYJOB=${env.JOB_NAME}\"
                 call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
