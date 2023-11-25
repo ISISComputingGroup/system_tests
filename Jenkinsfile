@@ -141,11 +141,13 @@ pipeline {
                     exit /b 1
                 )
                 @echo Running system tests on node ${env.NODE_NAME}
-                if \"%MYJOB%\" == \"System_Tests_release\" (
+                if \"%MYJOB%\" == \"System_Tests_galilold\" (
+                    call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
+		) else if \"%MYJOB%\" == \"System_Tests_release\" (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
                 ) else (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
-                )
+		)
                 call clean_files.bat
                 @echo FIRST PART OF TESTS STARTED
                 call run_tests.bat
