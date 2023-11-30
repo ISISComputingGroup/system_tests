@@ -64,19 +64,21 @@ pipeline {
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Installing IBEX on node ${env.NODE_NAME}
             REM EPICS should always be a directory junction on build servers
-            if exist "C:\\Instrument\\Apps\\EPICS" (
+            if exist "C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat" (
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
+            )
+            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+            ) else (
+                md C:\\Instrument\\Apps\\EPICS-%MYJOB%
+            )
+            if exist "C:\\Instrument\\Apps\\EPICS" (
                 @echo Removing EPICS directory link
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 echo ERROR Unable to remove EPICS
                 exit /b 1
-            )
-            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
-                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
-            ) else (
-                md C:\\Instrument\\Apps\\EPICS-%MYJOB%
             )
             if not exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
                 @echo unable to create C:\\Instrument\\Apps\\EPICS-%MYJOB%
