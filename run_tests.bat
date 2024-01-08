@@ -9,13 +9,13 @@ set "exitcode=0"
 python -u "%~dp0run_tests.py" %*
 IF %errorlevel% NEQ 0 (
     set exitcode=%errorlevel%
-    echo ERROR - Running base tests failed with code %errorlevel%
+    echo ERROR: Running base tests failed with code %errorlevel%
     goto finish
 )
 call %EPICS_ROOT%\ISIS\JournalParser\master\test\run_tests.bat
 IF %errorlevel% NEQ 0 (
     set exitcode=%errorlevel%
-    echo ERROR - running journal tests failed with code %errorlevel%
+    echo ERROR: running journal tests failed with code %errorlevel%
     goto finish
 )
 
