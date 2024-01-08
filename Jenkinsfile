@@ -77,7 +77,7 @@ pipeline {
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
             if exist "C:\\Instrument\\Apps\\EPICS" (
-                echo ERROR Unable to remove EPICS
+                echo ERROR: Unable to remove EPICS
                 exit /b 1
             )
             if not exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
@@ -104,7 +104,7 @@ pipeline {
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
             IF %errorlevel% NEQ 0 (
-                @echo ERROR unable to install ibex - error code %errorlevel%
+                @echo ERROR: unable to install ibex - error code %errorlevel%
                 call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
                 exit /b 1
@@ -135,11 +135,11 @@ pipeline {
                 del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
                 mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
                 IF %errorlevel% NEQ 0 (
-                    @echo ERROR unable to make EPICS directory junction link to EPICS-%MYJOB% - error %errorlevel%
+                    @echo ERROR: unable to make EPICS directory junction link to EPICS-%MYJOB% - error %errorlevel%
                     exit /b %errorlevel%
                 )
                 if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
-                    @echo ERROR Unable to find config_env.bat in linked EPICS directory
+                    @echo ERROR: Unable to find config_env.bat in linked EPICS directory
                     exit /b 1
                 )
                 @echo Running system tests on node ${env.NODE_NAME}
@@ -154,7 +154,11 @@ pipeline {
                 @echo FIRST PART OF TESTS STARTED
                 call run_tests.bat
                 set errcode1=%errorlevel%
-                @echo FIRST PART OF TESTS FINISHED WITH CODE %errcode1%
+                if %errcode1% NEQ 0 (
+                    @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%
+			    ) else (
+                    @echo OK: FIRST PART OF TESTS SUCCEEDED
+				)
                 @echo SECOND PART OF TESTS STARTED
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
@@ -171,13 +175,13 @@ pipeline {
                 rmdir "C:\\Instrument\\Apps\\EPICS"
                 @echo Finished running tests on node ${env.NODE_NAME}
                 if %errcode1% NEQ 0 (
-                    @echo ERROR - FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
+                    @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
                     exit /b %errcode1%
                 )
                 if %errcode2% NEQ 0 (
-                    @echo ERROR - FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
+                    @echo ERROR: FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
 		) else (
-                    @echo SUCCESS - BOTH FIRST AND SECOND PARTS OF TESTS SUCCEEDED
+                    @echo OK: BOTH FIRST AND SECOND PARTS OF TESTS SUCCEEDED
 		)
                 exit /b %errcode2%
              """
@@ -204,6 +208,13 @@ pipeline {
         """
         archiveArtifacts artifacts: '*-logs/*.log', caseSensitive: false
         junit "test-reports/**/*.xml,**/test-reports/**/*.xml"
+		logParser ([
+            projectRulePath: 'log_parse_rules.txt',
+            parsingRulesPath: '',
+            showGraphs: true, 
+            unstableOnWarning: false,
+            useProjectRule: true,
+        ])
     }
 
     cleanup {
@@ -220,7 +231,7 @@ pipeline {
 	    @echo ***
             @echo *** Any Office365connector Matched status FAILURE message below means
             @echo *** an earlier Jenkins step failed not the Office365connector itself
-            @echo *** Search log file for  ERROR  to locate true cause
+            @echo *** Search log file for  ERROR:  to locate true cause
             @echo ***
             exit /b 0
         """

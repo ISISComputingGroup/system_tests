@@ -1,0 +1,5 @@
+start /FIRST PART OF TESTS STARTED/
+start /SECOND PART OF TESTS STARTED/
+error /^(?i)error:/
+error /(?i)makefile:.*error/
+error /ERROR: tests exited with status/
