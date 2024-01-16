@@ -4,3 +4,4 @@ error /^(?i)error:/
 error /(?i)makefile:.*error/
 error /ERROR: tests exited with status/
 error /FAILED \(failures=/
+error /FAILED \(errors=/
