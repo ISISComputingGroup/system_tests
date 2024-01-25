@@ -5,3 +5,4 @@ error /(?i)makefile:.*error/
 error /ERROR: tests exited with status/
 error /FAILED \(failures=/
 error /FAILED \(errors=/
+error /not remade because of errors/
