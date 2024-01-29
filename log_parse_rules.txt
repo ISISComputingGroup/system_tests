@@ -1,8 +1,8 @@
 # need to allow for [timestamp]
 start /FIRST PART OF TESTS STARTED/
 start /SECOND PART OF TESTS STARTED/
-error /(?i)^\[[^]]*\] error:/
-error /(?i)^error:/
+ok /IPython does not exist, auto complete not installed/
+error /(?i)^(\[[^]]*\] )?error:/
 error /(?i)makefile:.*error/
 error /ERROR: tests exited with status/
 error /FAILED \(failures=/
