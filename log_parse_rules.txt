@@ -2,7 +2,7 @@
 start /FIRST PART OF TESTS STARTED/
 start /SECOND PART OF TESTS STARTED/
 ok /IPython does not exist, auto complete not installed/
-ok /py4j.java_gateway:An error occurred while trying to connect to the Java server/
+warning /py4j.java_gateway:An error occurred while trying to connect to the Java server/
 error /(?i)^(\[[^]]*\] )?error:/
 error /(?i)makefile:.*error/
 error /ERROR: tests exited with status/
