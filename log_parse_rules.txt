@@ -2,7 +2,7 @@
 start /FIRST PART OF TESTS STARTED/
 start /SECOND PART OF TESTS STARTED/
 ok /IPython does not exist, auto complete not installed/
-ok /ERROR: pip[']s dependency resolver does not currently take into account all the packages that are installed/ 
+warning /ERROR: pip[']s dependency resolver does not currently take into account all the packages that are installed/ 
 warning /py4j.java_gateway:An error occurred while trying to connect to the Java server/
 error /(?i)^(\[[^]]*\] )?error:/
 error /(?i)^(\[[^]]*\] )?fatal:/
