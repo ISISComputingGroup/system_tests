@@ -1,8 +1,8 @@
 # Note that these are what's required outside of the genie_python requirements
 h5py
 configobj
-docker
-docker-compose
+#docker
+#docker-compose
 kafka-python
 mock
 parameterized
