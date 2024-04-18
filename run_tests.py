@@ -91,7 +91,7 @@ if __name__ == '__main__':
                     print(f"Error deleting file {file_or_dir_dest} exception message is {e}")
                 time.sleep(2)
             if os.path.isdir(file_or_dir_src):
-                shutil.copytree(file_or_dir_src, file_or_dir_dest, dirs_exist_ok=True) # DO NOT commit
+                shutil.copytree(file_or_dir_src, file_or_dir_dest)
             else:
                 shutil.copy(file_or_dir_src, dest)
 
