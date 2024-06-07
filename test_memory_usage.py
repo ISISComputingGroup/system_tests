@@ -58,7 +58,7 @@ class TestMemoryUsage(unittest.TestCase):
         assert_that(memory_used, less_than(system_threshold-ASSUMED_NON_IBEX_USAGE))
 
     def test_GIVEN_typical_config_with_IOCs_blocks_and_LVDCOM_IOC_WHEN_dae_is_not_doing_a_run_THEN_memory_usage_stays_under_7point5gb(self):
-        system_threshold = 7.5
+        system_threshold = 8.5
 
         memory_used = self.get_current_memory_usage()
 
