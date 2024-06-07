@@ -1,12 +1,16 @@
 setlocal
 call create_virtual_env.bat
 call %EPICS_ROOT%\stop_ibex_server.bat
-python test_setup_teardown.py>base_line_memory.txt
+python -u test_setup_teardown.py>base_line_memory.txt
 set exitcode=%errorlevel%
 IF %exitcode% NEQ 0 (
     echo ERROR: Running test_setup_teardown failed with code %exitcode%
 )
 set /P BASE_MEMORY_USAGE=<base_line_memory.txt
+if "%EPICS_HOST_ARCH:~0,9%" == "win32-x86" (
+    @echo Skipping first part as 32bit system %EPICS_HOST_ARCH%
+    goto finish
+)
 call %EPICS_ROOT%\start_ibex_server.bat
 set "PYTHONUNBUFFERED=1"
 python -u "%~dp0run_tests.py" %*
@@ -23,6 +27,6 @@ IF %errorlevel% NEQ 0 (
 )
 
 :finish
-python test_setup_teardown.py --tear_down
+python -u test_setup_teardown.py --tear_down
 call %EPICS_ROOT%\stop_ibex_server.bat
 EXIT /b %exitcode%
