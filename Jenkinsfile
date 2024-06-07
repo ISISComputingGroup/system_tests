@@ -219,16 +219,18 @@ pipeline {
 
     cleanup {
         bat """
-	    @echo off
+            @echo off
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Started cleanup on node ${env.NODE_NAME}
-            REM stop ibex server will already have been called if needed
-            REM we could try and cleanup EPICS-%MYJOB% but unless we are short of disk space
-            REM leaving it gives us a stop_ibex_server there for next job run
+            REM call stop ibex server in case job aborted and not called
+            REM this cleans things up for next clone
+            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+            )
             rmdir "C:\\Instrument\\Apps\\EPICS" >NUL 2>&1
             rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL 2>&1
             @echo Finished cleanup on node ${env.NODE_NAME}
-	    @echo ***
+            @echo ***
             @echo *** Any Office365connector Matched status FAILURE message below means
             @echo *** an earlier Jenkins step failed not the Office365connector itself
             @echo *** Search log file for  ERROR:  to locate true cause
