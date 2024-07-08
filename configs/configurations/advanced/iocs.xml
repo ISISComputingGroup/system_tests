@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<iocs xmlns="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:ioc="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<ioc name="GALIL_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="ENCAVNSAMP" value=""/>
+			<macro name="GALILADDR" value="0.0.0.0"/>
+			<macro name="MTRCTRL" value="1"/>
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+</iocs>
