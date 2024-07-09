@@ -1,4 +1,5 @@
 import unittest
+from parameterized import parameterized as param
 
 from utilities.utilities import load_config_if_not_already_loaded, g, \
     set_genie_python_raises_exceptions
@@ -12,75 +13,78 @@ class TestAdvancedMotorControls(unittest.TestCase):
         load_config_if_not_already_loaded(ADV_CONFIG_NAME)
         set_genie_python_raises_exceptions(True)
 
-    def test_GIVEN_manager_mode_WHEN_calling_get_manager_mode_THEN_returns_true(self):
+    @param.expand([True, False])
+    def test_GIVEN_manager_mode_WHEN_calling_get_manager_mode_THEN_returns_true(self, manager_mode):
         # Checks that the get_manager_mode() function works as expected.
-        g.set_pv("CS:MANAGER", "Yes", True, True)
-        assert g.adv.get_manager_mode()
-
-        g.set_pv("CS:MANAGER", "No", True, True)
-        assert not g.adv.get_manager_mode()
+        g.set_pv("CS:MANAGER", manager_mode, wait=True, is_local=True)
+        self.assertTrue(g.adv.get_manager_mode() == manager_mode)
 
     def test_GIVEN_no_manager_mode_WHEN_setting_motor_position_THEN_exception_is_raised(self):
         # Checks that the user will not be allowed to change the motor position without being in manager mode
-        g.set_pv("CS:MANAGER", "No", True, True)
+        g.set_pv("CS:MANAGER", "No", wait=True, is_local=True)
 
         with self.assertRaises(RuntimeError):
-            g.adv.set_motor_position("MTR0101", 1000)
+            g.adv.redefine_motor_position("MTR0101", 1000)
 
     def test_GIVEN_invalid_motor_name_WHEN_setting_motor_position_THEN_exception_is_raised(self):
         # Checks that the set_motor_position function will only accept motors it recognises
-        g.set_pv("CS:MANAGER", "Yes", True, True)
+        g.set_pv("CS:MANAGER", "Yes", wait=True, is_local=True)
 
         with self.assertRaises(ValueError):
-            g.adv.set_motor_position("INVALID_MOTOR_NAME", 1000)
+            g.adv.redefine_motor_position("INVALID_MOTOR_NAME", 1000)
 
-    def test_set_and_foff_change_before_after_setting_motor_position(self):
+    def test_GIVEN_foff_is_variable_and_set_is_use_WHEN_setting_motor_position_THEN_foff_and_set_change_before_and_after(self):
         # Before changing motor position, check that SET mode is on Set
         # and FOFF is on Frozen
 
-        pv_name = g.my_pv_prefix + "MOT:MTR0101"
         foff_value = "Variable"
+        set_value = "Use"
 
-        g.set_pv(pv_name + ".FOFF", foff_value, True, True)
+        g.set_pv("MOT:MTR0101.FOFF", foff_value, wait=True, is_local=True)  # Frozen mode
+        g.set_pv("MOT:MTR0101.SET", set_value, wait=True, is_local=True)  # Use mode
 
-        with g.adv.motor_in_set_mode(pv_name):
-            assert g.get_pv(pv_name + ".SET", True) == "Set"
-            assert g.get_pv(pv_name + ".FOFF", True) == "Frozen"
+        with g.adv.motor_in_set_mode(g.my_pv_prefix + "MOT:MTR0101"):
+            self.assertTrue(g.get_pv("MOT:MTR0101.SET", to_string=True, is_local=True) == "Set")
+            self.assertTrue(g.get_pv("MOT:MTR0101.FOFF", to_string=True, is_local=True) == "Frozen")
 
-        assert g.get_pv(pv_name + ".SET", True) == "Use"
+        self.assertTrue(g.get_pv("MOT:MTR0101.SET", to_string=True, is_local=True) == "Use")
         # Check that MOT:MTR0101.SET is in Use mode after calling set_motor_position()
-        assert g.get_pv(pv_name + ".FOFF") == foff_value
+        self.assertTrue(g.get_pv("MOT:MTR0101.FOFF", to_string=True, is_local=True) == foff_value)
         # Check that MOT:MTR0101.FFOF is in the same mode before and after calling set_motor_position()
 
-    def test_GIVEN_manager_mode_and_valid_motor_name_WHEN_setting_motor_position_THEN_motor_position_set(self):
+    @param.expand([1000, -1000])
+    def test_GIVEN_manager_mode_and_valid_motor_name_WHEN_setting_motor_position_THEN_motor_position_set(self, motor_value):
         # Checks that for a combination of valid parameters there are no exceptions
-        params = [1000, -1000]
-        g.set_pv("CS:MANAGER", "Yes", True, True)
+        g.set_pv("CS:MANAGER", "Yes", wait=True, is_local=True)
 
-        pv_name = g.my_pv_prefix + "MOT:MTR0101"
+        g.adv.redefine_motor_position("MTR0101", motor_value)
 
-        for motor_value in params:
-
-            g.adv.set_motor_position("MTR0101", motor_value)
-
-            assert motor_value == g.get_pv(pv_name + ".VAL")
-            # Assert that the motor position changes after calling set_motor_position()
+        self.assertTrue(motor_value == g.get_pv("MOT:MTR0101.VAL", to_string=False, is_local=True))
+        # Assert that the motor position changes after calling set_motor_position()
 
     def test_GIVEN_motor_is_moving_WHEN_setting_motor_position_THEN_exception_raised(self):
-        pv_name = g.my_pv_prefix + "MOT:MTR0101"
-        g.set_pv("CS:MANAGER", "Yes", True, True)
-        g.set_pv(pv_name + ".SET", 0, True)  # Use mode
+        # Checks that the motor is not allowed to be repositioned while it is already moving
+        g.set_pv("CS:MANAGER", "Yes", wait=True, is_local=True)
+        g.set_pv("MOT:MTR0101.SET", 0, wait=True, is_local=True)  # Use mode
 
-        g.set_pv(pv_name + ".VAL", 30000.0, False)  # Set position so that motor begins moving
+        g.set_pv("MOT:MTR0101.VAL", 30000.0, wait=False, is_local=True)  # Set position so that motor begins moving
 
-        with self.assertRaises(RuntimeError) as e:
-            print(e)
-            g.adv.set_motor_position("MTR0101", 1000)  # Check that it throws as exception as it is moving
+        with self.assertRaises(RuntimeError):
+            g.adv.redefine_motor_position("MTR0101", 1000)  # Check that it throws as exception as it is moving
+
+    def test_GIVEN_invalid_pv_WHEN_calling_motor_in_set_mode_THEN_exception_raised(self):
+        # Checks that the function motor_in_set_mode will not accept an invalid pv
+        with self.assertRaises(ValueError):
+            with g.adv.motor_in_set_mode(g.my_pv_prefix + "MOT:INVALID_MOTOR_NAME"): None
+
+    def test_GIVEN_valid_pv_but_not_a_motor_pv_WHEN_calling_motor_in_set_mode_THEN_exception_raised(self):
+        # Checks that the function motor_in_set_mode will not accept a valid pv that does not point to a motor
+        with self.assertRaises(ValueError):
+            with g.adv.motor_in_set_mode(g.my_pv_prefix + "CS:MANAGER"): None
 
     def tearDown(self):
-        pv_name = g.my_pv_prefix + "MOT:MTR0101"
-        g.set_pv(pv_name + ".STOP", 1, True)  # Make sure motor is not moving
-        g.set_pv(pv_name + ".SET", 1, True)  # Set mode
-        g.set_pv(pv_name + ".VAL", 0.0, True)  # Motor is repositioned
-        g.set_pv("CS:MANAGER", "No", True, True)  # Make sure not in manager mode
+        g.set_pv("MOT:MTR0101.STOP", 1, wait=True, is_local=True)  # Make sure motor is not moving
+        g.set_pv("MOT:MTR0101.SET", 1, wait=True, is_local=True)  # Set mode
+        g.set_pv("MOT:MTR0101.VAL", 0.0, wait=True, is_local=True)  # Motor is repositioned
+        g.set_pv("CS:MANAGER", "No", wait=True, is_local=True)  # Make sure not in manager mode
         set_genie_python_raises_exceptions(False)
