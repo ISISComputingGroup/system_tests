@@ -13,56 +13,74 @@ class TestAdvancedMotorControls(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
 
     def test_GIVEN_manager_mode_WHEN_calling_get_manager_mode_THEN_returns_true(self):
-        g.set_pv("CS:MANAGER", "Yes", True, True)  # Check that the get_manager_mode() function works as expected.
+        # Checks that the get_manager_mode() function works as expected.
+        g.set_pv("CS:MANAGER", "Yes", True, True)
         assert g.adv.get_manager_mode()
 
         g.set_pv("CS:MANAGER", "No", True, True)
         assert not g.adv.get_manager_mode()
 
     def test_GIVEN_no_manager_mode_WHEN_setting_motor_position_THEN_exception_is_raised(self):
+        # Checks that the user will not be allowed to change the motor position without being in manager mode
         g.set_pv("CS:MANAGER", "No", True, True)
 
         with self.assertRaises(RuntimeError):
-            # Check that the user will not be allowed to change the motor position without being in manager mode
             g.adv.set_motor_position("MTR0101", 1000)
 
     def test_GIVEN_invalid_motor_name_WHEN_setting_motor_position_THEN_exception_is_raised(self):
+        # Checks that the set_motor_position function will only accept motors it recognises
         g.set_pv("CS:MANAGER", "Yes", True, True)
 
         with self.assertRaises(ValueError):
-            # Check that the set_motor_position will only accept motors it recognises
             g.adv.set_motor_position("INVALID_MOTOR_NAME", 1000)
 
-    def test_GIVEN_manager_mode_and_valid_motor_name_WHEN_setting_motor_position_THEN_no_exception_raised(self):
-        params = [(1000, "Frozen"), (-1000, "Frozen"), (1000, "Variable"), (-1000, "Variable")]
+    def test_set_and_foff_change_before_after_setting_motor_position(self):
+        # Before changing motor position, check that SET mode is on Set
+        # and FOFF is on Frozen
+
+        pv_name = g.my_pv_prefix + "MOT:MTR0101"
+        foff_value = "Variable"
+
+        g.set_pv(pv_name + ".FOFF", foff_value, True, True)
+
+        with g.adv.motor_in_set_mode(pv_name):
+            assert g.get_pv(pv_name + ".SET", True) == "Set"
+            assert g.get_pv(pv_name + ".FOFF", True) == "Frozen"
+
+        assert g.get_pv(pv_name + ".SET", True) == "Use"
+        # Check that MOT:MTR0101.SET is in Use mode after calling set_motor_position()
+        assert g.get_pv(pv_name + ".FOFF") == foff_value
+        # Check that MOT:MTR0101.FFOF is in the same mode before and after calling set_motor_position()
+
+    def test_GIVEN_manager_mode_and_valid_motor_name_WHEN_setting_motor_position_THEN_motor_position_set(self):
+        # Checks that for a combination of valid parameters there are no exceptions
+        params = [1000, -1000]
         g.set_pv("CS:MANAGER", "Yes", True, True)
 
-        for motor_value, foff_value in params:
+        pv_name = g.my_pv_prefix + "MOT:MTR0101"
 
-            g.set_pv(g.my_pv_prefix + "MOT:MTR0101.FOFF", foff_value, True, True)
+        for motor_value in params:
 
             g.adv.set_motor_position("MTR0101", motor_value)
 
-            assert motor_value == g.get_pv(g.my_pv_prefix + "MOT:MTR0101.VAL")
+            assert motor_value == g.get_pv(pv_name + ".VAL")
             # Assert that the motor position changes after calling set_motor_position()
-            assert g.get_pv(g.my_pv_prefix + "MOT:MTR0101.SET", True) == "Use"
-            # Check that MOT:MTR0101.SET is in Use mode after calling set_motor_position()
-            assert g.get_pv(g.my_pv_prefix + "MOT:MTR0101.FOFF") == foff_value
-            # Check that MOT:MTR0101.FFOF is in the same mode before and after calling set_motor_position()
 
     def test_GIVEN_motor_is_moving_WHEN_setting_motor_position_THEN_exception_raised(self):
+        pv_name = g.my_pv_prefix + "MOT:MTR0101"
         g.set_pv("CS:MANAGER", "Yes", True, True)
-        g.set_pv(g.my_pv_prefix + "MOT:MTR0101.SET", 0, True)  # Use mode
+        g.set_pv(pv_name + ".SET", 0, True)  # Use mode
 
-        g.set_pv(g.my_pv_prefix + "MOT:MTR0101.VAL", 30000.0, False)  # Set position so that motor begins moving
+        g.set_pv(pv_name + ".VAL", 30000.0, False)  # Set position so that motor begins moving
 
         with self.assertRaises(RuntimeError) as e:
             print(e)
             g.adv.set_motor_position("MTR0101", 1000)  # Check that it throws as exception as it is moving
 
     def tearDown(self):
-        g.set_pv(g.my_pv_prefix + "MOT:MTR0101.STOP", 1, True)  # Make sure motor is not moving
-        g.set_pv(g.my_pv_prefix + "MOT:MTR0101.SET", 1, True)  # Set mode
-        g.set_pv(g.my_pv_prefix + "MOT:MTR0101.VAL", 0.0, True)  # Motor is repositioned
+        pv_name = g.my_pv_prefix + "MOT:MTR0101"
+        g.set_pv(pv_name + ".STOP", 1, True)  # Make sure motor is not moving
+        g.set_pv(pv_name + ".SET", 1, True)  # Set mode
+        g.set_pv(pv_name + ".VAL", 0.0, True)  # Motor is repositioned
         g.set_pv("CS:MANAGER", "No", True, True)  # Make sure not in manager mode
         set_genie_python_raises_exceptions(False)
