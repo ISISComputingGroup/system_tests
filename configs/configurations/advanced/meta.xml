@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<meta>
+	<description>Testing genie python advanced scripts</description>
+	<synoptic>-- NONE --</synoptic>
+	<edits>
+		<edit>2024-07-08 13:01:05</edit>
+	</edits>
+	<isProtected>false</isProtected>
+	<isDynamic>false</isDynamic>
+	<configuresBlockGWAndArchiver>false</configuresBlockGWAndArchiver>
+</meta>
