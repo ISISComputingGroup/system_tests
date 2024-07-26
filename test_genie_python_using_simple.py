@@ -1,4 +1,5 @@
 import functools
+import os
 
 from hamcrest import *
 
@@ -9,6 +10,8 @@ import time
 from genie_python.channel_access_exceptions import UnableToConnectToPVException, WriteAccessException
 from utilities.utilities import load_config_if_not_already_loaded, check_block_exists, g, retry_on_failure, \
     set_genie_python_raises_exceptions
+from genie_python import genie_script_checker
+from genie_python.test_modules import test_script_checker
 
 TIMEOUT = 30
 SIMPLE_CONFIG_NAME = "rcptt_simple"
@@ -416,3 +419,46 @@ class TestAlerts(unittest.TestCase):
     def _waitfor_runstate(self, state):
         g.waitfor_runstate(state, TIMEOUT)
         self.assertEqual(g.get_runstate(), state)
+
+class SystemTestScriptChecker(unittest.TestCase):
+
+    def setUp(self):
+        g.set_instrument(None)
+        self.test_checker = test_script_checker.TestScriptChecker()
+        self.test_checker.setUp()
+
+    # Test that functions from C:\Instrument\scripts can be accessed and reports pyright reports error if used incorrectly
+    # "" C:\Instrument\Settings\config\NDW2452\Python\inst ""
+    # Using system tests as doing it from a unit tests perspective would mean depending on the nature of the local machine they may not have the modules
+    # to make these tests pass
+
+    def test_GIVEN_invalid_inst_script_from_settings_area_WHEN_calling_script_checker_THEN_pyright_throws_error(self):
+
+        path_to_inst = os.path.join("C:\\","Instrument","Settings","config",self.test_checker.machine,"Python","inst")
+        temp_file_name = "temp_file.py"
+
+        script_lines_1 = "def sample_changer_scloop(a: int, b: str):\n\tpass\n"
+        
+        script_lines_2 = ["from inst import temp_file\n"
+                          "temp_file.sample_changer_scloop('a',2)\n"]
+        
+        with open(os.path.join(path_to_inst,temp_file_name), "w") as temp_file:
+            temp_file.write(script_lines_1)
+            temp_file.flush()
+
+            with self.test_checker._CreateTempScriptAndReturnErrors(self.test_checker, script_lines_2) as errors_2:
+                self.assertTrue(errors_2[0].startswith("[PR] E: 2: Argument of type"))
+
+        os.unlink(temp_file.name)
+
+    def test_GIVEN_invalid_inst_script_from_general_WHEN_calling_script_checker_THEN_pyright_throws_error(self):
+        
+        script_lines = ["from technique.muon.muon_begin_end import g\n",
+                        "def test_inst():\n",
+                        "   g.begin(1.2, 'b', 'a', 'a', 'a')\n"]
+        
+        with self.test_checker._CreateTempScriptAndReturnErrors(self.test_checker, script_lines) as errors:
+            self.assertTrue(errors[0].startswith("[PR] E: 3: Argument of type"))
+
+    def tearDown(self):
+        self.test_checker.tearDown()
