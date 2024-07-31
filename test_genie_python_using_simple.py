@@ -447,7 +447,7 @@ class SystemTestScriptChecker(unittest.TestCase):
             temp_file.flush()
 
             with self.test_checker._CreateTempScriptAndReturnErrors(self.test_checker, script_lines_2) as errors_2:
-                self.assertTrue(errors_2[0].startswith("[PR] E: 2: Argument of type"))
+                self.assertTrue(errors_2[0].startswith("E: 2: Argument of type"))
 
         os.unlink(temp_file.name)
 
@@ -458,7 +458,8 @@ class SystemTestScriptChecker(unittest.TestCase):
                         "   g.begin(1.2, 'b', 'a', 'a', 'a')\n"]
         
         with self.test_checker._CreateTempScriptAndReturnErrors(self.test_checker, script_lines) as errors:
-            self.assertTrue(errors[0].startswith("[PR] E: 3: Argument of type"))
+            self.assertTrue(errors[0].startswith("E: 3: Argument of type"))
 
     def tearDown(self):
         self.test_checker.tearDown()
+        
