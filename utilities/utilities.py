@@ -97,8 +97,10 @@ def load_config_if_not_already_loaded(config_name):
 
     current_config = _get_config_name()
     if current_config != config_name:
-        raise AssertionError(f"Couldn't change config to '{config_name}' it is '{current_config}'."
-                             "(Is this because that configs schema is invalid?)")
+        raise AssertionError(
+            f"Couldn't change config to '{config_name}' it is '{current_config}'."
+            "(Is this because that configs schema is invalid?)"
+        )
 
 
 def _get_config_name():
@@ -193,7 +195,8 @@ def setup_simulated_wiring_tables(event_data=False):
     g.change_tables(
         wiring=wiring_table,
         detector=table_path_template.format("detector"),
-        spectra=table_path_template.format("spectra"))
+        spectra=table_path_template.format("spectra"),
+    )
     g.change_tcb(0, 10000, 100)
     if event_data:
         g.change_tcb(0, 10000, 100, regime=2)
@@ -224,11 +227,13 @@ def _wait_for_and_assert_dae_simulation_mode(mode):
         sleep(1.0)
     if g.get_dae_simulation_mode() != mode:
         sim_val = g.get_pv("DAE:SIM_MODE", is_local=True)
-        raise AssertionError(f"Could not set DAE simulation mode to {mode} - current SIM_MODE PV value is {sim_val}")
+        raise AssertionError(
+            f"Could not set DAE simulation mode to {mode} - current SIM_MODE PV value is {sim_val}"
+        )
 
 
 def set_wait_for_complete_callback_dae_settings(wait):
-    """ Sets the wait for completion callback attribute of the DAE
+    """Sets the wait for completion callback attribute of the DAE
 
     @param wait: Boolean value, True if you want the DAE to wait for the operation
     to complete before returning
@@ -271,7 +276,7 @@ def _start_stop_ioc_is_a_start(is_a_start, ioc_name):
         IOError error if IOC does not start/stop after IOCS_START_STOP_TIMEOUT seconds
 
     """
-    command = 'START' if is_a_start else 'STOP'
+    command = "START" if is_a_start else "STOP"
     if is_ioc_up(ioc_name) != is_a_start:
         g.set_pv(f"CS:PS:{ioc_name}:{command}", 1, is_local=True)
     else:
@@ -295,11 +300,15 @@ def bulk_start_ioc(ioc_list):
                 g.set_pv(f"CS:PS:{ioc_name}:START", 1, is_local=True)
         except UnableToConnectToPVException:
             not_in_proc_serv.append(ioc_name)
-            print(f"{ioc_name} not found in proc serv, should this be added to the list of iocs to skip?")
+            print(
+                f"{ioc_name} not found in proc serv, should this be added to the list of iocs to skip?"
+            )
     ioc_list = [ioc for ioc in ioc_list if ioc not in not_in_proc_serv]
     for ioc_name in ioc_list:
         try:
-            wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=True, ioc_name=ioc_name)
+            wait_for_ioc_start_stop(
+                timeout=IOCS_START_STOP_TIMEOUT, is_start=True, ioc_name=ioc_name
+            )
         except IOError:
             failed_to_start.append(ioc_name)
     return failed_to_start, not_in_proc_serv
@@ -317,7 +326,9 @@ def bulk_stop_ioc(ioc_list):
             g.set_pv(f"CS:PS:{ioc_name}:STOP", 1, is_local=True)
     for ioc_name in ioc_list:
         try:
-            wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=False, ioc_name=ioc_name)
+            wait_for_ioc_start_stop(
+                timeout=IOCS_START_STOP_TIMEOUT, is_start=False, ioc_name=ioc_name
+            )
         except IOError:
             failed_to_stop.append(ioc_name)
     return failed_to_stop
@@ -452,7 +463,9 @@ def wait_for_string_pvs_to_not_be_empty(pvs, seconds_to_wait, is_local=True):
             break
         sleep(1)
     else:
-        raise AssertionError(f"{[pv for pv, value in pv_values.items() if not value]} not available")
+        raise AssertionError(
+            f"{[pv for pv, value in pv_values.items() if not value]} not available"
+        )
     return pv_values
 
 

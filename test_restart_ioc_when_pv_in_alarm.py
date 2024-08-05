@@ -12,10 +12,13 @@ class TestRestartIocWhenPvInAlarm(unittest.TestCase):
     """
     Tests for the `restart_ioc_when_pv_in_alarm` script.
     """
+
     def setUp(self) -> None:
         g.set_instrument(None, import_instrument_init=False)
         load_config_if_not_already_loaded("test_restart_ioc_when_pv_in_alarm")
-        self.thread = restart_ioc_when_pv_in_alarm("TEST_BLOCK", ["SIMPLE"], ["GRUMPY"], wait_between_restarts=15)
+        self.thread = restart_ioc_when_pv_in_alarm(
+            "TEST_BLOCK", ["SIMPLE"], ["GRUMPY"], wait_between_restarts=15
+        )
 
     def tearDown(self) -> None:
         self.thread.stop()
