@@ -1,19 +1,29 @@
+import os
+import random
 import time
 import unittest
-from datetime import datetime, timedelta
-import h5py
-import random
-import os
+from contextlib import contextmanager
+from datetime import timedelta
 from threading import Thread
 from time import sleep
 
-from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
-    set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
-    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, load_config_if_not_already_loaded,\
-    _wait_for_and_assert_dae_simulation_mode, parameterized_list, get_execution_time
-
+import h5py
 from parameterized import parameterized
-from contextlib import contextmanager
+
+from utilities.utilities import (
+    _wait_for_and_assert_dae_simulation_mode,
+    g,
+    get_execution_time,
+    load_config_if_not_already_loaded,
+    parameterized_list,
+    set_genie_python_raises_exceptions,
+    set_wait_for_complete_callback_dae_settings,
+    setup_simulated_wiring_tables,
+    start_ioc,
+    stop_ioc,
+    temporarily_kill_icp,
+    wait_for_ioc_start_stop,
+)
 
 EXTREMELY_LARGE_NO_OF_PERIODS = 1000000
 
@@ -84,7 +94,9 @@ class TestDae(unittest.TestCase):
         with self.assertRaises(ValueError):
             g.set_dae_simulation_mode(False)
 
-    def test_GIVEN_run_state_is_setup_WHEN_attempt_to_change_simulation_mode_THEN_simulation_mode_changes(self):
+    def test_GIVEN_run_state_is_setup_WHEN_attempt_to_change_simulation_mode_THEN_simulation_mode_changes(
+        self,
+    ):
         self.fail_if_not_in_setup()
 
         g.set_dae_simulation_mode(False)
@@ -103,7 +115,7 @@ class TestDae(unittest.TestCase):
         width = float(random.randint(1, 1000))
         height = float(random.randint(1, 1000))
         l1 = float(random.randint(1, 1000))
-        beamstop = random.choice(['OUT', 'IN'])
+        beamstop = random.choice(["OUT", "IN"])
         filename = "{}\\test{}.nxs".format(os.getenv("TEMP"), random.randint(1, 1000))
         self._wait_for_method(g.get_sample_pars, self.TIMEOUT, "get_sample_pars did not return")
         g.change_title(title)
@@ -116,19 +128,19 @@ class TestDae(unittest.TestCase):
         g.snapshot_crpt(filename)
         sleep(5)
         with h5py.File(filename, "r") as f:
-            saved_title = f['/raw_data_1/title'][0].decode()
-            saved_width = f['/raw_data_1/sample/width'][0]
-            saved_height = f['/raw_data_1/sample/height'][0]
-            saved_geometry = f['/raw_data_1/sample/shape'][0].decode()
-            saved_l1 = -f['/raw_data_1/instrument/moderator/distance'][0]
-            saved_beamstop = f['/raw_data_1/isis_vms_compat/IVPB'][30]
+            saved_title = f["/raw_data_1/title"][0].decode()
+            saved_width = f["/raw_data_1/sample/width"][0]
+            saved_height = f["/raw_data_1/sample/height"][0]
+            saved_geometry = f["/raw_data_1/sample/shape"][0].decode()
+            saved_l1 = -f["/raw_data_1/instrument/moderator/distance"][0]
+            saved_beamstop = f["/raw_data_1/isis_vms_compat/IVPB"][30]
         os.remove(filename)
         self.assertEqual(title, saved_title)
         self.assertEqual(width, saved_width)
         self.assertEqual(height, saved_height)
         self.assertEqual(geometry, saved_geometry)
         self.assertEqual(l1, saved_l1)
-        if beamstop == 'OUT':
+        if beamstop == "OUT":
             self.assertEqual(1, saved_beamstop)
         else:
             self.assertEqual(0, saved_beamstop)
@@ -173,23 +185,30 @@ class TestDae(unittest.TestCase):
 
         g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
-        nexus_path = r'/raw_data_1/selog/{}/value_log'.format(test_block_name)
+        nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
         def test_function(f):
-            is_valid = [sample == 1 for sample in f[nexus_path + r'/value_valid'][:]]
-            values = [int(val) for val in f[nexus_path + r'/value'][:]]
-            alarm_severity = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_severity'][:]]
-            alarm_status = [str(sample[0], 'utf-8').strip() for sample in f[nexus_path + r'/alarm_status'][:]]
-            alarm_time = [int(time) for time in f[nexus_path + r'/alarm_time'][:]]
+            is_valid = [sample == 1 for sample in f[nexus_path + r"/value_valid"][:]]
+            values = [int(val) for val in f[nexus_path + r"/value"][:]]
+            alarm_severity = [
+                str(sample[0], "utf-8").strip() for sample in f[nexus_path + r"/alarm_severity"][:]
+            ]
+            alarm_status = [
+                str(sample[0], "utf-8").strip() for sample in f[nexus_path + r"/alarm_status"][:]
+            ]
+            alarm_time = [int(time) for time in f[nexus_path + r"/alarm_time"][:]]
 
             # There could be some samples at the beginning/end but we only care about the ones we've set
             first_value_index = values.index(test_values[0])
             print(f"first_value_index={first_value_index}, len(values)={len(values)}")
-            self.assertTrue((first_value_index + len(test_values) + 1) <= len(values), "Not enough value/value_valid items logged to file")
+            self.assertTrue(
+                (first_value_index + len(test_values) + 1) <= len(values),
+                "Not enough value/value_valid items logged to file",
+            )
 
             # Only care about test values and the final invalid one
-            is_valid = is_valid[first_value_index:first_value_index + len(test_values) + 1]
-            values = values[first_value_index:first_value_index + len(test_values) + 1]
+            is_valid = is_valid[first_value_index : first_value_index + len(test_values) + 1]
+            values = values[first_value_index : first_value_index + len(test_values) + 1]
 
             # find first occurrence of NONE after the start of the run, which is start of our values
             first_positive_alarm_timestamp = next(k for k, val in enumerate(alarm_time) if val > 0)
@@ -199,10 +218,18 @@ class TestDae(unittest.TestCase):
             alarm_status = alarm_status[first_alarm_index:final_alarm_index]
             alarm_time = alarm_time[first_alarm_index:final_alarm_index]
 
-            print(f"len(is_valid)={len(is_valid)} first_alarm_index={first_alarm_index} len(alarm_severity)={len(alarm_severity)}")
+            print(
+                f"len(is_valid)={len(is_valid)} first_alarm_index={first_alarm_index} len(alarm_severity)={len(alarm_severity)}"
+            )
 
-            self.assertTrue(len(is_valid) == len(test_values) + 1, "Not enough values/value_valid items logged to file")
-            self.assertTrue(len(alarm_severity) == len(test_values) + 1,"Not enough alarm status/severity items logged to file")
+            self.assertTrue(
+                len(is_valid) == len(test_values) + 1,
+                "Not enough values/value_valid items logged to file",
+            )
+            self.assertTrue(
+                len(alarm_severity) == len(test_values) + 1,
+                "Not enough alarm status/severity items logged to file",
+            )
 
             self.assertListEqual(is_valid, [True, True, True, False])
             # [0] is the value logged by ISISICP when SIMPLE IOC is restarted above
@@ -235,26 +262,31 @@ class TestDae(unittest.TestCase):
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
             def test_func(f):
-                saved_title = f['/raw_data_1/title'][0].decode()
+                saved_title = f["/raw_data_1/title"][0].decode()
                 self.assertEqual(expected_title, saved_title)
 
             nexus_file_with_retry(inst, runnumber, test_func)
 
-    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(self):
+    def test_GIVEN_run_with_block_in_title_WHEN_run_finished_THEN_run_title_has_value_of_block_in_it(
+        self,
+    ):
         # This is done in one go rather than as a parameterized list as each test needs to quite a long wait
         self.fail_if_not_in_setup()
         load_config_if_not_already_loaded("block_in_title")
 
-        test_blocks = [("FLOAT_BLOCK", 12.345, 12.345),
-                       ("LONG_BLOCK", 512, 512),
-                       ("STRING_BLOCK", "Test string", "Test string"),
-
-                       # BI/MBBI can only save integer representation to title
-                       ("BI_BLOCK", "YES", 1),
-                       ("MBBI_BLOCK", "CHEERFUL", 2)]
+        test_blocks = [
+            ("FLOAT_BLOCK", 12.345, 12.345),
+            ("LONG_BLOCK", 512, 512),
+            ("STRING_BLOCK", "Test string", "Test string"),
+            # BI/MBBI can only save integer representation to title
+            ("BI_BLOCK", "YES", 1),
+            ("MBBI_BLOCK", "CHEERFUL", 2),
+        ]
 
         test_title = "Test block value " + ("{} and " * len(test_blocks))
-        formatted_block_names = [BLOCK_FORMAT_PATTERN.format(block_name=block[0]) for block in test_blocks]
+        formatted_block_names = [
+            BLOCK_FORMAT_PATTERN.format(block_name=block[0]) for block in test_blocks
+        ]
         title = test_title.format(*formatted_block_names)
 
         expected_title = test_title.format(*[block[2] for block in test_blocks])
@@ -263,7 +295,9 @@ class TestDae(unittest.TestCase):
             [g.cset(block[0], block[1], wait=True) for block in test_blocks]
             sleep(10)
 
-    def test_GIVEN_run_with_multiple_blocks_in_title_WHEN_run_finished_THEN_title_has_all_block_values_in_it(self):
+    def test_GIVEN_run_with_multiple_blocks_in_title_WHEN_run_finished_THEN_title_has_all_block_values_in_it(
+        self,
+    ):
         self.fail_if_not_in_setup()
         load_config_if_not_already_loaded("block_in_title")
 
@@ -277,34 +311,52 @@ class TestDae(unittest.TestCase):
 
         title = test_title.format(block1=formatted_block_name_1, block2=formatted_block_name_2)
 
-        with self._assert_title_correct(title, test_title.format(block1=float_test_val, block2=long_test_val)):
+        with self._assert_title_correct(
+            title, test_title.format(block1=float_test_val, block2=long_test_val)
+        ):
             g.cset("FLOAT_BLOCK", float_test_val, wait=True)
             g.cset("LONG_BLOCK", long_test_val, wait=True)
             sleep(10)
 
-    def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(self):
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_false_and_valid_tables_given_THEN_dae_does_not_wait_and_xml_values_are_not_initially_correct(
+        self,
+    ):
         set_wait_for_complete_callback_dae_settings(False)
         set_genie_python_raises_exceptions(True)
 
         table_path_template = r"{}\tables\{}"
-        wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
-        detector = table_path_template.format(os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat")
-        spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
+        wiring = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat"
+        )
+        detector = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat"
+        )
+        spectra = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat"
+        )
 
         with self.assertRaises(ValueError):
             g.change_tables(wiring, detector, spectra)
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(self):
+    def test_GIVEN_wait_for_complete_callback_dae_settings_is_true_and_valid_tables_given_THEN_dae_waits_and_xml_values_are_confirmed_correct(
+        self,
+    ):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
 
         table_path_template = r"{}\tables\{}"
-        wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
-        detector = table_path_template.format(os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat")
-        spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
+        wiring = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat"
+        )
+        detector = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat"
+        )
+        spectra = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat"
+        )
         g.change_tables(wiring, detector, spectra)
 
         set_genie_python_raises_exceptions(False)
@@ -314,35 +366,41 @@ class TestDae(unittest.TestCase):
         g.change_tcb(0, 10000, 100, regime=2)
 
         table_path_template = r"{}/tables/{}"
-        wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
-        detector = table_path_template.format(os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat")
-        spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
-
-        g.change_tables(
-            wiring=wiring,
-            detector=detector,
-            spectra=spectra
+        wiring = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat"
         )
+        detector = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat"
+        )
+        spectra = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat"
+        )
+
+        g.change_tables(wiring=wiring, detector=detector, spectra=spectra)
 
         self.assertEqual(g.get_detector_table().lower(), detector.lower())
         self.assertEqual(g.get_wiring_table().lower(), wiring.lower())
         self.assertEqual(g.get_spectra_table().lower(), spectra.lower())
 
-    def test_GIVEN_valid_tables_to_change_tables_but_ISISDAE_killed_THEN_get_tables_raises_exception(self):
+    def test_GIVEN_valid_tables_to_change_tables_but_ISISDAE_killed_THEN_get_tables_raises_exception(
+        self,
+    ):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
 
         table_path_template = r"{}\tables\{}"
-        wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
-        detector = table_path_template.format(os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat")
-        spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
-
-        g.change_tables(
-            wiring=wiring,
-            detector=detector,
-            spectra=spectra
+        wiring = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat"
         )
+        detector = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat"
+        )
+        spectra = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat"
+        )
+
+        g.change_tables(wiring=wiring, detector=detector, spectra=spectra)
 
         with temporarily_kill_icp():
             self.assertRaises(Exception, g.get_detector_table)
@@ -356,7 +414,9 @@ class TestDae(unittest.TestCase):
         self.assertRaises(Exception, g.change_tables, r"C:\Nonsense\Wibble\Wobble\jelly.txt")
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
+    def test_GIVEN_change_tables_called_WHEN_existing_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(
+        self,
+    ):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -365,19 +425,26 @@ class TestDae(unittest.TestCase):
         detector = r"det_corr_184_process_5.dat"
         spectra = r"f_spectra_doors_all_process_2to1_5.dat"
 
-        g.change_tables(
-            wiring=wiring,
-            detector=detector,
-            spectra=spectra
-        )
+        g.change_tables(wiring=wiring, detector=detector, spectra=spectra)
 
-        self.assertEqual(g.get_detector_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector).lower())
-        self.assertEqual(g.get_wiring_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring).lower())
-        self.assertEqual(g.get_spectra_table().lower(), r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra).lower())
+        self.assertEqual(
+            g.get_detector_table().lower(),
+            r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], detector).lower(),
+        )
+        self.assertEqual(
+            g.get_wiring_table().lower(),
+            r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], wiring).lower(),
+        )
+        self.assertEqual(
+            g.get_spectra_table().lower(),
+            r"{}/tables/{}".format(os.environ["ICPCONFIGROOT"], spectra).lower(),
+        )
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_tables_called_WHEN_nonexisting_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(self):
+    def test_GIVEN_change_tables_called_WHEN_nonexisting_filenames_provided_not_absolute_paths_THEN_files_found_and_tables_set(
+        self,
+    ):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
@@ -387,47 +454,53 @@ class TestDae(unittest.TestCase):
         spectra = r"f_spectra_doors_all_2to1_5.dat"
 
         with self.assertRaises(Exception):
-            g.change_tables(
-                wiring=wiring,
-                detector=detector,
-                spectra=spectra
-            )
+            g.change_tables(wiring=wiring, detector=detector, spectra=spectra)
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_THEN_filepath_is_accepted(self):
+    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_THEN_filepath_is_accepted(
+        self,
+    ):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
 
         table_path_template = r"{}\tables\{}"
-        wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
-        detector = table_path_template.format(os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat")
-        spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
-
-        g.change_tables(
-            wiring=wiring,
-            detector=detector,
-            spectra=spectra
+        wiring = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat"
+        )
+        detector = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat"
+        )
+        spectra = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat"
         )
 
-    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_and_with_forward_slashes_THEN_filepath_is_accepted(self):
+        g.change_tables(wiring=wiring, detector=detector, spectra=spectra)
+
+    def test_GIVEN_change_tables_called_WHEN_filenames_are_not_raw_strings_and_with_forward_slashes_THEN_filepath_is_accepted(
+        self,
+    ):
         set_wait_for_complete_callback_dae_settings(True)
         set_genie_python_raises_exceptions(True)
         g.change_tcb(0, 10000, 100, regime=2)
 
         table_path_template = "{}/tables/{}"
-        wiring = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat")
-        detector = table_path_template.format(os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat")
-        spectra = table_path_template.format(os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat")
-
-        g.change_tables(
-            wiring=wiring,
-            detector=detector,
-            spectra=spectra
+        wiring = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_wiring_doors_all_event_process_5.dat"
+        )
+        detector = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "det_corr_184_process_5.dat"
+        )
+        spectra = table_path_template.format(
+            os.environ["ICPCONFIGROOT"], "f_spectra_doors_all_process_2to1_5.dat"
         )
 
-    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_normal_THEN_change_successful(self):
+        g.change_tables(wiring=wiring, detector=detector, spectra=spectra)
+
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_normal_THEN_change_successful(
+        self,
+    ):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
@@ -435,7 +508,9 @@ class TestDae(unittest.TestCase):
 
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(self):
+    def test_GIVEN_change_number_soft_periods_called_WHEN_new_value_too_big_for_DAE_hardware_THEN_raise_exception_to_console(
+        self,
+    ):
         set_genie_python_raises_exceptions(True)
 
         g.change_number_soft_periods(30)
@@ -447,7 +522,9 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     @parameterized.expand(parameterized_list([1, 2, 6, 9, 10]))
-    def test_GIVEN_change_period_called_WHEN_valid_argument_THEN_change_successful(self, _, new_period):
+    def test_GIVEN_change_period_called_WHEN_valid_argument_THEN_change_successful(
+        self, _, new_period
+    ):
         set_genie_python_raises_exceptions(True)
         g.change_number_soft_periods(10)
         self._wait_for_dae_period_change(10, g.get_number_periods)
@@ -458,7 +535,9 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     @parameterized.expand(parameterized_list([-1, 0, 11, 12]))
-    def test_GIVEN_change_period_called_WHEN_invalid_argument_THEN_raise_exception_to_console(self, _, new_period):
+    def test_GIVEN_change_period_called_WHEN_invalid_argument_THEN_raise_exception_to_console(
+        self, _, new_period
+    ):
         set_genie_python_raises_exceptions(True)
         g.change_number_soft_periods(10)
         self._wait_for_dae_period_change(10, g.get_number_periods)
@@ -472,7 +551,6 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(False)
 
     def _adjust_icp_begin_delay(self, delay_seconds):
-
         icp_properties_files = [
             r"C:\Labview modules\dae\isisicp.properties",
             r"C:\Instrument\Apps\EPICS\ICP_Binaries\isisicp.properties",
@@ -503,14 +581,19 @@ class TestDae(unittest.TestCase):
                         f.writelines(lines)
 
             if not config_found:
-                raise IOError("Could not find at least one icp config file (looked in {})".format(icp_properties_files))
+                raise IOError(
+                    "Could not find at least one icp config file (looked in {})".format(
+                        icp_properties_files
+                    )
+                )
 
         # Give time for ICP to restart
         time.sleep(15)
         g.waitfor_runstate("SETUP")
 
-    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(self):
-
+    def test_GIVEN_begin_in_progress_WHEN_runcontrol_changes_quickly_in_and_out_of_range_THEN_correct_state_is_eventually_used(
+        self,
+    ):
         load_config_if_not_already_loaded("rcptt_simple")
 
         # needs to be long enough so the various cset() commands below can exectute prior to begin completion
@@ -531,7 +614,11 @@ class TestDae(unittest.TestCase):
             number_of_attempts = 100
 
             for attempt in range(number_of_attempts):
-                print("runcontrol race condition check1 attempt {} / {}".format(attempt + 1, number_of_attempts))
+                print(
+                    "runcontrol race condition check1 attempt {} / {}".format(
+                        attempt + 1, number_of_attempts
+                    )
+                )
 
                 # Start with block out of range
                 g.cset("FLOAT_BLOCK", out_of_range, wait=True)
@@ -604,7 +691,9 @@ class TestDae(unittest.TestCase):
                 sleep(1)
         self.fail("dae period or number of periods read timed out")
 
-    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_time_returned_is_correct(self):
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_without_pause_THEN_time_returned_is_correct(
+        self,
+    ):
         """
         Checks if the seconds elapsed since the start is the same as the expected elapsed seconds.
         """
@@ -630,10 +719,16 @@ class TestDae(unittest.TestCase):
         thread.join()
 
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertAlmostEqual(sleep_time, time_taken[0], delta=tolerance)  # if this fails, then will print the two values
-        self.assertTrue(abs(timedelta(seconds=sleep_time) - time_taken[1]) < timedelta(seconds=tolerance))
+        self.assertAlmostEqual(
+            sleep_time, time_taken[0], delta=tolerance
+        )  # if this fails, then will print the two values
+        self.assertTrue(
+            abs(timedelta(seconds=sleep_time) - time_taken[1]) < timedelta(seconds=tolerance)
+        )
 
-    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(self):
+    def test_GIVEN_x_seconds_have_elapsed_since_start_WHEN_getting_time_since_start_with_pause_THEN_seconds_returned_is_correct(
+        self,
+    ):
         """
         Checks if the seconds elapsed since the start, including pause time period,
         is the same as the expected elapsed seconds.
@@ -663,8 +758,12 @@ class TestDae(unittest.TestCase):
         print(f"Time since begin {actual_s} expected {expected}")
 
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
-        self.assertAlmostEqual(expected, actual_s, delta=tolerance)  # if this fails, then will print the two values
-        self.assertTrue(abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=tolerance))
+        self.assertAlmostEqual(
+            expected, actual_s, delta=tolerance
+        )  # if this fails, then will print the two values
+        self.assertTrue(
+            abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=tolerance)
+        )
 
     def test_GIVEN_no_instetc_WHEN_get_rb_and_begin_run_THEN_dae_state_is_running(self):
         """
@@ -696,4 +795,3 @@ class TestDae(unittest.TestCase):
 
         g.end()
         g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
-

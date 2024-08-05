@@ -1,15 +1,14 @@
-import unittest
-import types
-import pkgutil
-import warnings
 import importlib
-
+import pkgutil
+import types
+import unittest
+import warnings
 
 IGNORED_MODULES = {
     "curses",  # Not supported on windows
     "dockerpty",  # Not supported on windows
     "adodbapi",  # Not needed by users
-    "black"  # Not needed by users
+    "black",  # Not needed by users
 }
 
 
@@ -17,6 +16,7 @@ class TestGeniePythonImports(unittest.TestCase):
     """
     Tests that modules which users use can be imported.
     """
+
     def _attempt_to_import_module_by_name(self, module_name):
         """
         Attempts to import a module by name.
@@ -32,7 +32,9 @@ class TestGeniePythonImports(unittest.TestCase):
             self.assertIsInstance(mod, types.ModuleType)
             del mod
         except Exception as e:
-            return "Could not import module '{}'. Exception was: {}: {}.".format(module_name, e.__class__.__name__, e)
+            return "Could not import module '{}'. Exception was: {}: {}.".format(
+                module_name, e.__class__.__name__, e
+            )
         else:
             return None
 
@@ -51,4 +53,6 @@ class TestGeniePythonImports(unittest.TestCase):
                 if res is not None:
                     failures.append(res)
 
-        self.assertEqual(len(failures), 0, "Could not import modules: \n{}".format("\n".join(failures)))
+        self.assertEqual(
+            len(failures), 0, "Could not import modules: \n{}".format("\n".join(failures))
+        )

@@ -1,19 +1,17 @@
 import json
 import os
-import unittest
-from typing import Callable
-
-from genie_python.utilities import compress_and_hex
-
-from utilities import utilities
-from utilities.utilities import parameterized_list, assert_with_timeout
-import time
-from genie_python import genie as g
-import requests
-from hamcrest import *
 import socket
+import time
+import unittest
+
+import requests
+from genie_python import genie as g
+from genie_python.utilities import compress_and_hex
+from hamcrest import *
 from parameterized import parameterized
 
+from utilities import utilities
+from utilities.utilities import assert_with_timeout, parameterized_list
 
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
 
@@ -33,13 +31,21 @@ class TestBlockserver(unittest.TestCase):
     """
     Tests for top-level functionality of block server
     """
+
     def setUp(self) -> None:
         g.set_instrument(None, import_instrument_init=False)
         self.pvlist_file = os.path.join(r"C:\Instrument", "Settings", "gwblock.pvlist")
         self.rc_settings_file = os.path.join(
-            r"C:\Instrument", "Settings", "config", socket.gethostname(), "configurations", "rc_settings.cmd"
+            r"C:\Instrument",
+            "Settings",
+            "config",
+            socket.gethostname(),
+            "configurations",
+            "rc_settings.cmd",
         )
-        self.config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs", "configurations")
+        self.config_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "configs", "configurations"
+        )
         self.block_archive_blocks_url = "http://localhost:4813/group?name=BLOCKS&format=json"
 
     def test_GIVEN_config_changes_THEN_dae_and_instetc_come_back_with_autorestart_reapplied(self):
@@ -67,29 +73,41 @@ class TestBlockserver(unittest.TestCase):
         simple_start_time_pv = "CS:IOC:SIMPLE:DEVIOS:STARTTOD"
         caen_start_time_pv = "CS:IOC:CAENV895_01:DEVIOS:STARTTOD"
         start_times = utilities.wait_for_string_pvs_to_not_be_empty(
-            [simple_start_time_pv, caen_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+            [simple_start_time_pv, caen_start_time_pv],
+            SECONDS_TO_WAIT_FOR_IOC_STARTS,
+            is_local=True,
         )
         simple_start_time_before = start_times[simple_start_time_pv]
         caen_start_time_before = start_times[caen_start_time_pv]
 
         details = utilities.get_config_details()
         details["desc"] = "some_edited_description"
-        g.set_pv("CS:BLOCKSERVER:SET_CURR_CONFIG_DETAILS", compress_and_hex(json.dumps(details)), is_local=True)
+        g.set_pv(
+            "CS:BLOCKSERVER:SET_CURR_CONFIG_DETAILS",
+            compress_and_hex(json.dumps(details)),
+            is_local=True,
+        )
 
         err = None
         for _ in range(SECONDS_TO_WAIT_FOR_IOC_STARTS):
             try:
                 # Get new start times
                 start_times = utilities.wait_for_string_pvs_to_not_be_empty(
-                    [simple_start_time_pv, caen_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+                    [simple_start_time_pv, caen_start_time_pv],
+                    SECONDS_TO_WAIT_FOR_IOC_STARTS,
+                    is_local=True,
                 )
                 simple_start_time_after = start_times[simple_start_time_pv]
                 caen_start_time_after = start_times[caen_start_time_pv]
                 self.assertEqual(
-                    simple_start_time_before, simple_start_time_after, "SIMPLE ioc should not have restarted"
+                    simple_start_time_before,
+                    simple_start_time_after,
+                    "SIMPLE ioc should not have restarted",
                 )
                 self.assertNotEqual(
-                    caen_start_time_before, caen_start_time_after, "CAENV895 ioc should have restarted"
+                    caen_start_time_before,
+                    caen_start_time_after,
+                    "CAENV895 ioc should have restarted",
                 )
                 break
             except (Exception, AssertionError) as e:
@@ -98,12 +116,21 @@ class TestBlockserver(unittest.TestCase):
         else:
             raise err
 
-    @parameterized.expand(parameterized_list([
-        ("simple1", "simple2"),  # Move IOC between 2 configs
-        ("simple_comp_macros", "simple_comp_macros_2"),  # Move IOC between two components
-        ("simple_with_macros", "simple_comp_macros"),  # Move IOC between config and component
-    ]))
-    def test_GIVEN_config_changes_by_ioc_and_ioc_has_same_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_not_restarted(self, _, old_config, new_config):
+    @parameterized.expand(
+        parameterized_list(
+            [
+                ("simple1", "simple2"),  # Move IOC between 2 configs
+                ("simple_comp_macros", "simple_comp_macros_2"),  # Move IOC between two components
+                (
+                    "simple_with_macros",
+                    "simple_comp_macros",
+                ),  # Move IOC between config and component
+            ]
+        )
+    )
+    def test_GIVEN_config_changes_by_ioc_and_ioc_has_same_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_not_restarted(
+        self, _, old_config, new_config
+    ):
         utilities.load_config_if_not_already_loaded(old_config)
 
         utilities.wait_for_iocs_to_be_up(["SIMPLE"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
@@ -126,13 +153,19 @@ class TestBlockserver(unittest.TestCase):
         # Assert that SIMPLE start time has not changed, i.e. SIMPLE didn't restart as a result of the config change.
         self.assertEqual(simple_start_time, new_simple_start_time)
 
-    @parameterized.expand(parameterized_list([
-        ("simple1", "simple_with_macros"),  # Config -> config
-        ("simple_comp_no_macros", "simple_comp_macros"),  # Component -> component
-        ("simple1", "simple_comp_macros"),  # Config -> Component
-        ("simple_comp_macros", "simple1"),  # Component -> Config
-    ]))
-    def test_GIVEN_config_changes_by_ioc_and_ioc_has_different_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_is_restarted(self, _, old_config, new_config):
+    @parameterized.expand(
+        parameterized_list(
+            [
+                ("simple1", "simple_with_macros"),  # Config -> config
+                ("simple_comp_no_macros", "simple_comp_macros"),  # Component -> component
+                ("simple1", "simple_comp_macros"),  # Config -> Component
+                ("simple_comp_macros", "simple1"),  # Component -> Config
+            ]
+        )
+    )
+    def test_GIVEN_config_changes_by_ioc_and_ioc_has_different_settings_in_old_and_new_WHEN_changing_configs_THEN_ioc_is_restarted(
+        self, _, old_config, new_config
+    ):
         utilities.load_config_if_not_already_loaded(old_config)
 
         utilities.wait_for_iocs_to_be_up(["SIMPLE"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
@@ -140,7 +173,7 @@ class TestBlockserver(unittest.TestCase):
 
         simple_start_time_pv = "CS:IOC:SIMPLE:DEVIOS:STARTTOD"
         simple_start_time = utilities.wait_for_string_pvs_to_not_be_empty(
-           [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+            [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
         )[simple_start_time_pv]
 
         # Load a config containing a different IOC, but still containing SIMPLE (with the same settings as before)
@@ -149,57 +182,65 @@ class TestBlockserver(unittest.TestCase):
         time.sleep(30)  # Time for IOCs to fully boot etc
 
         new_simple_start_time = utilities.wait_for_string_pvs_to_not_be_empty(
-           [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+            [simple_start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
         )[simple_start_time_pv]
 
         # Assert that SIMPLE start time has changed, as the IOC has different settings in the new config
         self.assertNotEqual(simple_start_time, new_simple_start_time)
 
-    def test_GIVEN_manually_started_ioc_WHEN_changing_to_config_containing_ioc_but_without_autostart_THEN_ioc_stopped(self):
+    def test_GIVEN_manually_started_ioc_WHEN_changing_to_config_containing_ioc_but_without_autostart_THEN_ioc_stopped(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("empty_for_system_tests")
 
-        assert_with_timeout(lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), False), timeout=30)
+        assert_with_timeout(
+            lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), False), timeout=30
+        )
 
         utilities.start_ioc("SIMPLE")
 
-        assert_with_timeout(lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), True), timeout=30)
+        assert_with_timeout(
+            lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), True), timeout=30
+        )
 
         utilities.load_config_if_not_already_loaded("simple_without_autostart")
 
-        assert_with_timeout(lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), False), timeout=30)
+        assert_with_timeout(
+            lambda: self.assertEqual(utilities.is_ioc_up("SIMPLE"), False), timeout=30
+        )
 
-## comment out now as need to check expected behaviour, this may have chanegd when
-#    def test_GIVEN_config_changes_to_empty_and_back_again_THEN_runcontrol_settings_reset_to_config_defaults(self):
-#        utilities.load_config_if_not_already_loaded("rcptt_simple")
-#        time.sleep(60)
-#        self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
-#
-#        # Settings different than config default
-#        g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
-#
-#        self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"])
-#
-#        utilities.load_config_if_not_already_loaded("empty_for_system_tests")
-#        time.sleep(60)
-#        utilities.load_config_if_not_already_loaded("rcptt_simple")
-#        time.sleep(60)
-#
-#        self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
+    ## comment out now as need to check expected behaviour, this may have chanegd when
+    #    def test_GIVEN_config_changes_to_empty_and_back_again_THEN_runcontrol_settings_reset_to_config_defaults(self):
+    #        utilities.load_config_if_not_already_loaded("rcptt_simple")
+    #        time.sleep(60)
+    #        self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
+    #
+    #        # Settings different than config default
+    #        g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
+    #
+    #        self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"])
+    #
+    #        utilities.load_config_if_not_already_loaded("empty_for_system_tests")
+    #        time.sleep(60)
+    #        utilities.load_config_if_not_already_loaded("rcptt_simple")
+    #        time.sleep(60)
+    #
+    #        self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"])
 
-## comment out now as need to check expected behaviour, this may have chanegd when
-## configuration loading was optimised
-#    def test_GIVEN_config_explicitly_reloaded_THEN_runcontrol_settings_reset_to_config_defaults(self):
-#        utilities.load_config_if_not_already_loaded("rcptt_simple")
-#        time.sleep(60)
-#        assert_with_timeout(assertion=lambda: self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=60)
-#
-#        # Settings different than config default
-#        g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
-#        assert_with_timeout(assertion=lambda: self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=60)
-#
-#        g.reload_current_config()
-#
-#        assert_with_timeout(assertion=lambda: self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=120)
+    ## comment out now as need to check expected behaviour, this may have chanegd when
+    ## configuration loading was optimised
+    #    def test_GIVEN_config_explicitly_reloaded_THEN_runcontrol_settings_reset_to_config_defaults(self):
+    #        utilities.load_config_if_not_already_loaded("rcptt_simple")
+    #        time.sleep(60)
+    #        assert_with_timeout(assertion=lambda: self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=60)
+    #
+    #        # Settings different than config default
+    #        g.cset("FLOAT_BLOCK", runcontrol=True, lowlimit=123, highlimit=456)
+    #        assert_with_timeout(assertion=lambda: self.assertTrue(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=60)
+    #
+    #        g.reload_current_config()
+    #
+    #        assert_with_timeout(assertion=lambda: self.assertFalse(g.cget("FLOAT_BLOCK")["runcontrol"]), timeout=120)
 
     def test_GIVEN_config_reloaded_THEN_alerts_username_and_pw_are_retained(self):
         utilities.load_config_if_not_already_loaded("rcptt_simple")
@@ -217,12 +258,18 @@ class TestBlockserver(unittest.TestCase):
         # Give time for config to be fully reloaded.
         time.sleep(60)
 
-        assert_with_timeout(assertion=lambda: self.assertEqual(g.get_pv("CS:AC:ALERTS:URL:SP", is_local=True), url),
-                            timeout=SECONDS_TO_WAIT_FOR_IOC_STARTS)
-        assert_with_timeout(assertion=lambda: self.assertEqual(g.get_pv("CS:AC:ALERTS:PW:SP", is_local=True), pw),
-                            timeout=SECONDS_TO_WAIT_FOR_IOC_STARTS)
+        assert_with_timeout(
+            assertion=lambda: self.assertEqual(g.get_pv("CS:AC:ALERTS:URL:SP", is_local=True), url),
+            timeout=SECONDS_TO_WAIT_FOR_IOC_STARTS,
+        )
+        assert_with_timeout(
+            assertion=lambda: self.assertEqual(g.get_pv("CS:AC:ALERTS:PW:SP", is_local=True), pw),
+            timeout=SECONDS_TO_WAIT_FOR_IOC_STARTS,
+        )
 
-    def test_GIVEN_config_contains_gw_and_archiver_files_THEN_archiver_uses_configuration_file(self):
+    def test_GIVEN_config_contains_gw_and_archiver_files_THEN_archiver_uses_configuration_file(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("test_blockserver_with_gw_archiver")
         time.sleep(30)
 
@@ -234,7 +281,9 @@ class TestBlockserver(unittest.TestCase):
 
         utilities.retry_assert(5, assert_block_archive_blocks_group_has_one_channel, 3.0)
 
-    def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
+    def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
         time.sleep(30)
 
@@ -244,7 +293,9 @@ class TestBlockserver(unittest.TestCase):
         assert_that(response["Channels"][0]["Channel"], ends_with("TIZROUTOFRANGE"))
         assert_that(response["Channels"][1]["Channel"], ends_with("TIZRWARNING"))
 
-    def test_GIVEN_config_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(self):
+    def test_GIVEN_config_does_not_contain_gw_and_archiver_files_THEN_archiver_configuration_generated_by_blockserver(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("test_blockserver")
 
         response = requests.get(self.block_archive_blocks_url).json()
@@ -260,7 +311,9 @@ class TestBlockserver(unittest.TestCase):
         with open(self.pvlist_file, "r") as pvlist, open(config_pvlist_file, "r") as config_pvlist:
             assert_that(pvlist.read(), is_(config_pvlist.read()))
 
-    def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_pvlist_generated(self):
+    def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_pvlist_generated(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
 
         with open(self.pvlist_file, "r") as pvlist:
@@ -280,7 +333,9 @@ class TestBlockserver(unittest.TestCase):
         utilities.load_config_if_not_already_loaded(config)
 
         config_rc_settings_file = os.path.join(self.config_dir, config, "rc_settings.cmd")
-        with open(self.rc_settings_file, "r") as rc_settings, open(config_rc_settings_file, "r") as config_rc_settings:
+        with open(self.rc_settings_file, "r") as rc_settings, open(
+            config_rc_settings_file, "r"
+        ) as config_rc_settings:
             assert_that(rc_settings.read(), is_(config_rc_settings.read()))
 
     def test_GIVEN_config_claims_but_does_not_contain_rc_settings_THEN_rc_settings_generated(self):
@@ -301,7 +356,7 @@ class TestBlockserver(unittest.TestCase):
         CONFIGURATION_NAME = "test_blockserver_save_active_config"
         BLOCK_NAME = "TEST_BLOCK"
         utilities.load_config_if_not_already_loaded(CONFIGURATION_NAME)
-        
+
         data = {}
         data["name"] = CONFIGURATION_NAME
         data["blocks"] = [
@@ -310,7 +365,12 @@ class TestBlockserver(unittest.TestCase):
                 "pv": "TEST_PV",
             }
         ]
-        
-        g.set_pv("CS:BLOCKSERVER:SAVE_NEW_CONFIG", compress_and_hex(json.dumps(data)), wait=True, is_local=True)
+
+        g.set_pv(
+            "CS:BLOCKSERVER:SAVE_NEW_CONFIG",
+            compress_and_hex(json.dumps(data)),
+            wait=True,
+            is_local=True,
+        )
         wait_for_server()
         self.assertTrue(utilities.check_block_exists(BLOCK_NAME))

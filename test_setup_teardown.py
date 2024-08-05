@@ -1,7 +1,8 @@
-from psutil import virtual_memory
-import os
-from configobj import ConfigObj
 import argparse
+import os
+
+from configobj import ConfigObj
+from psutil import virtual_memory
 
 ICP_BINARIES = os.path.join(os.environ.get("EPICS_ROOT"), "ICP_Binaries")
 CONFIG_FILE = "isisicp.properties"
@@ -35,9 +36,16 @@ def turn_on_datastreaming():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Set up and tear down tests (run whilst the server not started).')
-    parser.add_argument('--tear_down', action='store_const', const=True, default=False,
-                        help='run the tearDown of the tests, default is false so will run set up')
+    parser = argparse.ArgumentParser(
+        description="Set up and tear down tests (run whilst the server not started)."
+    )
+    parser.add_argument(
+        "--tear_down",
+        action="store_const",
+        const=True,
+        default=False,
+        help="run the tearDown of the tests, default is false so will run set up",
+    )
     args = parser.parse_args()
 
     if not args.tear_down:
