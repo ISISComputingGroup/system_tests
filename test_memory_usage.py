@@ -1,9 +1,15 @@
-from hamcrest import *
-import unittest
 import os
+import unittest
 
-from utilities.utilities import load_config_if_not_already_loaded, g, setup_simulated_wiring_tables, BASE_MEMORY_USAGE
-from psutil import virtual_memory, Process, process_iter, AccessDenied
+from hamcrest import *
+from psutil import AccessDenied, process_iter, virtual_memory
+
+from utilities.utilities import (
+    BASE_MEMORY_USAGE,
+    g,
+    load_config_if_not_already_loaded,
+    setup_simulated_wiring_tables,
+)
 
 TIMEOUT = 30
 TYPICAL_CONFIG_NAME = "memory_usage"

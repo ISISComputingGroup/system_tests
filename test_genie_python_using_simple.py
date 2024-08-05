@@ -1,14 +1,21 @@
-import functools
-
-from hamcrest import *
 
 import threading
-import unittest
 import time
+import unittest
 
-from genie_python.channel_access_exceptions import UnableToConnectToPVException, WriteAccessException
-from utilities.utilities import load_config_if_not_already_loaded, check_block_exists, g, retry_on_failure, \
-    set_genie_python_raises_exceptions
+from genie_python.channel_access_exceptions import (
+    UnableToConnectToPVException,
+    WriteAccessException,
+)
+from hamcrest import *
+
+from utilities.utilities import (
+    check_block_exists,
+    g,
+    load_config_if_not_already_loaded,
+    retry_on_failure,
+    set_genie_python_raises_exceptions,
+)
 
 TIMEOUT = 30
 SIMPLE_CONFIG_NAME = "rcptt_simple"

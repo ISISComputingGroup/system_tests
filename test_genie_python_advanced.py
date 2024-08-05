@@ -1,8 +1,12 @@
 import unittest
+
 from parameterized import parameterized as param
 
-from utilities.utilities import load_config_if_not_already_loaded, g, \
-    set_genie_python_raises_exceptions
+from utilities.utilities import (
+    g,
+    load_config_if_not_already_loaded,
+    set_genie_python_raises_exceptions,
+)
 
 ADV_CONFIG_NAME = "advanced"
 

@@ -1,7 +1,8 @@
-from psutil import virtual_memory
-import os
-from configobj import ConfigObj
 import argparse
+import os
+
+from configobj import ConfigObj
+from psutil import virtual_memory
 
 ICP_BINARIES = os.path.join(os.environ.get("EPICS_ROOT"), "ICP_Binaries")
 CONFIG_FILE = "isisicp.properties"

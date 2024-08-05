@@ -1,8 +1,10 @@
+import os
+import sys
 import unittest
-import os, sys
+
+from genie_python import genie as g
 
 from utilities import utilities
-from genie_python import genie as g
 
 sys.path.append(os.path.join("C:\\", "Instrument", "scripts"))
 

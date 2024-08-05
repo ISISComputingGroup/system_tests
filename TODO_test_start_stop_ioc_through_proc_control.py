@@ -10,8 +10,16 @@ from typing import List
 from hamcrest import assert_that, less_than
 from six.moves import range
 
-from utilities.utilities import g, as_seconds, start_ioc, stop_ioc, wait_for_ioc_start_stop, \
-    load_config_if_not_already_loaded, bulk_start_ioc, bulk_stop_ioc
+from utilities.utilities import (
+    as_seconds,
+    bulk_start_ioc,
+    bulk_stop_ioc,
+    g,
+    load_config_if_not_already_loaded,
+    start_ioc,
+    stop_ioc,
+    wait_for_ioc_start_stop,
+)
 
 # The following iocs are ignored in the test which starts/stops all iocs
 # This is usually because they don't build by default, or have some complex dependency,

@@ -1,12 +1,10 @@
-import unittest
+import os
 import subprocess
-import os 
-import shutil
+import unittest
+
 from genie_python import genie as g
 
 from utilities import utilities
-
-
 
 BLOCK_NAME = "SIMPLE_BLOCK_1"
 BLOCK_PV = "SIMPLE:HELLO"

@@ -10,21 +10,22 @@ from time import sleep, time
 from typing import Callable
 
 import six
+
 # import genie either from the local project in pycharm or from virtual env
 from genie_python.channel_access_exceptions import UnableToConnectToPVException
 
 try:
-    from source import genie_api_setup
     from source import genie as g
+    from source import genie_api_setup
 except ImportError:
     from genie_python import genie as g
     from genie_python import genie_api_setup
 
 # import genie utilities either from the local project in pycharm or from virtual env
 try:
-    from source.utilities import dehex_and_decompress, compress_and_hex
+    from source.utilities import compress_and_hex, dehex_and_decompress
 except ImportError:
-    from genie_python.utilities import dehex_and_decompress, compress_and_hex
+    from genie_python.utilities import compress_and_hex, dehex_and_decompress
 
 WAIT_FOR_SERVER_TIMEOUT = 30
 """Number of seconds to wait for a pv to become available in the config server e.g. when it starts or 

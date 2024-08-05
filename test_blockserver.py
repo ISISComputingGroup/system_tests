@@ -1,19 +1,17 @@
 import json
 import os
-import unittest
-from typing import Callable
-
-from genie_python.utilities import compress_and_hex
-
-from utilities import utilities
-from utilities.utilities import parameterized_list, assert_with_timeout
-import time
-from genie_python import genie as g
-import requests
-from hamcrest import *
 import socket
+import time
+import unittest
+
+import requests
+from genie_python import genie as g
+from genie_python.utilities import compress_and_hex
+from hamcrest import *
 from parameterized import parameterized
 
+from utilities import utilities
+from utilities.utilities import assert_with_timeout, parameterized_list
 
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
 

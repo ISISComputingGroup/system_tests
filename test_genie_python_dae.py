@@ -1,19 +1,29 @@
+import os
+import random
 import time
 import unittest
-from datetime import datetime, timedelta
-import h5py
-import random
-import os
+from contextlib import contextmanager
+from datetime import timedelta
 from threading import Thread
 from time import sleep
 
-from utilities.utilities import g, stop_ioc, start_ioc, wait_for_ioc_start_stop, \
-    set_genie_python_raises_exceptions, setup_simulated_wiring_tables, \
-    set_wait_for_complete_callback_dae_settings, temporarily_kill_icp, load_config_if_not_already_loaded,\
-    _wait_for_and_assert_dae_simulation_mode, parameterized_list, get_execution_time
-
+import h5py
 from parameterized import parameterized
-from contextlib import contextmanager
+
+from utilities.utilities import (
+    _wait_for_and_assert_dae_simulation_mode,
+    g,
+    get_execution_time,
+    load_config_if_not_already_loaded,
+    parameterized_list,
+    set_genie_python_raises_exceptions,
+    set_wait_for_complete_callback_dae_settings,
+    setup_simulated_wiring_tables,
+    start_ioc,
+    stop_ioc,
+    temporarily_kill_icp,
+    wait_for_ioc_start_stop,
+)
 
 EXTREMELY_LARGE_NO_OF_PERIODS = 1000000
 

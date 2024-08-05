@@ -1,9 +1,10 @@
 import os
 import unittest
-from utilities.utilities import g, retry_on_failure, load_config_if_not_already_loaded
-from six.moves import range
-import requests
 
+import requests
+from six.moves import range
+
+from utilities.utilities import g, load_config_if_not_already_loaded, retry_on_failure
 
 MAX_FIGURES = 3
 

@@ -1,9 +1,8 @@
-import unittest
-import types
-import pkgutil
-import warnings
 import importlib
-
+import pkgutil
+import types
+import unittest
+import warnings
 
 IGNORED_MODULES = {
     "curses",  # Not supported on windows

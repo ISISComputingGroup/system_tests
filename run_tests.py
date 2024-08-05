@@ -17,17 +17,17 @@
 Run system tests for genie_python. Copies across needed configs before running the tests.
 """
 
+import argparse
 import os
+import shutil
 import sys
 import time
 import unittest
 
-import shutil
 import xmlrunner
-import argparse
-from utilities import utilities
 from genie_python import genie as g
 
+from utilities import utilities
 
 SCRIPT_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 DEFAULT_DIRECTORY = os.path.join(SCRIPT_DIRECTORY, 'test-reports')
