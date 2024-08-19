@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from threading import Thread
 from time import sleep
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 import h5py
 from parameterized import parameterized
