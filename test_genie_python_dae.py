@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false
+
 import os
 import random
 import time
@@ -6,6 +8,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from threading import Thread
 from time import sleep
+from typing import Any
 
 import h5py
 from parameterized import parameterized
@@ -32,7 +35,9 @@ DAE_PERIOD_TIMEOUT_SECONDS = 15
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
 
-def nexus_file_with_retry(instrument: str, run_number: int, test_func: callable[[h5py.File], None]) -> None:
+def nexus_file_with_retry(
+    instrument: str, run_number: int, test_func: callable[[h5py.File], None]
+) -> None:
     # isisicp writes files asynchronously, so need to retry file read
     # in case file not completed and still locked
     nexus_file = "C:/data/{instrument}{run}.nxs".format(instrument=instrument, run=run_number)
@@ -83,7 +88,9 @@ class TestDae(unittest.TestCase):
         if g.get_runstate() != "SETUP":
             self.fail("Should be in SETUP")
 
-    def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(self) -> None:
+    def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(
+        self,
+    ) -> None:
         set_genie_python_raises_exceptions(True)
         g.begin()
         for _ in range(self.TIMEOUT):
@@ -189,7 +196,8 @@ class TestDae(unittest.TestCase):
         nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
         def test_function(f: h5py.File) -> None:
-            is_valid = [sample == 1 for sample in f[nexus_path + r"/value_valid"][:]]
+            value_valid: Any = f[nexus_path + r"/value_valid"]
+            is_valid = [sample == 1 for sample in value_valid[:]]
             values = [int(val) for val in f[nexus_path + r"/value"][:]]
             alarm_severity = [
                 str(sample[0], "utf-8").strip() for sample in f[nexus_path + r"/alarm_severity"][:]
@@ -798,7 +806,9 @@ class TestDae(unittest.TestCase):
         g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
     @parameterized.expand(parameterized_list(["abc", "def", "ghijk"]))
-    def test_GIVEN_change_title_called_WHEN_valid_argument_THEN_get_title_correct_immediately(self, _, title: str) -> None:
+    def test_GIVEN_change_title_called_WHEN_valid_argument_THEN_get_title_correct_immediately(
+        self, _, title: str
+    ) -> None:
         set_genie_python_raises_exceptions(True)
         g.change_title(title)
         self.assertEqual(g.get_title(), title)
