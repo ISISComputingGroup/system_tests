@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from threading import Thread
 from time import sleep
-from typing import Any
+from typing import Any, Callable
 
 import h5py
 from parameterized import parameterized
@@ -36,7 +36,7 @@ BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
 
 def nexus_file_with_retry(
-    instrument: str, run_number: int, test_func: callable[[h5py.File], None]
+    instrument: str, run_number: int, test_func: Callable[[h5py.File], None]
 ) -> None:
     # isisicp writes files asynchronously, so need to retry file read
     # in case file not completed and still locked
@@ -197,6 +197,7 @@ class TestDae(unittest.TestCase):
 
         def test_function(f: h5py.File) -> None:
             value_valid: Any = f[nexus_path + r"/value_valid"]
+            assert hasattr(value_valid, "__iter__")
             is_valid = [sample == 1 for sample in value_valid[:]]
             values = [int(val) for val in f[nexus_path + r"/value"][:]]
             alarm_severity = [
