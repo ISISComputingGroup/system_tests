@@ -196,9 +196,9 @@ class TestDae(unittest.TestCase):
         nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
         def test_function(f: h5py.File) -> None:
-            value_valid: Any = f[nexus_path + r"/value_valid"]
+            value_valid: Any = f[nexus_path + r"/value_valid"][:]
             assert hasattr(value_valid, "__iter__")
-            is_valid = [sample == 1 for sample in value_valid[:]]
+            is_valid = [sample == 1 for sample in value_valid]
             values = [int(val) for val in f[nexus_path + r"/value"][:]]
             alarm_severity = [
                 str(sample[0], "utf-8").strip() for sample in f[nexus_path + r"/alarm_severity"][:]
