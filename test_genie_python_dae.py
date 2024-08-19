@@ -195,8 +195,8 @@ class TestDae(unittest.TestCase):
 
         nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
-        def test_function(f: h5py.File) -> None:
-            value_valid: Iterable[Any] = f[nexus_path + r"/value_valid"][:]
+        def test_function(f: Any) -> None:
+            value_valid = f[nexus_path + r"/value_valid"][:]
             is_valid = [sample == 1 for sample in value_valid]
             values = [int(val) for val in f[nexus_path + r"/value"][:]]
             alarm_severity = [
