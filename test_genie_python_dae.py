@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from threading import Thread
 from time import sleep
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 import h5py
 from parameterized import parameterized
@@ -196,8 +196,7 @@ class TestDae(unittest.TestCase):
         nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
         def test_function(f: h5py.File) -> None:
-            value_valid: Any = f[nexus_path + r"/value_valid"][:]
-            assert hasattr(value_valid, "__iter__")
+            value_valid: Iterable[Any] = f[nexus_path + r"/value_valid"][:]
             is_valid = [sample == 1 for sample in value_valid]
             values = [int(val) for val in f[nexus_path + r"/value"][:]]
             alarm_severity = [
