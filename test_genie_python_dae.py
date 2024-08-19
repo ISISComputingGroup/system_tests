@@ -795,3 +795,9 @@ class TestDae(unittest.TestCase):
 
         g.end()
         g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
+
+    @parameterized.expand(parameterized_list(["abc", "def", "ghijk"]))
+    def test_GIVEN_change_title_called_WHEN_valid_argument_THEN_get_title_correct_immediately(self, _, title):
+        set_genie_python_raises_exceptions(True)
+        g.change_title(title)
+        self.assertEqual(g.get_title(), title)
