@@ -12,7 +12,7 @@ from hamcrest import assert_that, is_, is_in
 
 from utilities.utilities import (
     check_block_exists,
-    g, # type: ignore
+    g,  # type: ignore
     load_config_if_not_already_loaded,
     retry_on_failure,
     set_genie_python_raises_exceptions,
