@@ -4,8 +4,8 @@ import os
 from hamcrest import *
 
 import threading
-import unittest
 import time
+import unittest
 
 from genie_python.channel_access_exceptions import UnableToConnectToPVException, WriteAccessException
 from utilities.utilities import load_config_if_not_already_loaded, check_block_exists, g, retry_on_failure, \
@@ -33,7 +33,6 @@ def delayed_set_pv(wait_before_set, wait_after_set, pv, value_to_set):
 
 
 class TestBlockUtils(unittest.TestCase):
-
     def setUp(self):
         g.set_instrument(None)
 
@@ -42,7 +41,9 @@ class TestBlockUtils(unittest.TestCase):
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_mbbi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(self):
+    def test_GIVE_config_with_mbbi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(
+        self,
+    ):
         mbbi_block_name = "MBBI_BLOCK"
         assert_that(mbbi_block_name, is_in(g.get_blocks()))
 
@@ -52,7 +53,9 @@ class TestBlockUtils(unittest.TestCase):
             assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_mbbi_block_WHEN_set_and_get_block_value_using_kwarg_syntax_THEN_value_is_set_and_read(self):
+    def test_GIVE_config_with_mbbi_block_WHEN_set_and_get_block_value_using_kwarg_syntax_THEN_value_is_set_and_read(
+        self,
+    ):
         mbbi_block_name = "MBBI_BLOCK"
         assert_that(mbbi_block_name, is_in(g.get_blocks()))
 
@@ -62,7 +65,9 @@ class TestBlockUtils(unittest.TestCase):
             assert_that(g.cget(mbbi_block_name)["value"], is_(expected_val))
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(self):
+    def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_THEN_value_is_set_and_read(
+        self,
+    ):
         bi_block_name = "BI_BLOCK"
         assert_that(bi_block_name, is_in(g.get_blocks()))
 
@@ -72,7 +77,9 @@ class TestBlockUtils(unittest.TestCase):
             assert_that(g.cget(bi_block_name)["value"], is_(expected_val))
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_using_kwarg_syntax_THEN_value_is_set_and_read(self):
+    def test_GIVE_config_with_bi_block_WHEN_set_and_get_block_value_using_kwarg_syntax_THEN_value_is_set_and_read(
+        self,
+    ):
         bi_block_name = "BI_BLOCK"
         assert_that(bi_block_name, is_in(g.get_blocks()))
 
@@ -82,7 +89,9 @@ class TestBlockUtils(unittest.TestCase):
             assert_that(g.cget(bi_block_name)["value"], is_(expected_val))
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_mbbi_pv_WHEN_set_and_get_pv_value_with_not_is_local_THEN_value_is_set_and_read(self):
+    def test_GIVE_config_with_mbbi_pv_WHEN_set_and_get_pv_value_with_not_is_local_THEN_value_is_set_and_read(
+        self,
+    ):
         mbbi_pv_name = g.prefix_pv_name("SIMPLE:MBBI")
 
         for expected_val in ["CHEERFUL", "HAPPY"]:
@@ -90,7 +99,9 @@ class TestBlockUtils(unittest.TestCase):
             assert_that(g.get_pv(mbbi_pv_name), is_(expected_val))
 
     @retry_on_failure(3)
-    def test_GIVE_config_with_bi_pv_WHEN_set_and_get_pv_value_with_is_local_THEN_value_is_set_and_read(self):
+    def test_GIVE_config_with_bi_pv_WHEN_set_and_get_pv_value_with_is_local_THEN_value_is_set_and_read(
+        self,
+    ):
         bi_pv_name = "SIMPLE:BI"
 
         for expected_val in ["NO", "YES"]:
@@ -99,7 +110,6 @@ class TestBlockUtils(unittest.TestCase):
 
 
 class TestWaitforPV(unittest.TestCase):
-
     def setUp(self):
         g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
@@ -114,7 +124,9 @@ class TestWaitforPV(unittest.TestCase):
         with self.assertRaises(UnableToConnectToPVException):
             g.adv.wait_for_pv(pv_name, 0, maxwait=10)
 
-    def test_GIVEN_pv_reaches_correct_value_WHEN_waiting_for_pv_THEN_waitfor_returns_before_timeout(self):
+    def test_GIVEN_pv_reaches_correct_value_WHEN_waiting_for_pv_THEN_waitfor_returns_before_timeout(
+        self,
+    ):
         pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
         g.set_pv(pv_name, 0, wait=True)
         wait_before = 1
@@ -122,11 +134,17 @@ class TestWaitforPV(unittest.TestCase):
         max_wait = (wait_before + wait_after) * 2
         value_to_wait_for = 2
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(wait_before, wait_after, pv_name, value_to_wait_for))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv, args=(wait_before, wait_after, pv_name, value_to_wait_for)
+        )
         set_pv_thread.start()
         g.adv.wait_for_pv(pv_name, value_to_wait_for, maxwait=max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because pv has changed")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(True),
+            "Waitfor should have finished because pv has changed",
+        )
 
     def test_GIVEN_pv_change_but_not_to_correct_value_WHEN_waiting_for_pv_THEN_timeout(self):
         pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
@@ -137,11 +155,17 @@ class TestWaitforPV(unittest.TestCase):
         wait_after = 5
         max_wait = (wait_before + wait_after) * 2
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(wait_before, wait_after, pv_name, wrong_value))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv, args=(wait_before, wait_after, pv_name, wrong_value)
+        )
         set_pv_thread.start()
         g.adv.wait_for_pv(pv_name, value_to_wait_for, maxwait=max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(False), "SetPV thread should have finished before maxwait has passed.")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(False),
+            "SetPV thread should have finished before maxwait has passed.",
+        )
 
 
 class TestDispSetOnBlock(unittest.TestCase):
@@ -152,15 +176,15 @@ class TestDispSetOnBlock(unittest.TestCase):
         self._pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
 
     def tearDown(self):
-        g.set_pv(self._pv_name+".DISP", 0)
+        g.set_pv(self._pv_name + ".DISP", 0)
 
     def test_GIVEN_disp_set_on_block_WHEN_setting_pv_value_THEN_exception_is_raised(self):
-        g.set_pv(self._pv_name+".DISP", 1)
+        g.set_pv(self._pv_name + ".DISP", 1)
         with self.assertRaises(WriteAccessException):
             g.set_pv(self._pv_name, "test")
 
     def test_GIVEN_disp_not_set_on_block_WHEN_setting_pv_value_THEN_pv_value_is_set(self):
-        g.set_pv(self._pv_name+".DISP", 0)
+        g.set_pv(self._pv_name + ".DISP", 0)
         test_value = 123
         time.sleep(2)
         g.set_pv(self._pv_name, test_value)
@@ -168,8 +192,8 @@ class TestDispSetOnBlock(unittest.TestCase):
 
     def test_GIVEN_field_WHEN_setting_pv_value_THEN_field_is_set_and_disp_is_not_checked(self):
         test_value = "m"
-        g.set_pv(self._pv_name+".EGU", test_value)
-        assert g.get_pv(self._pv_name+".EGU") == test_value
+        g.set_pv(self._pv_name + ".EGU", test_value)
+        assert g.get_pv(self._pv_name + ".EGU") == test_value
 
     def test_GIVEN_disp_is_set_on_pv_WHEN_setting_field_value_THEN_exception_is_raised(self):
         g.set_pv(self._pv_name + ".DISP", 1)
@@ -178,7 +202,6 @@ class TestDispSetOnBlock(unittest.TestCase):
 
 
 class TestWaitforBlock(unittest.TestCase):
-
     def setUp(self):
         g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
@@ -190,109 +213,198 @@ class TestWaitforBlock(unittest.TestCase):
         g.cset(self.block_name, 0)
         assert_that(check_block_exists(self.block_name), is_(True))
 
-    def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_reaches_value_THEN_waitfor_completes(self):
+    def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_reaches_value_THEN_waitfor_completes(
+        self,
+    ):
         value_to_wait_for = 2
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_to_wait_for))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, value_to_wait_for),
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to correct value")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(True),
+            "Waitfor should have finished because block has changed to correct value",
+        )
 
     def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_wrong_value_THEN_timeout(self):
         value_to_wait_for = 2
         wrong_value = 3
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because value is wrong")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(False),
+            "Waitfor should have timed out because value is wrong",
+        )
 
-    def test_GIVEN_waiting_for_value_in_limits_on_block_WHEN_block_enters_range_THEN_waitfor_completes(self):
+    def test_GIVEN_waiting_for_value_in_limits_on_block_WHEN_block_enters_range_THEN_waitfor_completes(
+        self,
+    ):
         value_in_range = 2
         low_limit = 1
         high_limit = 3
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_in_range))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, value_in_range),
+        )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait
+        )
 
-        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to value in range")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(True),
+            "Waitfor should have finished because block has changed to value in range",
+        )
 
     def test_GIVEN_waiting_for_value_in_limits_on_block_WHEN_block_wrong_value_THEN_timeout(self):
         wrong_value = 4
         low_limit = 1
         high_limit = 3
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
+        )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait
+        )
 
-        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because value is not in range")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(False),
+            "Waitfor should have timed out because value is not in range",
+        )
 
-    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_enters_range_THEN_waitfor_completes(self):
+    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_enters_range_THEN_waitfor_completes(
+        self,
+    ):
         value_in_range = -2
         high_limit = -1
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_in_range))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, value_in_range),
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to value below limit")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(True),
+            "Waitfor should have finished because block has changed to value below limit",
+        )
 
-    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_above_limit_THEN_timeout(self):
+    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_above_limit_THEN_timeout(
+        self,
+    ):
         wrong_value = 1
         high_limit = -1
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because block above limit")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(False),
+            "Waitfor should have timed out because block above limit",
+        )
 
-    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_enters_range_THEN_waitfor_completes(self):
+    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_enters_range_THEN_waitfor_completes(
+        self,
+    ):
         value_in_range = 3
         low_limit = 2
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, value_in_range))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, value_in_range),
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to value above limit")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(True),
+            "Waitfor should have finished because block has changed to value above limit",
+        )
 
-    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_below_limit_THEN_timeout(self):
+    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_below_limit_THEN_timeout(
+        self,
+    ):
         wrong_value = 1
         low_limit = 2
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, wrong_value))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(False), "Waitfor should have timed out because block below limit")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(False),
+            "Waitfor should have timed out because block below limit",
+        )
 
     # Testing cases where the block is directly on the limit - the highlimit is a maximum value so waitfor should complete
 
-    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_reaches_limit_boundary_THEN_waitfor_completes(self):
+    def test_GIVEN_waiting_for_value_below_high_limit_on_block_WHEN_block_reaches_limit_boundary_THEN_waitfor_completes(
+        self,
+    ):
         high_limit = -1
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, high_limit))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, high_limit),
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to the limit")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(True),
+            "Waitfor should have finished because block has changed to the limit",
+        )
 
-    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_reaches_limit_boundary_THEN_waitfor_completes(self):
+    def test_GIVEN_waiting_for_value_above_low_limit_on_block_WHEN_block_reaches_limit_boundary_THEN_waitfor_completes(
+        self,
+    ):
         low_limit = 2
 
-        set_pv_thread = threading.Thread(target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, low_limit))
+        set_pv_thread = threading.Thread(
+            target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, low_limit)
+        )
         set_pv_thread.start()
         g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
-        assert_that(set_pv_thread.is_alive(), is_(True), "Waitfor should have finished because block has changed to the limit")
+        assert_that(
+            set_pv_thread.is_alive(),
+            is_(True),
+            "Waitfor should have finished because block has changed to the limit",
+        )
+
 
 class TestRunControl(unittest.TestCase):
-
     def setUp(self):
         g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
@@ -330,8 +442,8 @@ class TestRunControl(unittest.TestCase):
         g.waitfor_runstate(state, TIMEOUT)
         self.assertEqual(g.get_runstate(), state)
 
-class TestAlerts(unittest.TestCase):
 
+class TestAlerts(unittest.TestCase):
     def setUp(self):
         g.set_instrument(None)
         load_config_if_not_already_loaded(SIMPLE_CONFIG_NAME)
@@ -345,7 +457,7 @@ class TestAlerts(unittest.TestCase):
         g.abort()
 
     def test_GIVEN_alert_range_WHEN_parameter_out_of_range_THEN_alert_sent(self):
-        # setup  
+        # setup
         g.begin()
         self._waitfor_runstate("RUNNING")
         mobiles_pv = g.prefix_pv_name("CS:AC:ALERTS:MOBILES:SP")
@@ -359,7 +471,9 @@ class TestAlerts(unittest.TestCase):
         assert_that(g.get_pv(send_cnt_pv), is_(0))
         g.set_pv(pw_pv, "dummy")
         g.set_pv(inst_pv, "TESTINST")
-        g.set_pv(url_pv, "test")  # this needs to be "test" so that webget knows not to send a message
+        g.set_pv(
+            url_pv, "test"
+        )  # this needs to be "test" so that webget knows not to send a message
 
         # check setting mobiles and emails
         g.alerts.set_sms(["123456", "789"])
@@ -374,13 +488,13 @@ class TestAlerts(unittest.TestCase):
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(0))
         assert_that(g.get_pv(send_cnt_pv), is_(0))
-        
+
         # now make out of range
         g.alerts.set_range(self.block_name, 10.0, 20.0)
         time.sleep(5)
         assert_that(g.get_pv(out_pv), is_(1))
         assert_that(g.get_pv(send_cnt_pv), is_(1))
-        
+
         # now make in range
         g.alerts.set_range(self.block_name, -10.0, 20.0)
         time.sleep(5)
@@ -396,25 +510,27 @@ class TestAlerts(unittest.TestCase):
 
         # check values
         vals = g.alerts._dump(self.block_name)
-        assert_that(vals['emails'], is_(["a@b", "c@d"]))
-        assert_that(vals['mobiles'], is_(["123456", "789"]))
-        assert_that(vals['lowlimit'], is_(10.0))
-        assert_that(vals['highlimit'], is_(20.0))
-        assert_that(vals['delay_in'], is_(2.0))
-        assert_that(vals['delay_out'], is_(1.0))
-        assert_that(vals['enabled'], is_('NO'))
+        assert_that(vals["emails"], is_(["a@b", "c@d"]))
+        assert_that(vals["mobiles"], is_(["123456", "789"]))
+        assert_that(vals["lowlimit"], is_(10.0))
+        assert_that(vals["highlimit"], is_(20.0))
+        assert_that(vals["delay_in"], is_(2.0))
+        assert_that(vals["delay_out"], is_(1.0))
+        assert_that(vals["enabled"], is_("NO"))
 
     def test_GIVEN_details_WHEN_message_specified_THEN_alert_message_sent(self):
         url_pv = g.prefix_pv_name("CS:AC:ALERTS:URL:SP")
         message_pv = g.prefix_pv_name("CS:AC:ALERTS:MESSAGE:SP")
         send_cnt_pv = g.prefix_pv_name("CS:AC:ALERTS:_SENDCNT")
         old_send_cnt = g.get_pv(send_cnt_pv)
-        g.set_pv(url_pv, "test")  # this needs to be "test" so that webget knows not to send a message
-        
+        g.set_pv(
+            url_pv, "test"
+        )  # this needs to be "test" so that webget knows not to send a message
+
         g.alerts.send("test message")
         time.sleep(5)
         assert_that(g.get_pv(send_cnt_pv), is_(old_send_cnt + 1))
-        assert_that(g.get_pv(message_pv), is_("test message"))        
+        assert_that(g.get_pv(message_pv), is_("test message"))
 
     def _waitfor_runstate(self, state):
         g.waitfor_runstate(state, TIMEOUT)
