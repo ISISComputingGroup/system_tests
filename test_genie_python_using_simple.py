@@ -569,7 +569,7 @@ class SystemTestScriptChecker(unittest.TestCase):
             temp_file.write(script_lines_1)
             temp_file.flush()
 
-            with self.test_checker._CreateTempScriptAndReturnErrors(
+            with test_script_checker.TestScriptChecker._CreateTempScriptAndReturnErrors(
                 self.test_checker, script_lines_2
             ) as errors_2:
                 self.assertTrue(errors_2[0].startswith("E: 2: Argument of type"))
@@ -585,7 +585,7 @@ class SystemTestScriptChecker(unittest.TestCase):
             "   g.begin(1.2, 'b', 'a', 'a', 'a')\n",
         ]
 
-        with self.test_checker._CreateTempScriptAndReturnErrors(
+        with test_script_checker.TestScriptChecker._CreateTempScriptAndReturnErrors(
             self.test_checker, script_lines
         ) as errors:
             self.assertTrue(errors[0].startswith("E: 3: Argument of type"))
