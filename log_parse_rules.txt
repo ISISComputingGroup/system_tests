@@ -4,10 +4,11 @@ start /SECOND PART OF TESTS STARTED/
 ok /IPython does not exist, auto complete not installed/
 info /ERROR: pip[']s dependency resolver does not currently take into account all the packages that are installed/ 
 info /py4j.java_gateway:An error occurred while trying to connect to the Java server/
+error /ERROR: FIRST PART OF TESTS/
+error /ERROR: tests exited with status/
 warning /(?i)^(\[[^]]*\] )?error:/
 error /(?i)^(\[[^]]*\] )?fatal:/
 warning /(?i)makefile:.*error/
-error /ERROR: tests exited with status/
 error /FAILED \(failures=/
 error /FAILED \(errors=/
 warning /not remade because of errors/
