@@ -1,3 +1,5 @@
+# pyright: reportIndexIssue=false
+
 import os
 import random
 import time
@@ -6,6 +8,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from threading import Thread
 from time import sleep
+from typing import Any, Callable
 
 import h5py
 from parameterized import parameterized
@@ -32,7 +35,9 @@ DAE_PERIOD_TIMEOUT_SECONDS = 15
 BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
 
-def nexus_file_with_retry(instrument, run_number, test_func):
+def nexus_file_with_retry(
+    instrument: str, run_number: int, test_func: Callable[[h5py.File], None]
+) -> None:
     # isisicp writes files asynchronously, so need to retry file read
     # in case file not completed and still locked
     nexus_file = "C:/data/{instrument}{run}.nxs".format(instrument=instrument, run=run_number)
@@ -65,24 +70,27 @@ class TestDae(unittest.TestCase):
 
     TIMEOUT = 300
 
-    def setUp(self):
+    def setUp(self) -> None:
         g.set_instrument(None)
         self._adjust_icp_begin_delay(0)
 
-        # all tests that interact with anything but genie should try to load a config to ensure that the configurations
+        # all tests that interact with anything but genie should try to load a config
+        # to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
         load_config_if_not_already_loaded("empty_for_system_tests")
 
         setup_simulated_wiring_tables()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         set_genie_python_raises_exceptions(False)
 
-    def fail_if_not_in_setup(self):
+    def fail_if_not_in_setup(self) -> None:
         if g.get_runstate() != "SETUP":
             self.fail("Should be in SETUP")
 
-    def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(self):
+    def test_GIVEN_run_state_is_running_WHEN_attempt_to_change_simulation_mode_THEN_error(
+        self,
+    ) -> None:
         set_genie_python_raises_exceptions(True)
         g.begin()
         for _ in range(self.TIMEOUT):
@@ -168,7 +176,7 @@ class TestDae(unittest.TestCase):
         # Wait for alarm
         for _ in range(5):
             in_alarm = g.cget(test_block_name)["alarm"] == "INVALID"
-            connected = g.cget(test_block_name)["connected"] == True
+            connected = g.cget(test_block_name)["connected"]
             zero_value = g.cget(test_block_name)["value"] == 0
             block_ok = in_alarm and connected and zero_value
             if block_ok:
@@ -187,8 +195,9 @@ class TestDae(unittest.TestCase):
 
         nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
-        def test_function(f):
-            is_valid = [sample == 1 for sample in f[nexus_path + r"/value_valid"][:]]
+        def test_function(f: Any) -> None:
+            value_valid = f[nexus_path + r"/value_valid"][:]
+            is_valid = [sample == 1 for sample in value_valid]
             values = [int(val) for val in f[nexus_path + r"/value"][:]]
             alarm_severity = [
                 str(sample[0], "utf-8").strip() for sample in f[nexus_path + r"/alarm_severity"][:]
@@ -765,7 +774,7 @@ class TestDae(unittest.TestCase):
             abs(timedelta(seconds=expected) - actual_timedelta) < timedelta(seconds=tolerance)
         )
 
-    def test_GIVEN_no_instetc_WHEN_get_rb_and_begin_run_THEN_dae_state_is_running(self):
+    def test_GIVEN_no_instetc_WHEN_get_rb_and_begin_run_THEN_dae_state_is_running(self) -> None:
         """
         Checks that if INSTECT is down and methods like get_rb_number timeout/fail, then a user can begin a run
         and the DAE functions as expected without getting stuck.
@@ -795,3 +804,11 @@ class TestDae(unittest.TestCase):
 
         g.end()
         g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
+
+    @parameterized.expand(parameterized_list(["abc", "def", "ghijk"]))
+    def test_GIVEN_change_title_called_WHEN_valid_argument_THEN_get_title_correct_immediately(
+        self, _, title: str
+    ) -> None:
+        set_genie_python_raises_exceptions(True)
+        g.change_title(title)
+        self.assertEqual(g.get_title(), title)
