@@ -6,16 +6,16 @@ System tests of IBEX and genie_python
 
 If you want to run these tests on a developer machine, clone this repo into `C:\Instrument\Dev`. Some files will need to be copied from the settings directory of a build machine.
 
-* Copy these files from `system_tests/configs/tables` into your `C:/Instrument/settings/<machine name>/tables/` directory:
+* Copy these files from `system_tests/configs/tables` into your `C:/Instrument/settings/config/<machine name>/configurations/tables/` directory:
     1. RCPTT_detector128.dat
     1. RCPTT_spectra128.dat
     1. RCPTT_wiring128.dat
     
-* Copy these files from `system_tests/configs/tcb` into your `C:/Instrument/settings/<machine name>/tcb/` directory:
+* Copy these files from `system_tests/configs/tcb` into your `C:/Instrument/settings/config/<machine name>/configurations/tcb/` directory:
     1. RCPTT_TCB_1.dat
     1. RCPTT_TCB_2.dat
     
-* Copy these folders from `system_tests/configs/configurations` into your `C:/Instrument/settings/<machine name>/configurations/` directory:
+* Copy these folders from `system_tests/configs/configurations` into your `C:/Instrument/settings/config/<machine name>/configurations/` directory:
     1. block_in_title
     1. memory_usage
     1. rcptt_simple
