@@ -1,36 +1,41 @@
 import unittest
-from io import StringIO
+
+import bluesky.plan_stubs as bps
+import bluesky.plans as bp
+from bluesky.callbacks import LiveTable
+from bluesky.preprocessors import subs_decorator
+from bluesky.run_engine import RunEngine, RunEngineResult
+from genie_python import genie as g  # type: ignore
+from ibex_bluesky_core.devices import get_pv_prefix
+from ibex_bluesky_core.devices.block import block_r, block_rw_rbv
+from ibex_bluesky_core.devices.simpledae import SimpleDae
+from ibex_bluesky_core.devices.simpledae.controllers import (
+    PeriodPerPointController,
+    RunPerPointController,
+)
+from ibex_bluesky_core.devices.simpledae.reducers import (
+    GoodFramesNormalizer,
+    PeriodGoodFramesNormalizer,
+)
+from ibex_bluesky_core.devices.simpledae.waiters import GoodFramesWaiter, PeriodGoodFramesWaiter
+from ibex_bluesky_core.run_engine import get_run_engine
+from ophyd_async.plan_stubs import ensure_connected
 
 from utilities.utilities import (
-    g,
     load_config_if_not_already_loaded,
     set_genie_python_raises_exceptions,
 )
-from ibex_bluesky_core.run_engine import get_run_engine
-from bluesky.run_engine import RunEngine
-import bluesky.plan_stubs as bps
-import bluesky.plans as bp
-from ophyd_async.plan_stubs import ensure_connected
-from ibex_bluesky_core.devices.block import block_r, block_rw, block_rw_rbv
-from bluesky.preprocessors import subs_decorator
-from bluesky.callbacks import LiveTable
-from ibex_bluesky_core.callbacks.plotting import LivePlot
-from ibex_bluesky_core.devices import get_pv_prefix
-from ibex_bluesky_core.devices.simpledae import SimpleDae
-from ibex_bluesky_core.devices.simpledae.controllers import PeriodPerPointController, RunPerPointController
-from ibex_bluesky_core.devices.simpledae.waiters import GoodFramesWaiter, PeriodGoodFramesWaiter
-from ibex_bluesky_core.devices.simpledae.reducers import GoodFramesNormalizer, PeriodGoodFramesNormalizer
 
 RE: RunEngine = get_run_engine()
 
-P3_INIT_VALUE = 123.456
-P5_INIT_VALUE = 987.654321
+P3_INIT_VALUE: float = 123.456
+P5_INIT_VALUE: float = 987.654321
 
 
 class TestBluesky(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         g.set_instrument(None)
-        # load_config_if_not_already_loaded("bluesky_sys_test")
+        load_config_if_not_already_loaded("bluesky_sys_test")
         set_genie_python_raises_exceptions(True)
         g.cset("p3", P3_INIT_VALUE)
         g.cset("p5", P5_INIT_VALUE)
@@ -69,17 +74,18 @@ class TestBluesky(unittest.TestCase):
         )
         return dae
 
-    def test_rd_block(self):
+    def test_rd_block(self) -> None:
         def _plan():
             p3 = block_r(float, "p3")
             yield from ensure_connected(p3)
             return (yield from bps.rd(p3))
 
         result = RE(_plan())
+        assert isinstance(result, RunEngineResult)
 
         self.assertAlmostEqual(result.plan_result, P3_INIT_VALUE, places=5)
 
-    def test_abs_scan_two_blocks(self):
+    def test_abs_scan_two_blocks(self) -> None:
         def _plan():
             p3 = block_r(float, "p3")
             p5 = block_rw_rbv(float, "p5")
@@ -91,7 +97,7 @@ class TestBluesky(unittest.TestCase):
         # At end of scan, p5 should be left at last value by default.
         self.assertAlmostEqual(g.cget("p5")["value"], 10)
 
-    def test_rel_scan_two_blocks(self):
+    def test_rel_scan_two_blocks(self) -> None:
         def _plan():
             p3 = block_r(float, "p3")
             p5 = block_rw_rbv(float, "p5")
@@ -103,12 +109,14 @@ class TestBluesky(unittest.TestCase):
         # After a rel_scan, the movable is moved back to original value
         self.assertAlmostEqual(g.cget("p5")["value"], P5_INIT_VALUE)
 
-    def test_scan_with_livetable_callback(self):
+    def test_scan_with_livetable_callback(self) -> None:
         livetable_lines = []
 
-        @subs_decorator([
-            LiveTable(["p3", "p5"], out=livetable_lines.append),
-        ])
+        @subs_decorator(
+            [
+                LiveTable(["p3", "p5"], out=livetable_lines.append),
+            ]
+        )
         def _plan():
             p3 = block_r(float, "p3")
             p5 = block_rw_rbv(float, "p5")
@@ -119,11 +127,11 @@ class TestBluesky(unittest.TestCase):
 
         # Tricky as livetable contains timestamps etc, but check that the table
         # describes the first and last point we were trying to measure, with appropriate
-        # precisions.
+        # precisions pulled from the PVs.
         self.assertTrue(any("|    123.456 |  -10.00000 |" in line for line in livetable_lines))
         self.assertTrue(any("|    123.456 |   10.00000 |" in line for line in livetable_lines))
 
-    def test_count_simple_dae(self):
+    def test_count_simple_dae(self) -> None:
         start_run_number = int(g.get_runnumber())
 
         def _plan():
@@ -137,7 +145,7 @@ class TestBluesky(unittest.TestCase):
 
         self.assertEqual(start_run_number + 1, end_run_number)
 
-    def test_scan_simple_dae_in_run_per_point_mode(self):
+    def test_scan_simple_dae_in_run_per_point_mode(self) -> None:
         npoints = 3
         start_run_number = int(g.get_runnumber())
 
@@ -154,7 +162,7 @@ class TestBluesky(unittest.TestCase):
         # Assert we've done npoints runs
         self.assertEqual(start_run_number + npoints, end_run_number)
 
-    def test_scan_simple_dae_in_period_per_point_mode(self):
+    def test_scan_simple_dae_in_period_per_point_mode(self) -> None:
         npoints = 3
         start_run_number = int(g.get_runnumber())
 
