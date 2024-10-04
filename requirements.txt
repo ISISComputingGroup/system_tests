@@ -8,3 +8,4 @@ PyHamcrest
 requests
 six
 unittest-xml-reporting
+ibex_bluesky_core
