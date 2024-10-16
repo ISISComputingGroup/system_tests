@@ -22,7 +22,7 @@ If you want to run these tests on a developer machine, clone this repo into `C:\
 
 
 Once these files are in place, run the tests with `run_tests.bat`
-
+You may have to start the IBEX server if it complains - `C:/Instrument/Apps/Epics/start_ibex_server.bat`
 
 ### Running all tests
 
