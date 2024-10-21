@@ -9,3 +9,4 @@ del /q C:\Instrument\Var\logs\deploy\*.*
 del /q C:\Instrument\Var\logs\ibex_server\*.*
 del /q C:\Instrument\Var\logs\IOCTestFramework\*.*
 popd
+exit /b 0
