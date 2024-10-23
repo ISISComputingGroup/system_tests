@@ -72,6 +72,9 @@ pipeline {
             ) else (
                 md C:\\Instrument\\Apps\\EPICS-%MYJOB%
             )
+            REM clear logs early to stop reporting previous errors
+            REM in case install aborts
+            call %WORKSPACE%\clear_logs.bat
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 @echo Removing EPICS directory link
                 rmdir "C:\\Instrument\\Apps\\EPICS"
@@ -127,14 +130,8 @@ pipeline {
                 if exist "C:\\Instrument\\Apps\\EPICS" (
                     rmdir "C:\\Instrument\\Apps\\EPICS"
                 )
-                del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
-                del /q C:\\Instrument\\Var\\logs\\conserver\\*.*
-                del /q C:\\Instrument\\Var\\logs\\gateway\\blockserver\\*.*
-                del /q C:\\Instrument\\Var\\logs\\gateway\\external\\*.*
-                del /q C:\\Instrument\\Var\\logs\\genie_python\\*.*
-                del /q C:\\Instrument\\Var\\logs\\deploy\\*.*
-                del /q C:\\Instrument\\Var\\logs\\ibex_server\\*.*
-                del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
+                REM as ELOCK is released between stages clear logs to be safe
+                call %WORKSPACE%\clear_logs.bat
                 mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
                 IF %errorlevel% NEQ 0 (
                     @echo ERROR: unable to make EPICS directory junction link to EPICS-%MYJOB% - error %errorlevel%
@@ -231,6 +228,11 @@ pipeline {
             )
             rmdir "C:\\Instrument\\Apps\\EPICS" >NUL 2>&1
             rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL 2>&1
+            REM clear logs as we have already archived them. Though we clear
+            REM logs before an install also remove them here in case
+            REM next job git checkout aborts and tries to report same errors
+            REM as now all over again
+            call %WORKSPACE%\clear_logs.bat
             @echo Finished cleanup on node ${env.NODE_NAME}
             @echo ***
             @echo *** Any Office365connector Matched status FAILURE message below means
