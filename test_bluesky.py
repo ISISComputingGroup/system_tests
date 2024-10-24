@@ -33,6 +33,9 @@ RE: RunEngine = get_run_engine()
 P3_INIT_VALUE: float = 123.456
 P5_INIT_VALUE: float = 987.654321
 
+LOG_FOLDER = os.path.join("C:\\", "instrument", "var", "logs", "bluesky")
+LOG_MESSAGE = "Logging something to "
+LOG_ENV_PATH = "BLUESKY_LOGS"
 
 class TestBluesky(unittest.TestCase):
     def setUp(self) -> None:
