@@ -1,5 +1,6 @@
+import os
+import sys
 import unittest
-import os, sys
 
 import bluesky.plan_stubs as bps
 import bluesky.plans as bp
@@ -36,6 +37,7 @@ P5_INIT_VALUE: float = 987.654321
 LOG_FOLDER = os.path.join("C:\\", "instrument", "var", "logs", "bluesky")
 LOG_MESSAGE = "Logging something to "
 LOG_ENV_PATH = "BLUESKY_LOGS"
+LOG_FILE_NAME = "blueskylogs.log"
 
 
 class TestBluesky(unittest.TestCase):
@@ -187,18 +189,18 @@ class TestBluesky(unittest.TestCase):
         # Assert we successfully set npoints periods
         self.assertEqual(g.get_number_periods(), npoints)
 
-    def test_GIVEN_logging_is_requested_THEN_the_log_folder_exists():
+    def test_GIVEN_logging_is_requested_THEN_the_log_folder_exists(self) -> None:
         this_function_name = sys._getframe().f_code.co_name
         message = LOG_MESSAGE + this_function_name
         # Log invocation.
         logger.blueskylogger.info(message)
         if LOG_ENV_PATH in os.environ:
-            assert os.path.exists(os.environ[LOG_ENV_PATH]) == False
+            assert not os.path.exists(os.environ[LOG_ENV_PATH])
 
         if LOG_ENV_PATH not in os.environ:
-            assert os.path.exists(LOG_FOLDER) == True
+            assert os.path.exists(LOG_FOLDER)
 
-    def test_GIVEN_logging_is_requested_THEN_the_log_file_exists():
+    def test_GIVEN_logging_is_requested_THEN_the_log_file_exists(self) -> None:
         log_path = LOG_FOLDER
         if LOG_ENV_PATH in os.environ:
             log_path = os.environ[LOG_ENV_PATH]
@@ -208,9 +210,9 @@ class TestBluesky(unittest.TestCase):
         message = LOG_MESSAGE + this_function_name
         logger.blueskylogger.info(message)
         qualified_log_filename = os.path.join(log_path, LOG_FILE_NAME)
-        assert os.path.exists(qualified_log_filename) == True
+        assert os.path.exists(qualified_log_filename)
 
-    def test_GIVEN_logging_is_requested_THEN_the_log_file_contains_the_message():
+    def test_GIVEN_logging_is_requested_THEN_the_log_file_contains_the_message(self) -> None:
         log_path = LOG_FOLDER
         if LOG_ENV_PATH in os.environ:
             log_path = os.environ[LOG_ENV_PATH]
@@ -220,7 +222,7 @@ class TestBluesky(unittest.TestCase):
         message = LOG_MESSAGE + this_function_name
         logger.blueskylogger.info(message)
         qualified_log_filename = os.path.join(log_path, LOG_FILE_NAME)
-        assert os.path.exists(qualified_log_filename) == True
+        assert os.path.exists(qualified_log_filename)
         # Open the log file and read its content.
         with open(qualified_log_filename, "r") as f:
             content = f.read()
