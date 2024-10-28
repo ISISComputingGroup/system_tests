@@ -1,3 +1,5 @@
+import os
+import sys
 import unittest
 
 import bluesky.plan_stubs as bps
@@ -18,6 +20,7 @@ from ibex_bluesky_core.devices.simpledae.reducers import (
     PeriodGoodFramesNormalizer,
 )
 from ibex_bluesky_core.devices.simpledae.waiters import GoodFramesWaiter, PeriodGoodFramesWaiter
+from ibex_bluesky_core.logger import logger
 from ibex_bluesky_core.run_engine import get_run_engine
 from ophyd_async.plan_stubs import ensure_connected
 
@@ -30,6 +33,11 @@ RE: RunEngine = get_run_engine()
 
 P3_INIT_VALUE: float = 123.456
 P5_INIT_VALUE: float = 987.654321
+
+LOG_FOLDER = os.path.join("C:\\", "instrument", "var", "logs", "bluesky")
+LOG_MESSAGE = "Logging something to "
+LOG_ENV_PATH = "BLUESKY_LOGS"
+LOG_FILE_NAME = "blueskylogs.log"
 
 
 class TestBluesky(unittest.TestCase):
@@ -180,6 +188,45 @@ class TestBluesky(unittest.TestCase):
         self.assertEqual(start_run_number + 1, end_run_number)
         # Assert we successfully set npoints periods
         self.assertEqual(g.get_number_periods(), npoints)
+
+    def test_GIVEN_logging_is_requested_THEN_the_log_folder_exists(self) -> None:
+        this_function_name = sys._getframe().f_code.co_name
+        message = LOG_MESSAGE + this_function_name
+        # Log invocation.
+        logger.blueskylogger.info(message)
+        if LOG_ENV_PATH in os.environ:
+            assert not os.path.exists(os.environ[LOG_ENV_PATH])
+
+        if LOG_ENV_PATH not in os.environ:
+            assert os.path.exists(LOG_FOLDER)
+
+    def test_GIVEN_logging_is_requested_THEN_the_log_file_exists(self) -> None:
+        log_path = LOG_FOLDER
+        if LOG_ENV_PATH in os.environ:
+            log_path = os.environ[LOG_ENV_PATH]
+
+        # Log invocation.
+        this_function_name = sys._getframe().f_code.co_name
+        message = LOG_MESSAGE + this_function_name
+        logger.blueskylogger.info(message)
+        qualified_log_filename = os.path.join(log_path, LOG_FILE_NAME)
+        assert os.path.exists(qualified_log_filename)
+
+    def test_GIVEN_logging_is_requested_THEN_the_log_file_contains_the_message(self) -> None:
+        log_path = LOG_FOLDER
+        if LOG_ENV_PATH in os.environ:
+            log_path = os.environ[LOG_ENV_PATH]
+
+        # Log invocation.
+        this_function_name = sys._getframe().f_code.co_name
+        message = LOG_MESSAGE + this_function_name
+        logger.blueskylogger.info(message)
+        qualified_log_filename = os.path.join(log_path, LOG_FILE_NAME)
+        assert os.path.exists(qualified_log_filename)
+        # Open the log file and read its content.
+        with open(qualified_log_filename, "r") as f:
+            content = f.read()
+            assert content.__contains__(message)
 
 
 if __name__ == "__main__":
