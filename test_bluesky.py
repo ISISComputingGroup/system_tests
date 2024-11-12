@@ -1,6 +1,7 @@
+import logging
 import os
-import sys
 import unittest
+import uuid
 
 import bluesky.plan_stubs as bps
 import bluesky.plans as bp
@@ -20,7 +21,7 @@ from ibex_bluesky_core.devices.simpledae.reducers import (
     PeriodGoodFramesNormalizer,
 )
 from ibex_bluesky_core.devices.simpledae.waiters import GoodFramesWaiter, PeriodGoodFramesWaiter
-from ibex_bluesky_core.logger import logger
+from ibex_bluesky_core.log import set_bluesky_log_levels
 from ibex_bluesky_core.run_engine import get_run_engine
 from ophyd_async.plan_stubs import ensure_connected
 
@@ -36,8 +37,8 @@ P5_INIT_VALUE: float = 987.654321
 
 LOG_FOLDER = os.path.join("C:\\", "instrument", "var", "logs", "bluesky")
 LOG_MESSAGE = "Logging something to "
-LOG_ENV_PATH = "BLUESKY_LOGS"
-LOG_FILE_NAME = "blueskylogs.log"
+LOG_ENV_PATH = "IBEX_BLUESKY_CORE_LOGS"
+LOG_FILE_NAME = "bluesky.log"
 
 
 class TestBluesky(unittest.TestCase):
@@ -47,6 +48,13 @@ class TestBluesky(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
         g.cset("p3", P3_INIT_VALUE)
         g.cset("p5", P5_INIT_VALUE)
+        set_bluesky_log_levels("DEBUG")
+
+        log_path = LOG_FOLDER
+        if LOG_ENV_PATH in os.environ:
+            log_path = os.environ[LOG_ENV_PATH]
+
+        self.qualified_log_filename = os.path.join(log_path, LOG_FILE_NAME)
 
     def _run_per_point_dae(self) -> SimpleDae:
         prefix = get_pv_prefix()
@@ -190,43 +198,60 @@ class TestBluesky(unittest.TestCase):
         self.assertEqual(g.get_number_periods(), npoints)
 
     def test_GIVEN_logging_is_requested_THEN_the_log_folder_exists(self) -> None:
-        this_function_name = sys._getframe().f_code.co_name
-        message = LOG_MESSAGE + this_function_name
         # Log invocation.
-        logger.blueskylogger.info(message)
-        if LOG_ENV_PATH in os.environ:
-            assert not os.path.exists(os.environ[LOG_ENV_PATH])
-
-        if LOG_ENV_PATH not in os.environ:
-            assert os.path.exists(LOG_FOLDER)
+        logging.getLogger("ibex_bluesky_core").info(
+            "test_GIVEN_logging_is_requested_THEN_the_log_folder_exists"
+        )
+        self.assertTrue(os.path.exists(LOG_FOLDER))
 
     def test_GIVEN_logging_is_requested_THEN_the_log_file_exists(self) -> None:
-        log_path = LOG_FOLDER
-        if LOG_ENV_PATH in os.environ:
-            log_path = os.environ[LOG_ENV_PATH]
-
         # Log invocation.
-        this_function_name = sys._getframe().f_code.co_name
-        message = LOG_MESSAGE + this_function_name
-        logger.blueskylogger.info(message)
-        qualified_log_filename = os.path.join(log_path, LOG_FILE_NAME)
-        assert os.path.exists(qualified_log_filename)
+        logging.getLogger("ibex_bluesky_core").info(
+            "test_GIVEN_logging_is_requested_THEN_the_log_file_exists"
+        )
+        self.assertTrue(os.path.exists(self.qualified_log_filename))
 
     def test_GIVEN_logging_is_requested_THEN_the_log_file_contains_the_message(self) -> None:
-        log_path = LOG_FOLDER
-        if LOG_ENV_PATH in os.environ:
-            log_path = os.environ[LOG_ENV_PATH]
-
         # Log invocation.
-        this_function_name = sys._getframe().f_code.co_name
-        message = LOG_MESSAGE + this_function_name
-        logger.blueskylogger.info(message)
-        qualified_log_filename = os.path.join(log_path, LOG_FILE_NAME)
-        assert os.path.exists(qualified_log_filename)
+        bluesky_message = LOG_MESSAGE + str(uuid.uuid4())
+        other_message = LOG_MESSAGE + str(uuid.uuid4())
+
+        logging.getLogger("ibex_bluesky_core").info(bluesky_message)
+        logging.getLogger("an.other.logger").info(other_message)
+
         # Open the log file and read its content.
-        with open(qualified_log_filename, "r") as f:
+        with open(self.qualified_log_filename, "r") as f:
             content = f.read()
-            assert content.__contains__(message)
+            self.assertIn(bluesky_message, content)
+            self.assertNotIn(other_message, content)
+
+    def test_GIVEN_logging_is_configured_at_info_level_THEN_debug_messages_do_not_go_to_log_file(
+        self,
+    ):
+        debug_msg = LOG_MESSAGE + str(uuid.uuid4())
+        info_msg = LOG_MESSAGE + str(uuid.uuid4())
+
+        set_bluesky_log_levels("INFO")
+        logging.getLogger("ibex_bluesky_core").debug(debug_msg)
+        logging.getLogger("ibex_bluesky_core").info(info_msg)
+
+        with open(self.qualified_log_filename, "r") as f:
+            content = f.read()
+            self.assertNotIn(debug_msg, content)
+            self.assertIn(info_msg, content)
+
+    def test_GIVEN_logging_is_configured_at_debug_level_THEN_debug_messages_do_go_to_log_file(self):
+        debug_msg = LOG_MESSAGE + str(uuid.uuid4())
+        info_msg = LOG_MESSAGE + str(uuid.uuid4())
+
+        set_bluesky_log_levels("DEBUG")
+        logging.getLogger("ibex_bluesky_core").debug(debug_msg)
+        logging.getLogger("ibex_bluesky_core").info(info_msg)
+
+        with open(self.qualified_log_filename, "r") as f:
+            content = f.read()
+            self.assertIn(debug_msg, content)
+            self.assertIn(info_msg, content)
 
 
 if __name__ == "__main__":
