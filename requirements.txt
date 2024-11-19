@@ -1,4 +1,3 @@
-# Note that these are what's required outside of the genie_python requirements
 h5py
 configobj
 mock
@@ -9,3 +8,4 @@ requests
 six
 unittest-xml-reporting
 ibex_bluesky_core
+genie_python
