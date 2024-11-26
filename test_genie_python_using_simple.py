@@ -7,7 +7,8 @@ from genie_python.channel_access_exceptions import (
     UnableToConnectToPVException,
     WriteAccessException,
 )
-from genie_python.test_modules import test_script_checker
+from genie_python.genie_script_checker import ScriptChecker
+from genie_python.testing_utils.script_checker import CreateTempScriptAndReturnErrors
 from hamcrest import assert_that, is_, is_in
 
 from utilities.utilities import (
@@ -545,8 +546,6 @@ class TestAlerts(unittest.TestCase):
 class SystemTestScriptChecker(unittest.TestCase):
     def setUp(self):
         g.set_instrument(None)
-        self.test_checker = test_script_checker.TestScriptChecker()
-        self.test_checker.setUp()
 
     # Test that functions from C:\Instrument\scripts can be accessed and reports pyright reports error if used incorrectly
     # "" C:\Instrument\Settings\config\NDW2452\Python\inst ""
@@ -557,7 +556,7 @@ class SystemTestScriptChecker(unittest.TestCase):
         self,
     ):
         path_to_inst = os.path.join(
-            "C:\\", "Instrument", "Settings", "config", self.test_checker.machine, "Python", "inst"
+            "c:\\", "instrument", "settings", "config", g.adv.get_instrument(), "Python", "inst"
         )
         temp_file_name = "temp_file.py"
 
@@ -569,8 +568,8 @@ class SystemTestScriptChecker(unittest.TestCase):
             temp_file.write(script_lines_1)
             temp_file.flush()
 
-            with test_script_checker.TestScriptChecker._CreateTempScriptAndReturnErrors(
-                self.test_checker, script_lines_2
+            with CreateTempScriptAndReturnErrors(
+                ScriptChecker(), g.adv.get_instrument(), script_lines_2
             ) as errors_2:
                 self.assertTrue(errors_2[0].startswith("E: 2: Argument of type"))
 
@@ -585,10 +584,7 @@ class SystemTestScriptChecker(unittest.TestCase):
             "   g.begin(1.2, 'b', 'a', 'a', 'a')\n",
         ]
 
-        with test_script_checker.TestScriptChecker._CreateTempScriptAndReturnErrors(
-            self.test_checker, script_lines
+        with CreateTempScriptAndReturnErrors(
+            ScriptChecker(), g.adv.get_instrument(), script_lines
         ) as errors:
             self.assertTrue(errors[0].startswith("E: 3: Argument of type"))
-
-    def tearDown(self):
-        self.test_checker.tearDown()
