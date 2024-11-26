@@ -8,4 +8,4 @@ requests
 six
 unittest-xml-reporting
 ibex_bluesky_core
-genie_python@git+https://github.com/IsisComputingGroup/genie@a4a1f2f1468107a6a20d71a82caa6acbdcc4fa8e
+genie_python
