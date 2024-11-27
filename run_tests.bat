@@ -1,6 +1,13 @@
 setlocal
 call create_virtual_env.bat
 call %EPICS_ROOT%\stop_ibex_server.bat
+
+REM always run system tests against latest versions of genie_python and ibex_bluesky_core
+python -m pip install genie_python[plot]@git+https://github.com/IsisComputingGroup/genie.git@main
+if %errorlevel% NEQ 0 EXIT /B %errorlevel%
+python -m pip install ibex_bluesky_core@git+https://github.com/IsisComputingGroup/ibex_bluesky_core.git@main
+if %errorlevel% NEQ 0 EXIT /B %errorlevel%
+
 python -u test_setup_teardown.py>base_line_memory.txt
 set exitcode=%errorlevel%
 IF %exitcode% NEQ 0 (
