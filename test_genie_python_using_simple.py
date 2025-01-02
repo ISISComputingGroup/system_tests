@@ -543,6 +543,7 @@ class TestAlerts(unittest.TestCase):
         self.assertEqual(g.get_runstate(), state)
 
 
+
 class SystemTestScriptChecker(unittest.TestCase):
     def setUp(self):
         g.set_instrument(None)
@@ -556,7 +557,7 @@ class SystemTestScriptChecker(unittest.TestCase):
         self,
     ):
         path_to_inst = os.path.join(
-            "c:\\", "instrument", "settings", "config", g.adv.get_instrument(), "Python", "inst"
+            "c:\\", "instrument", "settings", "config", g.adv.get_instrument_full_name(), "Python", "inst"
         )
         temp_file_name = "temp_file.py"
 
@@ -569,7 +570,7 @@ class SystemTestScriptChecker(unittest.TestCase):
             temp_file.flush()
 
             with CreateTempScriptAndReturnErrors(
-                ScriptChecker(), g.adv.get_instrument(), script_lines_2
+                ScriptChecker(), g.adv.get_instrument_full_name(), script_lines_2
             ) as errors_2:
                 self.assertTrue(errors_2[0].startswith("E: 2: Argument of type"))
 
@@ -585,6 +586,6 @@ class SystemTestScriptChecker(unittest.TestCase):
         ]
 
         with CreateTempScriptAndReturnErrors(
-            ScriptChecker(), g.adv.get_instrument(), script_lines
+            ScriptChecker(), g.adv.get_instrument_full_name(), script_lines
         ) as errors:
             self.assertTrue(errors[0].startswith("E: 3: Argument of type"))
