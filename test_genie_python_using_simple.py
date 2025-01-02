@@ -10,6 +10,7 @@ from genie_python.channel_access_exceptions import (
 from genie_python.genie_script_checker import ScriptChecker
 from genie_python.testing_utils.script_checker import CreateTempScriptAndReturnErrors
 from hamcrest import assert_that, is_, is_in
+
 from utilities.utilities import (
     check_block_exists,
     g,  # type: ignore
