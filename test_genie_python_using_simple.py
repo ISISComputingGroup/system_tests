@@ -141,7 +141,8 @@ class TestWaitforPV(unittest.TestCase):
         value_to_wait_for = 2
 
         set_pv_thread = threading.Thread(
-            target=delayed_set_pv, args=(wait_before, wait_after, pv_name, value_to_wait_for)
+            target=delayed_set_pv,
+            args=(wait_before, wait_after, pv_name, value_to_wait_for),
         )
         set_pv_thread.start()
         g.adv.wait_for_pv(pv_name, value_to_wait_for, maxwait=max_wait)
@@ -152,7 +153,9 @@ class TestWaitforPV(unittest.TestCase):
             "Waitfor should have finished because pv has changed",
         )
 
-    def test_GIVEN_pv_change_but_not_to_correct_value_WHEN_waiting_for_pv_THEN_timeout(self):
+    def test_GIVEN_pv_change_but_not_to_correct_value_WHEN_waiting_for_pv_THEN_timeout(
+        self,
+    ):
         pv_name = g.prefix_pv_name("SIMPLE:VALUE1:SP")
         g.set_pv(pv_name, 0, wait=True)
         value_to_wait_for = 2
@@ -184,24 +187,32 @@ class TestDispSetOnBlock(unittest.TestCase):
     def tearDown(self):
         g.set_pv(self._pv_name + ".DISP", 0)
 
-    def test_GIVEN_disp_set_on_block_WHEN_setting_pv_value_THEN_exception_is_raised(self):
+    def test_GIVEN_disp_set_on_block_WHEN_setting_pv_value_THEN_exception_is_raised(
+        self,
+    ):
         g.set_pv(self._pv_name + ".DISP", 1)
         with self.assertRaises(WriteAccessException):
             g.set_pv(self._pv_name, "test")
 
-    def test_GIVEN_disp_not_set_on_block_WHEN_setting_pv_value_THEN_pv_value_is_set(self):
+    def test_GIVEN_disp_not_set_on_block_WHEN_setting_pv_value_THEN_pv_value_is_set(
+        self,
+    ):
         g.set_pv(self._pv_name + ".DISP", 0)
         test_value = 123
         time.sleep(2)
         g.set_pv(self._pv_name, test_value)
         assert g.get_pv(self._pv_name) == test_value
 
-    def test_GIVEN_field_WHEN_setting_pv_value_THEN_field_is_set_and_disp_is_not_checked(self):
+    def test_GIVEN_field_WHEN_setting_pv_value_THEN_field_is_set_and_disp_is_not_checked(
+        self,
+    ):
         test_value = "m"
         g.set_pv(self._pv_name + ".EGU", test_value)
         assert g.get_pv(self._pv_name + ".EGU") == test_value
 
-    def test_GIVEN_disp_is_set_on_pv_WHEN_setting_field_value_THEN_exception_is_raised(self):
+    def test_GIVEN_disp_is_set_on_pv_WHEN_setting_field_value_THEN_exception_is_raised(
+        self,
+    ):
         g.set_pv(self._pv_name + ".DISP", 1)
         with self.assertRaises(WriteAccessException):
             g.set_pv(self._pv_name + ".EGU", "test")
@@ -229,7 +240,9 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, value_to_wait_for),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -237,7 +250,9 @@ class TestWaitforBlock(unittest.TestCase):
             "Waitfor should have finished because block has changed to correct value",
         )
 
-    def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_wrong_value_THEN_timeout(self):
+    def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_wrong_value_THEN_timeout(
+        self,
+    ):
         value_to_wait_for = 2
         wrong_value = 3
 
@@ -246,7 +261,9 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -267,7 +284,10 @@ class TestWaitforBlock(unittest.TestCase):
         )
         set_pv_thread.start()
         g.waitfor_block(
-            block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait
+            block=self.block_name,
+            lowlimit=low_limit,
+            highlimit=high_limit,
+            maxwait=self.max_wait,
         )
 
         assert_that(
@@ -276,7 +296,9 @@ class TestWaitforBlock(unittest.TestCase):
             "Waitfor should have finished because block has changed to value in range",
         )
 
-    def test_GIVEN_waiting_for_value_in_limits_on_block_WHEN_block_wrong_value_THEN_timeout(self):
+    def test_GIVEN_waiting_for_value_in_limits_on_block_WHEN_block_wrong_value_THEN_timeout(
+        self,
+    ):
         wrong_value = 4
         low_limit = 1
         high_limit = 3
@@ -287,7 +309,10 @@ class TestWaitforBlock(unittest.TestCase):
         )
         set_pv_thread.start()
         g.waitfor_block(
-            block=self.block_name, lowlimit=low_limit, highlimit=high_limit, maxwait=self.max_wait
+            block=self.block_name,
+            lowlimit=low_limit,
+            highlimit=high_limit,
+            maxwait=self.max_wait,
         )
 
         assert_that(
@@ -307,7 +332,9 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, value_in_range),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, highlimit=high_limit, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -326,7 +353,9 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, highlimit=high_limit, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -345,7 +374,9 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, value_in_range),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -364,7 +395,9 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -384,7 +417,9 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, high_limit),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, highlimit=high_limit, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -398,10 +433,13 @@ class TestWaitforBlock(unittest.TestCase):
         low_limit = 2
 
         set_pv_thread = threading.Thread(
-            target=delayed_set_pv, args=(self.wait_before, self.wait_after, self.pv_name, low_limit)
+            target=delayed_set_pv,
+            args=(self.wait_before, self.wait_after, self.pv_name, low_limit),
         )
         set_pv_thread.start()
-        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
+        g.waitfor_block(
+            block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait
+        )
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -543,7 +581,6 @@ class TestAlerts(unittest.TestCase):
         self.assertEqual(g.get_runstate(), state)
 
 
-
 class SystemTestScriptChecker(unittest.TestCase):
     def setUp(self):
         g.set_instrument(None)
@@ -557,13 +594,21 @@ class SystemTestScriptChecker(unittest.TestCase):
         self,
     ):
         path_to_inst = os.path.join(
-            "c:\\", "instrument", "settings", "config", g.adv.get_instrument_full_name(), "Python", "inst"
+            "c:\\",
+            "instrument",
+            "settings",
+            "config",
+            g.adv.get_instrument_full_name(),
+            "Python",
+            "inst",
         )
         temp_file_name = "temp_file.py"
 
         script_lines_1 = "def sample_changer_scloop(a: int, b: str):\n\tpass\n"
 
-        script_lines_2 = ["from inst import temp_file\n" "temp_file.sample_changer_scloop('a',2)\n"]
+        script_lines_2 = [
+            "from inst import temp_file\n" "temp_file.sample_changer_scloop('a',2)\n"
+        ]
 
         with open(os.path.join(path_to_inst, temp_file_name), "w") as temp_file:
             temp_file.write(script_lines_1)
