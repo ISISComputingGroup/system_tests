@@ -10,7 +10,6 @@ from genie_python.channel_access_exceptions import (
 from genie_python.genie_script_checker import ScriptChecker
 from genie_python.testing_utils.script_checker import CreateTempScriptAndReturnErrors
 from hamcrest import assert_that, is_, is_in
-
 from utilities.utilities import (
     check_block_exists,
     g,  # type: ignore
@@ -240,9 +239,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, value_to_wait_for),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -261,9 +258,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, value=value_to_wait_for, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -332,9 +327,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, value_in_range),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, highlimit=high_limit, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -353,9 +346,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, highlimit=high_limit, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -374,9 +365,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, value_in_range),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -395,9 +384,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, wrong_value),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -417,9 +404,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, high_limit),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, highlimit=high_limit, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, highlimit=high_limit, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -437,9 +422,7 @@ class TestWaitforBlock(unittest.TestCase):
             args=(self.wait_before, self.wait_after, self.pv_name, low_limit),
         )
         set_pv_thread.start()
-        g.waitfor_block(
-            block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait
-        )
+        g.waitfor_block(block=self.block_name, lowlimit=low_limit, maxwait=self.max_wait)
 
         assert_that(
             set_pv_thread.is_alive(),
@@ -606,9 +589,7 @@ class SystemTestScriptChecker(unittest.TestCase):
 
         script_lines_1 = "def sample_changer_scloop(a: int, b: str):\n\tpass\n"
 
-        script_lines_2 = [
-            "from inst import temp_file\n" "temp_file.sample_changer_scloop('a',2)\n"
-        ]
+        script_lines_2 = ["from inst import temp_file\n" "temp_file.sample_changer_scloop('a',2)\n"]
 
         with open(os.path.join(path_to_inst, temp_file_name), "w") as temp_file:
             temp_file.write(script_lines_1)
