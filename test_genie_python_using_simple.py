@@ -114,6 +114,15 @@ class TestBlockUtils(unittest.TestCase):
             g.set_pv(bi_pv_name, expected_val, is_local=True, wait=True)
             assert_that(g.get_pv(bi_pv_name, is_local=True), is_(expected_val))
 
+    @retry_on_failure(3)
+    def test_GIVE_config_with_bi_pv_WHEN_set_pv_value_with_None_THEN_value_is_not_set(
+        self,
+    ):
+        bi_pv_name = "SIMPLE:BI"
+        value_at_start = g.get_pv(bi_pv_name, is_local=True)
+        g.set_pv(bi_pv_name, None, is_local=True, wait=True)
+        assert_that(g.get_pv(bi_pv_name), is_(value_at_start))
+
 
 class TestWaitforPV(unittest.TestCase):
     def setUp(self):
