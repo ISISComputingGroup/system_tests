@@ -26,6 +26,7 @@ import unittest
 
 import xmlrunner
 from genie_python import genie as g
+from genie_python.genie_toggle_settings import exceptions_raised
 
 from utilities import utilities
 
@@ -118,6 +119,7 @@ if __name__ == "__main__":
                 shutil.copy(file_or_dir_src, dest)
 
     g.set_instrument(None)
+    exceptions_raised(True)
     utilities.load_config_if_not_already_loaded("empty_for_system_tests")
     utilities.wait_for_iocs_to_be_up(["ISISDAE_01"], 300)
 
