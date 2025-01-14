@@ -9,3 +9,4 @@ six
 unittest-xml-reporting
 ibex_bluesky_core
 genie_python
+configobj
