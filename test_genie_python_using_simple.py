@@ -114,6 +114,15 @@ class TestBlockUtils(unittest.TestCase):
             g.set_pv(bi_pv_name, expected_val, is_local=True, wait=True)
             assert_that(g.get_pv(bi_pv_name, is_local=True), is_(expected_val))
 
+    @retry_on_failure(3)
+    def test_GIVE_config_with_bi_pv_WHEN_set_pv_value_with_None_THEN_value_is_not_set(
+        self,
+    ):
+        bi_pv_name = "SIMPLE:BI"
+        value_at_start = g.get_pv(bi_pv_name, is_local=True)
+        g.set_pv(bi_pv_name, None, is_local=True, wait=True)
+        assert_that(g.get_pv(bi_pv_name), is_(value_at_start))
+
 
 class TestWaitforPV(unittest.TestCase):
     def setUp(self):
@@ -590,7 +599,7 @@ class SystemTestScriptChecker(unittest.TestCase):
 
         script_lines_1 = "def sample_changer_scloop(a: int, b: str):\n\tpass\n"
 
-        script_lines_2 = ["from inst import temp_file\n" "temp_file.sample_changer_scloop('a',2)\n"]
+        script_lines_2 = ["from inst import temp_file\ntemp_file.sample_changer_scloop('a',2)\n"]
 
         with open(os.path.join(path_to_inst, temp_file_name), "w") as temp_file:
             temp_file.write(script_lines_1)
