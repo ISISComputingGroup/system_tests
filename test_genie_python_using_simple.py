@@ -599,7 +599,7 @@ class SystemTestScriptChecker(unittest.TestCase):
 
         script_lines_1 = "def sample_changer_scloop(a: int, b: str):\n\tpass\n"
 
-        script_lines_2 = ["from inst import temp_file\n" "temp_file.sample_changer_scloop('a',2)\n"]
+        script_lines_2 = ["from inst import temp_file\ntemp_file.sample_changer_scloop('a',2)\n"]
 
         with open(os.path.join(path_to_inst, temp_file_name), "w") as temp_file:
             temp_file.write(script_lines_1)
