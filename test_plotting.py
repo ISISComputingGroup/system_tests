@@ -1,8 +1,12 @@
 import os
 import unittest
-from utilities.utilities import g, retry_on_failure, load_config_if_not_already_loaded
-from six.moves import range
+
 import requests
+from six.moves import range
+
+from utilities.utilities import g, load_config_if_not_already_loaded, retry_on_failure
+
+MAX_FIGURES = 3
 
 
 class TestPlotting(unittest.TestCase):
@@ -11,6 +15,7 @@ class TestPlotting(unittest.TestCase):
 
     Instead, we write a handful of "smoke tests" to check that it isn't throwing any hugely obvious exceptions
     """
+
     PYPLOT = None
 
     @classmethod
@@ -30,12 +35,14 @@ class TestPlotting(unittest.TestCase):
         load_config_if_not_already_loaded("empty_for_system_tests")
 
         import matplotlib
-        matplotlib.use('module://genie_python.matplotlib_backend.ibex_web_backend')
+
+        matplotlib.use("module://genie_python.matplotlib_backend.ibex_websocket_backend")
         import matplotlib.pyplot as pyplot
+
         TestPlotting.PYPLOT = pyplot
 
     def setUp(self):
-        TestPlotting.PYPLOT.close('all')
+        TestPlotting.PYPLOT.close("all")
 
     def assert_webserver_up(self):
         web_response = requests.get("http://127.0.0.1:8988/")
@@ -62,7 +69,9 @@ class TestPlotting(unittest.TestCase):
             g.end()
 
     @retry_on_failure(3)
-    def test_GIVEN_when_plot_exists_WHEN_connect_to_matplotlib_server_THEN_response_is_http_200_ok(self):
+    def test_GIVEN_when_plot_exists_WHEN_connect_to_matplotlib_server_THEN_response_is_http_200_ok(
+        self,
+    ):
         TestPlotting.PYPLOT.plot(range(5))
         TestPlotting.PYPLOT.show()
         self.assert_webserver_up()
@@ -72,10 +81,11 @@ class TestPlotting(unittest.TestCase):
         g.begin()
         try:
             import matplotlib.pyplot as p
+
             for i in range(7):
                 g.plot_spectrum(1)
 
-            self.assertEqual(6, len(p.get_fignums()))
+            self.assertEqual(MAX_FIGURES, len(p.get_fignums()))
         finally:
             g.end()
 
@@ -84,10 +94,11 @@ class TestPlotting(unittest.TestCase):
         g.begin()
         try:
             import matplotlib.pyplot as p
+
             for i in range(7):
                 p.figure(i)
 
-            self.assertEqual(6, len(p.get_fignums()))
+            self.assertEqual(MAX_FIGURES, len(p.get_fignums()))
         finally:
             g.end()
 
@@ -96,9 +107,10 @@ class TestPlotting(unittest.TestCase):
         g.begin()
         try:
             import matplotlib.pyplot as p
+
             for i in range(8, 0, -1):
                 p.figure(i)
 
-            self.assertEqual([1, 2, 3, 4, 5, 6], p.get_fignums())
+            self.assertEqual([1, 2, 3], p.get_fignums())
         finally:
             g.end()

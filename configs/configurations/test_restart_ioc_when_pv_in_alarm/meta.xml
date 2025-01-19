@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<meta>
+	<description>test</description>
+	<synoptic>-- NONE --</synoptic>
+	<edits>
+		<edit>2022-08-25 16:15:36</edit>
+		<edit>2022-08-26 08:39:15</edit>
+	</edits>
+	<isProtected>false</isProtected>
+	<isDynamic>false</isDynamic>
+	<configuresBlockGWAndArchiver>false</configuresBlockGWAndArchiver>
+</meta>

@@ -21,7 +21,7 @@ pipeline {
 
   // The options directive is for configuration that applies to the whole job.
   options {
-    buildDiscarder(logRotator(numToKeepStr:'10', daysToKeepStr: '14'))
+    buildDiscarder(logRotator(numToKeepStr:'5', daysToKeepStr: '14'))
     timestamps()
     // as we "checkout scm" as a stage, we do not need to do it here too
     skipDefaultCheckout(true)
@@ -64,11 +64,35 @@ pipeline {
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Installing IBEX on node ${env.NODE_NAME}
             REM EPICS should always be a directory junction on build servers
-            if exist "C:\\Instrument\\Apps\\EPICS" (
+            if exist "C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat" (
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
+            )
+            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+            ) else (
+                md C:\\Instrument\\Apps\\EPICS-%MYJOB%
+            )
+            REM clear logs early to stop reporting previous errors
+            REM in case install aborts
+            call %WORKSPACE%\\clear_logs.bat
+            if exist "C:\\Instrument\\Apps\\EPICS" (
                 @echo Removing EPICS directory link
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
+            if exist "C:\\Instrument\\Apps\\EPICS" (
+                echo ERROR: Unable to remove EPICS
+                exit /b 1
+            )
+            if not exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                @echo unable to create C:\\Instrument\\Apps\\EPICS-%MYJOB%
+                exit /b 1
+            )
+            mklink /j C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
+            if %errorlevel% NEQ 0 (
+                @echo unable to create junction from C:\\Instrument\\Apps\\EPICS to C:\\Instrument\\Apps\\EPICS-%MYJOB%
+                exit /b 1
+            )
+            dir C:\\Instrument\\Apps
             if \"%MYJOB%\" == \"System_Tests_debug\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_static\" (
@@ -77,42 +101,20 @@ pipeline {
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_STATIC_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_release\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat RELEASE
+            ) else if \"%MYJOB%\" == \"System_Tests_win32\" (
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS x86
+            ) else if \"%MYJOB%\" == \"System_Tests_Win11\" (
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
-            REM preserve error code as we need always need to rename EPICS directory
-            set insterr=%errorlevel%
-	    REM call stop in case anything running from before e.g. just in time debug window
-            call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
-            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
-                REM Retry delete multiple times as sometimes fails
-                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-                rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            )
-            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
-                echo ERROR Unable to remove EPICS-%MYJOB%
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
+            IF %errorlevel% NEQ 0 (
+                @echo ERROR: unable to install ibex - error code %errorlevel%
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
+                rmdir "C:\\Instrument\\Apps\\EPICS"
                 exit /b 1
             )
-            move C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
-            set moveerr=%errorlevel%
-            IF %insterr% NEQ 0 (
-                @echo ERROR unable to install ibex - error code %insterr%
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                exit /b %insterr%
-            )
-            IF %moveerr% NEQ 0 (
-                @echo ERROR unable to rename EPICS directory to EPICS-%MYJOB% - error code %moveerr%
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                rd /s /q C:\\Instrument\\Apps\\EPICS>NUL
-                exit /b %moveerr%
-            )
+            dir C:\\Instrument\\Apps
             """
          }
         }
@@ -121,47 +123,65 @@ pipeline {
       stage("Run Tests") {
         steps {
           lock(resource: ELOCK, inversePrecedence: false) {
-           timeout(time: 1800, unit: 'MINUTES') {
+           timeout(time: 18, unit: 'HOURS') {
               bat """
                 set \"MYJOB=${env.JOB_NAME}\"
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
                 if exist "C:\\Instrument\\Apps\\EPICS" (
-                    call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                     rmdir "C:\\Instrument\\Apps\\EPICS"
                 )
-                del /q C:\\Instrument\\Var\\logs\\ioc\\*.*
-                del /q C:\\Instrument\\Var\\logs\\IOCTestFramework\\*.*
+                REM as ELOCK is released between stages clear logs to be safe
+                call %WORKSPACE%\\clear_logs.bat
                 mklink /J C:\\Instrument\\Apps\\EPICS C:\\Instrument\\Apps\\EPICS-%MYJOB%
                 IF %errorlevel% NEQ 0 (
-                    @echo ERROR unable to make EPICS directory junction link to EPICS-%MYJOB% - error %errorlevel%
+                    @echo ERROR: unable to make EPICS directory junction link to EPICS-%MYJOB% - error %errorlevel%
                     exit /b %errorlevel%
                 )
                 if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
-                    @echo ERROR Unable to find config_env.bat in linked EPICS directory
+                    @echo ERROR: Unable to find config_env.bat in linked EPICS directory
                     exit /b 1
                 )
                 @echo Running system tests on node ${env.NODE_NAME}
-                if \"%MYJOB%\" == \"System_Tests_release\" (
+                if \"%MYJOB%\" == \"System_Tests_galilold\" (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
-				) else (
+		) else if \"%MYJOB%\" == \"System_Tests_release\" (
+                    call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
+                ) else (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
-				)
+		)
                 call clean_files.bat
+                @echo FIRST PART OF TESTS STARTED
                 call run_tests.bat
                 set errcode1=%errorlevel%
+                if %errcode1% NEQ 0 (
+                    @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%
+			    ) else (
+                    @echo OK: FIRST PART OF TESTS SUCCEEDED
+				)
+                @echo SECOND PART OF TESTS STARTED
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
-                REM we need to pass -i to ignore build errors or we will stop on first test failure
-                REM overall build status will still fail due to junit
-                make -i ioctests
+                REM make will usually stop on first test failure as python will return an error. We can pass -i to make to ignore
+		REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
+		REM the case when python crashes with no XML output. So we will try using -k which looks to "keep going"
+                REM but still return an overall failure code
+                make -k ioctests
                 set errcode2=%errorlevel%
                 popd
+                @echo SECOND PART OF TESTS FINISHED WITH CODE %errcode2%
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
                 @echo Finished running tests on node ${env.NODE_NAME}
                 if %errcode1% NEQ 0 (
+                    @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
                     exit /b %errcode1%
                 )
+                if %errcode2% NEQ 0 (
+                    @echo ERROR: FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
+		) else (
+                    @echo OK: BOTH FIRST AND SECOND PARTS OF TESTS SUCCEEDED
+		)
                 exit /b %errcode2%
              """
           }
@@ -178,29 +198,47 @@ pipeline {
             @echo Saving test output on node ${env.NODE_NAME}
             robocopy "C:\\Instrument\\Var\\logs\\ioc" "%WORKSPACE%\\ioc-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Var\\logs\\IOCTestFramework" "%WORKSPACE%\\ioctest-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\gateway" "%WORKSPACE%\\gateway-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\genie_python" "%WORKSPACE%\\genie_python-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\deploy" "%WORKSPACE%\\deploy-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Var\\logs\\ibex_server" "%WORKSPACE%\\ibex_server-logs" /E /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Apps\\EPICS-%MYJOB%" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             exit /b 0
         """
         archiveArtifacts artifacts: '*-logs/*.log', caseSensitive: false
         junit "test-reports/**/*.xml,**/test-reports/**/*.xml"
+		logParser ([
+            projectRulePath: 'log_parse_rules.txt',
+            parsingRulesPath: '',
+            showGraphs: true, 
+            unstableOnWarning: false,
+            useProjectRule: true,
+        ])
     }
 
     cleanup {
         bat """
+            @echo off
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Started cleanup on node ${env.NODE_NAME}
-            REM not ideal to call without lock, and retaking lock may be a potential race condition
-            REM however the directory junction will only exist if the previous step times out      
-            REM we do not remove or use a path with C:\\Instrument\\Apps\\EPICS as e.g. a build
-            REM may have started and changed it
-            if exist "C:\\Instrument\\Apps\\EPICS" (
-                call "C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat"
+            REM call stop ibex server in case job aborted and not called
+            REM this cleans things up for next clone
+            if exist "C:\\Instrument\\Apps\\EPICS-%MYJOB%" (
+                call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
             )
-            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            rd /q /s C:\\Instrument\\Apps\\EPICS-%MYJOB%>NUL
-            rd /q /s %WORKSPACE%\\my_venv>NUL
+            rmdir "C:\\Instrument\\Apps\\EPICS" >NUL 2>&1
+            rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL 2>&1
+            REM clear logs as we have already archived them. Though we clear
+            REM logs before an install also remove them here in case
+            REM next job git checkout aborts and tries to report same errors
+            REM as now all over again
+            call %WORKSPACE%\\clear_logs.bat
             @echo Finished cleanup on node ${env.NODE_NAME}
+            @echo ***
+            @echo *** Any Office365connector Matched status FAILURE message below means
+            @echo *** an earlier Jenkins step failed not the Office365connector itself
+            @echo *** Search log file for  ERROR:  to locate true cause
+            @echo ***
             exit /b 0
         """
     }

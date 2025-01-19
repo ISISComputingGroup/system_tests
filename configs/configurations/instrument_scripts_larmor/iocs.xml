@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<iocs xmlns="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:ioc="http://epics.isis.rl.ac.uk/schema/iocs/1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+	<ioc name="GALIL_06" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="ENCAVNSAMP" value=""/>
+			<macro name="GALILADDR" value="127.0.0.1"/>
+			<macro name="MTRCTRL" value="06"/>
+			<macro name="GALILCONFIGDIR" value="C:/Instrument/Apps/EPICS/support/motionSetPoints/master/settings/setting_for_system_tests/instrument_scripts/larmor" />
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc name="GALIL_05" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="ENCAVNSAMP" value=""/>
+			<macro name="GALILADDR" value="127.0.0.1"/>
+			<macro name="MTRCTRL" value="05"/>
+			<macro name="GALILCONFIGDIR" value="C:/Instrument/Apps/EPICS/support/motionSetPoints/master/settings/setting_for_system_tests/instrument_scripts/larmor" />
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc name="HVCAENSIM_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="IFREADONLY" value=" "/>
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc name="MK3CHOPR_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros/>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+</iocs>

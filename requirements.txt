@@ -1,7 +1,5 @@
-# Note that these are what's required outside of the genie_python requirements
 h5py
 configobj
-kafka-python
 mock
 parameterized
 psutil
@@ -9,5 +7,6 @@ PyHamcrest
 requests
 six
 unittest-xml-reporting
-ess-streaming-data-types
-
+ibex_bluesky_core
+genie_python
+configobj
