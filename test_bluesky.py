@@ -167,8 +167,6 @@ class TestBluesky(unittest.TestCase):
 
         RE(_plan())
 
-        input()
-
         self.assertAlmostEqual(icc.peak_stats['com'], 0)
         print(icc.live_fit.result.params['c0'])
         print(icc.live_fit.result.fit_report())
