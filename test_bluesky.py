@@ -8,11 +8,11 @@ import bluesky.plan_stubs as bps
 import bluesky.plans as bp
 import matplotlib
 from bluesky.callbacks import LiveTable
-from ibex_bluesky_core.callbacks.fitting.fitting_utils import Linear
 from bluesky.preprocessors import subs_decorator
 from bluesky.run_engine import RunEngine, RunEngineResult
 from genie_python import genie as g  # type: ignore
 from ibex_bluesky_core.callbacks import ISISCallbacks
+from ibex_bluesky_core.callbacks.fitting.fitting_utils import Linear
 from ibex_bluesky_core.devices import get_pv_prefix
 from ibex_bluesky_core.devices.block import block_r, block_rw_rbv
 from ibex_bluesky_core.devices.simpledae import SimpleDae
@@ -24,7 +24,10 @@ from ibex_bluesky_core.devices.simpledae.reducers import (
     GoodFramesNormalizer,
     PeriodGoodFramesNormalizer,
 )
-from ibex_bluesky_core.devices.simpledae.waiters import GoodFramesWaiter, PeriodGoodFramesWaiter
+from ibex_bluesky_core.devices.simpledae.waiters import (
+    GoodFramesWaiter,
+    PeriodGoodFramesWaiter,
+)
 from ibex_bluesky_core.log import set_bluesky_log_levels
 from ibex_bluesky_core.run_engine import get_run_engine
 from ophyd_async.plan_stubs import ensure_connected
@@ -153,10 +156,13 @@ class TestBluesky(unittest.TestCase):
         self.assertTrue(any("|    123.456 |   10.00000 |" in line for line in livetable_lines))
 
     def test_scan_with_standard_callbacks(self) -> None:
-        icc = ISISCallbacks(x="p5", y="p3",
-                            fit=Linear().fit(),
-                            human_readable_file_output_dir=Path(LOG_FOLDER) / "output_files",
-                            live_fit_logger_output_dir=Path(LOG_FOLDER) / "fitting")
+        icc = ISISCallbacks(
+            x="p5",
+            y="p3",
+            fit=Linear().fit(),
+            human_readable_file_output_dir=Path(LOG_FOLDER) / "output_files",
+            live_fit_logger_output_dir=Path(LOG_FOLDER) / "fitting",
+        )
 
         @icc
         def _plan():
@@ -167,10 +173,10 @@ class TestBluesky(unittest.TestCase):
 
         RE(_plan())
 
-        self.assertAlmostEqual(icc.peak_stats['com'], 0)
-        print(icc.live_fit.result.params['c0'])
+        self.assertAlmostEqual(icc.peak_stats["com"], 0)
+        print(icc.live_fit.result.params["c0"])
         print(icc.live_fit.result.fit_report())
-        self.assertAlmostEqual(icc.live_fit.result.params['c0'], P3_INIT_VALUE)
+        self.assertAlmostEqual(icc.live_fit.result.params["c0"], P3_INIT_VALUE)
 
     def test_count_simple_dae(self) -> None:
         start_run_number = int(g.get_runnumber())
@@ -236,7 +242,9 @@ class TestBluesky(unittest.TestCase):
         )
         self.assertTrue(os.path.exists(self.qualified_log_filename))
 
-    def test_GIVEN_logging_is_requested_THEN_the_log_file_contains_the_message(self) -> None:
+    def test_GIVEN_logging_is_requested_THEN_the_log_file_contains_the_message(
+        self,
+    ) -> None:
         # Log invocation.
         bluesky_message = LOG_MESSAGE + str(uuid.uuid4())
         other_message = LOG_MESSAGE + str(uuid.uuid4())
@@ -265,7 +273,9 @@ class TestBluesky(unittest.TestCase):
             self.assertNotIn(debug_msg, content)
             self.assertIn(info_msg, content)
 
-    def test_GIVEN_logging_is_configured_at_debug_level_THEN_debug_messages_do_go_to_log_file(self):
+    def test_GIVEN_logging_is_configured_at_debug_level_THEN_debug_messages_do_go_to_log_file(
+        self,
+    ):
         debug_msg = LOG_MESSAGE + str(uuid.uuid4())
         info_msg = LOG_MESSAGE + str(uuid.uuid4())
 
