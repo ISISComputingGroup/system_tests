@@ -105,6 +105,8 @@ pipeline {
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS x86
             ) else if \"%MYJOB%\" == \"System_Tests_Win11\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS
+            ) else if \"%MYJOB%\" == \"System_Tests_Win11_Win11\" (
+                call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS x64 win11
             ) else (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat
             )
