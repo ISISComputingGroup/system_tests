@@ -9,5 +9,6 @@ del /q genie_python\*.*
 del /q deploy\*.*
 del /q ibex_server\*.*
 del /q IOCTestFramework\*.*
+del /q /s *.*
 popd
 exit /b 0
