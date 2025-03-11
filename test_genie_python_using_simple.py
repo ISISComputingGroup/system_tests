@@ -121,7 +121,7 @@ class TestBlockUtils(unittest.TestCase):
         bi_pv_name = "SIMPLE:BI"
         value_at_start = g.get_pv(bi_pv_name, is_local=True)
         g.set_pv(bi_pv_name, None, is_local=True, wait=True)
-        assert_that(g.get_pv(bi_pv_name), is_(value_at_start))
+        assert_that(g.get_pv(bi_pv_name, is_local=True), is_(value_at_start))
 
 
 class TestWaitforPV(unittest.TestCase):
