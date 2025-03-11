@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from hamcrest import *
+from hamcrest import assert_that, is_, less_than
 from psutil import AccessDenied, process_iter, virtual_memory
 
 from utilities.utilities import (
@@ -22,16 +22,17 @@ ASSUMED_NON_IBEX_USAGE = 2.0
 
 
 class TestMemoryUsage(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         g.set_instrument(None)
 
         setup_simulated_wiring_tables()
 
-        # all tests that interact with anything but genie should try to load a config to ensure that the configurations
+        # all tests that interact with anything but genie should try to load
+        # a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
         load_config_if_not_already_loaded(TYPICAL_CONFIG_NAME)
 
-    def get_current_memory_usage(self):
+    def get_current_memory_usage(self) -> float:
         """
         Obtains the current system memory usage and returns it in gibibytes
 
@@ -60,7 +61,7 @@ class TestMemoryUsage(unittest.TestCase):
 
     def test_GIVEN_typical_config_with_IOCs_blocks_and_LVDCOM_IOC_WHEN_dae_is_doing_a_run_THEN_memory_usage_stays_under_9point5gb(
         self,
-    ):
+    ) -> None:
         system_threshold = 9.5
 
         g.begin()
@@ -71,7 +72,7 @@ class TestMemoryUsage(unittest.TestCase):
 
     def test_GIVEN_typical_config_with_IOCs_blocks_and_LVDCOM_IOC_WHEN_dae_is_not_doing_a_run_THEN_memory_usage_stays_under_7point5gb(
         self,
-    ):
+    ) -> None:
         system_threshold = 8.5
 
         memory_used = self.get_current_memory_usage()
@@ -80,7 +81,7 @@ class TestMemoryUsage(unittest.TestCase):
 
     def get_matching_process_cmdline_substring_from_process_or_none(
         self, process, process_cmdline_substrings
-    ):
+    ) -> str:
         """
         Get the first substring from process_cmdline_substrings that is contained in the cmdline call for the process
          or None if no substrings match.
@@ -90,7 +91,7 @@ class TestMemoryUsage(unittest.TestCase):
             if process_cmdline_substring in cmdline:
                 return process_cmdline_substring
 
-    def get_commit_sizes_in_kb(self, process_cmdline_substrings):
+    def get_commit_sizes_in_kb(self, process_cmdline_substrings) -> dict():
         """
         Get the commit sizes of the processes that contain the given substrings in their command line call.
         """
@@ -111,7 +112,7 @@ class TestMemoryUsage(unittest.TestCase):
 
     def assert_commit_sizes_are_less_than_expected_max_commit_size(
         self, process_cmdline_substrings_and_expected_max_commit_size, commit_sizes_in_kb
-    ):
+    ) -> None:
         assertion_error_occurred = False
         for process_cmdline_substring, commit_size_in_kb in commit_sizes_in_kb.items():
             try:
@@ -130,7 +131,7 @@ class TestMemoryUsage(unittest.TestCase):
                 f"Expected commit size to be less than values: {process_cmdline_substrings_and_expected_max_commit_size}. Actually got: {commit_sizes_in_kb}"
             )
 
-    def test_GIVEN_standard_setup_THEN_commit_size_of_python_processes_are_reasonable(self):
+    def test_GIVEN_standard_setup_THEN_commit_size_of_python_processes_are_reasonable(self) -> None:
         process_cmdline_substrings_and_expected_max_commit_size = {
             "block_server.py": 900000,
             "database_server.py": 900000,
