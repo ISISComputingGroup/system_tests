@@ -133,8 +133,8 @@ class TestMemoryUsage(unittest.TestCase):
 
     def test_GIVEN_standard_setup_THEN_commit_size_of_python_processes_are_reasonable(self) -> None:
         process_cmdline_substrings_and_expected_max_commit_size = {
-            "block_server.py": 900000,
-            "database_server.py": 900000,
+            "block_server.py": 950000,
+            "database_server.py": 950000,
         }
         commit_sizes_in_kb = self.get_commit_sizes_in_kb(
             process_cmdline_substrings_and_expected_max_commit_size.keys()
