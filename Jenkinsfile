@@ -114,6 +114,7 @@ pipeline {
                 @echo ERROR: unable to install ibex - error code %errorlevel%
                 call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
+		rd /s /q C:\\Instrument\\Apps\\EPICS-%MYJOB% >NUL 2>&1
                 exit /b 1
             )
             dir C:\\Instrument\\Apps
@@ -224,6 +225,7 @@ pipeline {
                 call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
             )
             rmdir "C:\\Instrument\\Apps\\EPICS" >NUL 2>&1
+            rd /s /q C:\\Instrument\\Apps\\EPICS-%MYJOB% >NUL 2>&1
             rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL 2>&1
             REM clear logs as we have already archived them. Though we clear
             REM logs before an install also remove them here in case
