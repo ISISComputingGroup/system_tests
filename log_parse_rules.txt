@@ -12,3 +12,9 @@ warning /(?i)makefile:.*error/
 error /FAILED \(failures=/
 error /FAILED \(errors=/
 warning /not remade because of errors/
+error /(?i)^(\[[^]]*\] )?AssertionError:/
+error /(?i)^(\[[^]]*\] )?error \[/
+error /(?i)^(\[[^]]*\] )?error \(/
+error /(?i)^(\[[^]]*\] )?fail \[/
+error /(?i)^(\[[^]]*\] )?fail \(/
+error /zlib\.error: Error/
