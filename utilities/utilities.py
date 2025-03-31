@@ -449,7 +449,7 @@ def wait_for_iocs_to_be_up(ioc_names: list[str], seconds_to_wait: int) -> None:
 
 def wait_for_string_pvs_to_not_be_empty(
     pvs: list[str], seconds_to_wait: int, is_local: bool = True
-) -> dict():
+) -> dict:
     """
     Wait for a number of string pvs to be non-empty and return their values.
     Raises an assertion error if at least one is not found.
