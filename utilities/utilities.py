@@ -68,7 +68,7 @@ def parameterized_list(cases):
     return return_list
 
 
-def load_config_if_not_already_loaded(config_name):
+def load_config_if_not_already_loaded(config_name, timeout=WAIT_FOR_SERVER_TIMEOUT):
     """
     Load a config by name if it has not already been loaded.
 
@@ -86,7 +86,7 @@ def load_config_if_not_already_loaded(config_name):
 
     g.set_pv("CS:BLOCKSERVER:LOAD_CONFIG", value=compress_and_hex(config_name), is_local=True)
     status_was_busy = False
-    for i in range(WAIT_FOR_SERVER_TIMEOUT):
+    for i in range(timeout):
         status = get_server_status()
         if status_was_busy and status == "":
             break

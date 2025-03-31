@@ -30,7 +30,7 @@ class TestMemoryUsage(unittest.TestCase):
         # all tests that interact with anything but genie should try to load
         # a config to ensure that the configurations
         # in the tests are not broken, e.g. by a schema update
-        load_config_if_not_already_loaded(TYPICAL_CONFIG_NAME)
+        load_config_if_not_already_loaded(TYPICAL_CONFIG_NAME, timeout=360)
 
     def get_current_memory_usage(self) -> float:
         """
