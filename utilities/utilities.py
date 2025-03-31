@@ -7,7 +7,7 @@ import os
 import timeit
 import unittest
 from time import sleep, time
-from typing import Callable, ParamSpec, TypeVar
+from typing import Any, Callable, ParamSpec, TypeVar
 
 import six
 
@@ -44,7 +44,7 @@ IOCS_START_STOP_TIMEOUT = 60
 BASE_MEMORY_USAGE = "BASE_MEMORY_USAGE"
 
 
-def parameterized_list(cases: list[str]) -> list[str]:
+def parameterized_list(cases: list[Any]) -> list[tuple[str, Any]]:
     """
     Creates a list of cases for parameterized to use to run tests.
 
@@ -119,7 +119,7 @@ def _get_config_name() -> str:
     return get_config_details()["name"]
 
 
-def get_config_details() -> dict():
+def get_config_details() -> dict:
     """
     Returns the current config name after waiting for up to WAIT_FOR_SERVER_TIMEOUT seconds
             for it to be readable
@@ -292,7 +292,7 @@ def _start_stop_ioc_is_a_start(is_a_start: bool, ioc_name: str) -> None:
     wait_for_ioc_start_stop(timeout=IOCS_START_STOP_TIMEOUT, is_start=is_a_start, ioc_name=ioc_name)
 
 
-def bulk_start_ioc(ioc_list: list[str]) -> tuple[bool, bool]:
+def bulk_start_ioc(ioc_list: list[str]) -> tuple[list[str], list[str]]:
     """
     start a list of IOCs in bulk
     :param ioc_list: a list of the names of the IOCs to start
@@ -323,7 +323,7 @@ def bulk_start_ioc(ioc_list: list[str]) -> tuple[bool, bool]:
     return failed_to_start, not_in_proc_serv
 
 
-def bulk_stop_ioc(ioc_list: list[str]) -> bool:
+def bulk_stop_ioc(ioc_list: list[str]) -> list[str]:
     """
     Stops a list of IOCs in bulk
     :param ioc_list: a list of the names of the IOCs to stop
@@ -482,16 +482,16 @@ def wait_for_string_pvs_to_not_be_empty(
     return pv_values
 
 
-def retry_on_failure(max_times: int) -> Callable[[], None]:
+def retry_on_failure(max_times: int) -> Callable[[Callable[P, T]], Callable[P, None]]:
     """
     Decorator that will retry running a test if it failed.
     :param max_times: Maximum number of times to retry running the test
     :return: the decorator
     """
 
-    def decorator(func: Callable[P, T]) -> Callable[P, T]:
+    def decorator(func: Callable[P, T]) -> Callable[P, None]:
         @six.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             err = None
             for attempt in range(max_times):
                 try:
