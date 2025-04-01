@@ -7,7 +7,7 @@ import os
 import timeit
 import unittest
 from time import sleep, time
-from typing import Any, Callable, ParamSpec, TypeVar
+from typing import Any, Callable, ContextManager, ParamSpec, TypeVar
 
 import six
 
@@ -248,7 +248,7 @@ def set_wait_for_complete_callback_dae_settings(wait: bool) -> None:
     genie_api_setup.__api.dae.wait_for_completion_callback_dae_settings = wait
 
 
-def temporarily_kill_icp() -> None:
+def temporarily_kill_icp() -> ContextManager[None]:
     # Temporarily kills the ISIS ICP (ISIS DAE)
 
     return genie_api_setup.__api.dae.temporarily_kill_icp()
