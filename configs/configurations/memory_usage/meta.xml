@@ -6,5 +6,6 @@
 		<edit>2019-02-04 12:15:24</edit>
 	</edits>
         <isProtected>false</isProtected>
+        <isDynamic>false</isDynamic>
 	<configuresBlockGWAndArchiver>false</configuresBlockGWAndArchiver>
 </meta>
