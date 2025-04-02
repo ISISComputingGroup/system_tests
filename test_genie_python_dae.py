@@ -812,3 +812,40 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
         g.change_title(title)
         self.assertEqual(g.get_title(), title)
+
+    def test_GIVEN_dae_setup_WHEN_read_x_and_xe_THEN_centre_and_edges_correct(
+        self
+    ) -> None:
+        set_genie_python_raises_exceptions(True)
+        # check x and xe are correct length
+        ntc = g.get_number_timechannels()
+        n = g.get_pv("DAE:SPEC:1:1:X.NORD")
+        ne = g.get_pv("DAE:SPEC:1:1:XE.NORD")
+        self.assertEqual(n, ntc)
+        self.assertEqual(ne, n + 1)
+        # check x is a bin centre of xe edges
+        x = g.get_pv("DAE:SPEC:1:1:X")
+        xe = g.get_pv("DAE:SPEC:1:1:XE")
+        self.assertAlmostEqual(x[0], (xe[0] + xe[1]) / 2.0, delta=.001)
+        set_genie_python_raises_exceptions(False)
+
+    def test_GIVEN_dae_setup_WHEN_paused_THEN_period_values_correct(
+        self
+    ) -> None:
+        set_genie_python_raises_exceptions(True)
+        sleep_time = 5
+        g.change_number_soft_periods(2)
+        self._wait_for_dae_period_change(10, g.get_number_periods)
+        g.begin()
+        g.waitfor(frames=100)
+        sleep(sleep_time)
+        g.pause()
+        gf0 = g.get_frames()
+        self.assertEqual(gf0, g.get_frames(period=True))
+        g.change_period(2)
+        self._wait_for_dae_period_change(2, g.get_period)
+        g.resume()
+        g.waitfor(frames=200)
+        g.pause()
+        gf1 = g.get_frames()
+        self.assertEqual(gf1 - gf0, g.get_frames(period=True))
