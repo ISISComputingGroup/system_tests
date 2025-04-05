@@ -81,11 +81,11 @@ pipeline {
                 rmdir "C:\\Instrument\\Apps\\EPICS"
             )
             REM EPICS should be a junction but occasionally it seems to be a real directory
-            REM usually happens when a build gets terminated early, but unsure of exact reasons 
+            REM usually happens when a build gets terminated early, but unsure of exact reasons
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 @echo WARNING: Needing to removing EPICS directory files as not a junction
                 rmdir /s /q "C:\\Instrument\\Apps\\EPICS"
-                rmdir /s /q "C:\\Instrument\\Apps\\EPICS"
+                if exist "C:\\Instrument\\Apps\\EPICS" rmdir /s /q "C:\\Instrument\\Apps\\EPICS"
             )
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 echo ERROR: Unable to remove EPICS
