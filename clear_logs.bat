@@ -1,5 +1,8 @@
 setlocal
-pushd C:\Instrument\Var\logs
-del /q /s *.* >NUL
-popd
+for /d %%i in ( C:\Instrument\Var\logs C:\Instrument\Var\autosave ) do (
+    @echo Cleaning %%i
+    pushd %%i
+    del /s /q *.* >NUL
+    popd
+)
 exit /b 0
