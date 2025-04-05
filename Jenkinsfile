@@ -61,6 +61,7 @@ pipeline {
         steps {
          lock(resource: ELOCK, inversePrecedence: false) {
           bat """
+            setlocal
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Installing IBEX on node ${env.NODE_NAME}
             REM EPICS should always be a directory junction on build servers
@@ -78,6 +79,13 @@ pipeline {
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 @echo Removing EPICS directory link
                 rmdir "C:\\Instrument\\Apps\\EPICS"
+            )
+            REM EPICS should be a junction but occasionally it seems to be a real directory
+            REM usually happens when a build gets terminated early, but unsure of exact reasons 
+            if exist "C:\\Instrument\\Apps\\EPICS" (
+                @echo WARNING: Needing to removing EPICS directory files as not a junction
+                rmdir /s /q "C:\\Instrument\\Apps\\EPICS"
+                rmdir /s /q "C:\\Instrument\\Apps\\EPICS"
             )
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 echo ERROR: Unable to remove EPICS
@@ -114,7 +122,7 @@ pipeline {
                 @echo ERROR: unable to install ibex - error code %errorlevel%
                 call C:\\Instrument\\Apps\\EPICS-%MYJOB%\\stop_ibex_server.bat
                 rmdir "C:\\Instrument\\Apps\\EPICS"
-		rd /s /q C:\\Instrument\\Apps\\EPICS-%MYJOB% >NUL 2>&1
+                rd /s /q C:\\Instrument\\Apps\\EPICS-%MYJOB% >NUL 2>&1
                 exit /b 1
             )
             dir C:\\Instrument\\Apps
@@ -147,27 +155,27 @@ pipeline {
                 @echo Running system tests on node ${env.NODE_NAME}
                 if \"%MYJOB%\" == \"System_Tests_galilold\" (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
-		) else if \"%MYJOB%\" == \"System_Tests_release\" (
+        ) else if \"%MYJOB%\" == \"System_Tests_release\" (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat OLD
                 ) else (
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
-		)
+        )
                 call clean_files.bat
                 @echo FIRST PART OF TESTS STARTED
                 call run_tests.bat
                 set errcode1=%errorlevel%
                 if %errcode1% NEQ 0 (
                     @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%
-			    ) else (
+                ) else (
                     @echo OK: FIRST PART OF TESTS SUCCEEDED
-				)
+                )
                 @echo SECOND PART OF TESTS STARTED
                 @echo Running IOC tests on node ${env.NODE_NAME}
                 pushd "C:\\Instrument\\Apps\\EPICS"
                 call config_env.bat
                 REM make will usually stop on first test failure as python will return an error. We can pass -i to make to ignore
-		REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
-		REM the case when python crashes with no XML output. So we will try using -k which looks to "keep going"
+        REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
+        REM the case when python crashes with no XML output. So we will try using -k which looks to "keep going"
                 REM but still return an overall failure code
                 make -k ioctests
                 set errcode2=%errorlevel%
@@ -182,9 +190,9 @@ pipeline {
                 )
                 if %errcode2% NEQ 0 (
                     @echo ERROR: FIRST PART OF TESTS SUCCEEDED, SECOND PART FAILED WITH CODE %errcode2%
-		) else (
+        ) else (
                     @echo OK: BOTH FIRST AND SECOND PARTS OF TESTS SUCCEEDED
-		)
+        )
                 exit /b %errcode2%
              """
           }
@@ -207,7 +215,7 @@ pipeline {
         """
         archiveArtifacts artifacts: 'var-logs/**/*.*, icp-logs/*.*', caseSensitive: false
         junit "test-reports/**/*.xml,**/test-reports/**/*.xml"
-		logParser ([
+        logParser ([
             projectRulePath: 'log_parse_rules.txt',
             parsingRulesPath: '',
             showGraphs: true, 
