@@ -16,6 +16,12 @@ def measure_memory_usage():
     print(virtual_memory().used)
 
 
+def backup_isisicp_config():
+    config_backup = ConfigObj(icp_config_file_path)
+    config_backup.filename = icp_config_backup_file_path
+    config_backup.write()
+
+
 def restore_isisicp_config():
     config = ConfigObj(icp_config_backup_file_path)
     config.filename = icp_config_file_path
@@ -23,10 +29,6 @@ def restore_isisicp_config():
 
 
 def turn_on_datastreaming():
-    config_backup = ConfigObj(icp_config_file_path)
-    config_backup.filename = icp_config_backup_file_path
-    config_backup.write()
-
     config = ConfigObj(icp_config_file_path)
     config["isisicp.kafkastream"] = True
     config["isisicp.kafkastream.topicprefix"] = "TEST"
@@ -50,6 +52,7 @@ if __name__ == "__main__":
 
     if not args.tear_down:
         measure_memory_usage()
-        turn_on_datastreaming()
+        backup_isisicp_config()
+        #turn_on_datastreaming()
     else:
         restore_isisicp_config()
