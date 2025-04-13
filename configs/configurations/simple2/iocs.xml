@@ -5,11 +5,9 @@
 		<pvs/>
 		<pvsets/>
 	</ioc>
-	<ioc name="AG3631A_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
-		<macros>
-			<macro name="PORT" value="" description="Serial COM Port" pattern="^COM[0-9]+$" hasDefault="no"/>
-		</macros>
-		<pvs/>
-		<pvsets/>
+	<ioc autostart="true" name="TPG300_01" remotePvPrefix="" restart="true" simlevel="recsim">
+		<macros />
+		<pvs />
+		<pvsets />
 	</ioc>
 </iocs>
