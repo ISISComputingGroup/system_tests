@@ -819,13 +819,13 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
         # check x and xe are correct length
         ntc = g.get_number_timechannels()
-        n = g.get_pv("DAE:SPEC:1:1:X.NORD")
-        ne = g.get_pv("DAE:SPEC:1:1:XE.NORD")
+        n = g.get_pv("DAE:SPEC:1:1:X.NORD", is_local=True)
+        ne = g.get_pv("DAE:SPEC:1:1:XE.NORD", is_local=True)
         self.assertEqual(n, ntc)
         self.assertEqual(ne, n + 1)
         # check x is a bin centre of xe edges
-        x = g.get_pv("DAE:SPEC:1:1:X")
-        xe = g.get_pv("DAE:SPEC:1:1:XE")
+        x = g.get_pv("DAE:SPEC:1:1:X", is_local=True)
+        xe = g.get_pv("DAE:SPEC:1:1:XE", is_local=True)
         self.assertAlmostEqual(x[0], (xe[0] + xe[1]) / 2.0, delta=.001)
         set_genie_python_raises_exceptions(False)
 
@@ -834,8 +834,9 @@ class TestDae(unittest.TestCase):
     ) -> None:
         set_genie_python_raises_exceptions(True)
         sleep_time = 5
-        g.change_number_soft_periods(2)
-        self._wait_for_dae_period_change(10, g.get_number_periods)
+        num_periods = 2
+        g.change_number_soft_periods(num_periods)
+        self._wait_for_dae_period_change(num_periods, g.get_number_periods)
         g.begin()
         g.waitfor(frames=100)
         sleep(sleep_time)
