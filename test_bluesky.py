@@ -12,21 +12,17 @@ from bluesky.preprocessors import subs_decorator
 from bluesky.run_engine import RunEngine, RunEngineResult
 from genie_python import genie as g  # type: ignore
 from ibex_bluesky_core.callbacks import ISISCallbacks
-from ibex_bluesky_core.callbacks.fitting.fitting_utils import Linear
 from ibex_bluesky_core.devices.block import block_r, block_rw_rbv
-from ibex_bluesky_core.devices.simpledae import SimpleDae
-from ibex_bluesky_core.devices.simpledae.controllers import (
+from ibex_bluesky_core.devices.simpledae import (
+    GoodFramesNormalizer,
+    GoodFramesWaiter,
+    PeriodGoodFramesNormalizer,
+    PeriodGoodFramesWaiter,
     PeriodPerPointController,
     RunPerPointController,
+    SimpleDae,
 )
-from ibex_bluesky_core.devices.simpledae.reducers import (
-    GoodFramesNormalizer,
-    PeriodGoodFramesNormalizer,
-)
-from ibex_bluesky_core.devices.simpledae.waiters import (
-    GoodFramesWaiter,
-    PeriodGoodFramesWaiter,
-)
+from ibex_bluesky_core.fitting import Linear
 from ibex_bluesky_core.log import set_bluesky_log_levels
 from ibex_bluesky_core.run_engine import get_run_engine
 from ibex_bluesky_core.utils import get_pv_prefix
