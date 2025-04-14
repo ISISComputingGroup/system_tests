@@ -208,7 +208,7 @@ pipeline {
             set \"MYJOB=${env.JOB_NAME}\"
             @echo Saving test output on node ${env.NODE_NAME}
             robocopy "C:\\Instrument\\Var\\logs" "%WORKSPACE%\\var-logs" /S /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\data" "%WORKSPACE%\\icp-logs" "journal.txt" "journal*.xml" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\data" "%WORKSPACE%\\icp-logs" "*.txt" "journal*.xml" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\data\\log" "%WORKSPACE%\\icp-logs" "*.log" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Apps\\EPICS-%MYJOB%" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             exit /b 0
