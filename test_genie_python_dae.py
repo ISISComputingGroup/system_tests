@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from threading import Thread
 from time import sleep
-from typing import Callable
+from typing import Any, Callable
 
 import h5py
 from parameterized import parameterized
@@ -182,7 +182,7 @@ class TestDae(unittest.TestCase):
                 g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
                 nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
-                def test_function(f: h5py.File, run_number: int) -> None:
+                def test_function(f: Any, run_number: int) -> None:
                     # if no values are logged this will fail with a
                     # "Unable to synchronously open object (component not found)" exception
                     values = [val for val in f[nexus_path + r"/value"][:]]
@@ -191,7 +191,7 @@ class TestDae(unittest.TestCase):
                     )
                     self.assertTrue(
                         len(values) > 0,
-                        f"Not enough values logged to file with delay {delay}",
+                        "Not enough values logged to file",
                     )
 
                 nexus_file_with_retry(g.adv.get_instrument(), run_number, test_function)
@@ -319,7 +319,7 @@ class TestDae(unittest.TestCase):
 
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
-            def test_func(f: h5py.File, run_number: int) -> None:
+            def test_func(f: Any, run_number: int) -> None:
                 saved_title = f["/raw_data_1/title"][0].decode()
                 self.assertEqual(expected_title, saved_title)
 
