@@ -161,7 +161,9 @@ class TestDae(unittest.TestCase):
         self.fail_if_not_in_setup()
         set_genie_python_raises_exceptions(True)
         test_block_name = "FLOAT_BLOCK"
+        # number of planned restarts due to a begin/end
         r_cnt_start = g.get_pv("DAE:_RESTART_ARCHIVER_CNT", is_local=True)
+        # number of forced restarts due to background check
         fr_cnt_start = g.get_pv("DAE:_FR_ARCHIVER_CNT", is_local=True)
         ncheck = 10
         # block is not changing but check we get at least one value logged
@@ -193,7 +195,7 @@ class TestDae(unittest.TestCase):
                     )
 
                 nexus_file_with_retry(g.adv.get_instrument(), run_number, test_function)
-        # check archiver has restarted expected number of times and no force restarts
+        # check archiver has restarted expected number of times and no forced restarts
         # ARBLOCK restarted on begin and end hence factor 2
         r_cnt = g.get_pv("DAE:_RESTART_ARCHIVER_CNT", is_local=True)
         fr_cnt = g.get_pv("DAE:_FR_ARCHIVER_CNT", is_local=True)
