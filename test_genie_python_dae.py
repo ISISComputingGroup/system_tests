@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from threading import Thread
 from time import sleep
-from typing import Any, Callable
+from typing import Callable
 
 import h5py
 from parameterized import parameterized
@@ -36,7 +36,7 @@ BLOCK_FORMAT_PATTERN = "@{block_name}@"
 
 
 def nexus_file_with_retry(
-    instrument: str, run_number: int, test_func: Callable[[h5py.File], None]
+    instrument: str, run_number: int, test_func: Callable[[h5py.File, int], None]
 ) -> None:
     # isisicp writes files asynchronously, so need to retry file read
     # in case file not completed and still locked
@@ -46,7 +46,8 @@ def nexus_file_with_retry(
     for i in range(num_of_tries):
         try:
             with h5py.File(nexus_file, "r") as f:
-                test_func(f)
+                test_func(f, run_number)
+                break
         except IOError:
             if i == num_of_tries - 1:
                 print("{} not found, giving up".format(nexus_file))
@@ -153,6 +154,52 @@ class TestDae(unittest.TestCase):
         else:
             self.assertEqual(0, saved_beamstop)
 
+    def test_GIVEN_running_instrument_WHEN_block_logging_but_not_changing_THEN_block_value_saved_in_file(
+        self,
+    ):
+        load_config_if_not_already_loaded("rcptt_simple")
+        self.fail_if_not_in_setup()
+        set_genie_python_raises_exceptions(True)
+        test_block_name = "FLOAT_BLOCK"
+        r_cnt_start = g.get_pv("DAE:_RESTART_ARCHIVER_CNT", is_local=True)
+        fr_cnt_start = g.get_pv("DAE:_FR_ARCHIVER_CNT", is_local=True)
+        ncheck = 10
+        # block is not changing but check we get at least one value logged
+        # test quick begin/end and some with delays
+        # there is a 5 second flush time in archiver -> mysql hence
+        # trying shorter and longer delays
+        delays = [(10, 10), (2, 10), (10, 2), (2, 2), (2, 0), (0, 2), (0, 0)]
+        for delay in delays:
+            print(f"Testing (pre, post) delay {delay}")
+            for _ in range(ncheck):
+                sleep(delay[0])
+                g.begin()
+                sleep(delay[1])
+                run_number = g.get_runnumber()
+                g.end()
+                g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
+                nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
+
+                def test_function(f: h5py.File, run_number: int) -> None:
+                    # if no values are logged this will fail with a
+                    # "Unable to synchronously open object (component not found)" exception
+                    values = [val for val in f[nexus_path + r"/value"][:]]
+                    print(
+                        f"Found {len(values)} value(s) for block {test_block_name} run {run_number}"
+                    )
+                    self.assertTrue(
+                        len(values) > 0,
+                        f"Not enough values logged to file with delay {delay}",
+                    )
+
+                nexus_file_with_retry(g.adv.get_instrument(), run_number, test_function)
+        # check archiver has restarted expected number of times and no force restarts
+        # ARBLOCK restarted on begin and end hence factor 2
+        r_cnt = g.get_pv("DAE:_RESTART_ARCHIVER_CNT", is_local=True)
+        fr_cnt = g.get_pv("DAE:_FR_ARCHIVER_CNT", is_local=True)
+        self.assertEqual(r_cnt, r_cnt_start + 2 * ncheck * len(delays))
+        self.assertEqual(fr_cnt, fr_cnt_start)
+
     def test_GIVEN_running_instrument_WHEN_block_logging_THEN_block_saved_in_file(self):
         load_config_if_not_already_loaded("rcptt_simple")
         self.fail_if_not_in_setup()
@@ -195,7 +242,7 @@ class TestDae(unittest.TestCase):
 
         nexus_path = r"/raw_data_1/selog/{}/value_log".format(test_block_name)
 
-        def test_function(f: Any) -> None:
+        def test_function(f: h5py.File, run_number: int) -> None:
             value_valid = f[nexus_path + r"/value_valid"][:]
             is_valid = [sample == 1 for sample in value_valid]
             values = [int(val) for val in f[nexus_path + r"/value"][:]]
@@ -270,7 +317,7 @@ class TestDae(unittest.TestCase):
 
             g.waitfor_runstate("SETUP", maxwaitsecs=self.TIMEOUT)
 
-            def test_func(f):
+            def test_func(f: h5py.File, run_number: int) -> None:
                 saved_title = f["/raw_data_1/title"][0].decode()
                 self.assertEqual(expected_title, saved_title)
 
@@ -567,7 +614,10 @@ class TestDae(unittest.TestCase):
 
         begindelay_property = "isisicp.begindelay"
         config_line = "{} = {}\r\n".format(begindelay_property, delay_seconds)
-        if g.get_runstate() != "SETUP":
+        g.waitfor_runstate("PROCESSING", maxwaitsecs=30, onexit=True)
+        runstate = g.get_runstate()
+        if runstate != "SETUP":
+            print(f"Aborting run as currently {runstate}")
             g.abort()  # make sure not left in a funny state from e.g. previous aborted test
 
         with g._genie_api.dae.temporarily_kill_icp():
@@ -813,9 +863,7 @@ class TestDae(unittest.TestCase):
         g.change_title(title)
         self.assertEqual(g.get_title(), title)
 
-    def test_GIVEN_dae_setup_WHEN_read_x_and_xe_THEN_centre_and_edges_correct(
-        self
-    ) -> None:
+    def test_GIVEN_dae_setup_WHEN_read_x_and_xe_THEN_centre_and_edges_correct(self) -> None:
         set_genie_python_raises_exceptions(True)
         # check x and xe are correct length
         ntc = g.get_number_timechannels()
@@ -826,12 +874,10 @@ class TestDae(unittest.TestCase):
         # check x is a bin centre of xe edges
         x = g.get_pv("DAE:SPEC:1:1:X", is_local=True)
         xe = g.get_pv("DAE:SPEC:1:1:XE", is_local=True)
-        self.assertAlmostEqual(x[0], (xe[0] + xe[1]) / 2.0, delta=.001)
+        self.assertAlmostEqual(x[0], (xe[0] + xe[1]) / 2.0, delta=0.001)
         set_genie_python_raises_exceptions(False)
 
-    def test_GIVEN_dae_setup_WHEN_paused_THEN_period_values_correct(
-        self
-    ) -> None:
+    def test_GIVEN_dae_setup_WHEN_paused_THEN_period_values_correct(self) -> None:
         set_genie_python_raises_exceptions(True)
         sleep_time = 5
         num_periods = 2
