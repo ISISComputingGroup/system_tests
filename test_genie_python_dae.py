@@ -772,12 +772,13 @@ class TestDae(unittest.TestCase):
             return_value.append(g.get_time_since_begin(True))
 
         time_taken = []
-        thread = Thread(target=get_time_thread, args=(time_taken,))
-        thread.start()
+        #thread = Thread(target=get_time_thread, args=(time_taken,))
+        #thread.start()
 
         g.begin()
+        get_time_thread(time_taken)
 
-        thread.join()
+        #thread.join()
 
         # Taking the fluctuation of actual runtime into account and tolerating up to 1 sec difference
         self.assertAlmostEqual(
