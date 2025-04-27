@@ -236,7 +236,9 @@ class TestWaitforBlock(unittest.TestCase):
         self.wait_before = 1
         self.wait_after = 2
         self.max_wait = (self.wait_before + self.wait_after) * 2
-        g.cset(self.block_name, 0)
+        initial_block_value = 0
+        g.cset(self.block_name, initial_block_value)
+        g.waitfor_block(self.block_name, value=initial_block_value , maxwait=TIMEOUT)
         assert_that(check_block_exists(self.block_name), is_(True))
 
     def test_GIVEN_waiting_for_exact_value_on_block_WHEN_block_reaches_value_THEN_waitfor_completes(
