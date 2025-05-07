@@ -362,8 +362,8 @@ class TestDae(unittest.TestCase):
 
         test_title = "Run with two blocks in {block1} and {block2}"
 
-        float_test_val = 12.345
-        long_test_val = 512
+        float_test_val = 23.456
+        long_test_val = 1024
 
         formatted_block_name_1 = BLOCK_FORMAT_PATTERN.format(block_name="FLOAT_BLOCK")
         formatted_block_name_2 = BLOCK_FORMAT_PATTERN.format(block_name="LONG_BLOCK")
