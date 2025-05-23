@@ -242,6 +242,8 @@ pipeline {
             REM next job git checkout aborts and tries to report same errors
             REM as now all over again
             call %WORKSPACE%\\clear_logs.bat
+            REM close any isisicp error windows from system tests of changing simulation mode
+            close_isisicp_error_window.exe
             @echo Finished cleanup on node ${env.NODE_NAME}
             @echo ***
             @echo *** Any Office365connector Matched status FAILURE message below means
