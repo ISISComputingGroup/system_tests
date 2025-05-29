@@ -186,6 +186,8 @@ pipeline {
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             )
+            REM call non-recursve before recursive in case it is a junction
+            rmdir C:\\Instrument\\Apps\\EPICS >NUL 2>&1
             rd /s /q C:\\Instrument\\Apps\\EPICS >NUL 2>&1
             rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL 2>&1
             REM close any isisicp error windows from system tests of changing simulation mode
