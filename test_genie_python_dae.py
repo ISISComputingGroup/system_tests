@@ -192,7 +192,7 @@ class TestDae(unittest.TestCase):
                     )
                     self.assertTrue(
                         len(values) > 0,
-                        "Not enough values logged to file",
+                        f"Not enough values logged to run {run_number}",
                     )
 
                 nexus_file_with_retry(g.adv.get_instrument(), run_number, test_function)
@@ -262,7 +262,7 @@ class TestDae(unittest.TestCase):
             print(f"first_value_index={first_value_index}, len(values)={len(values)}")
             self.assertTrue(
                 (first_value_index + len(test_values) + 1) <= len(values),
-                "Not enough value/value_valid items logged to file",
+                f"Not enough value/value_valid items logged to run {run_number}",
             )
 
             # Only care about test values and the final invalid one
@@ -283,11 +283,11 @@ class TestDae(unittest.TestCase):
 
             self.assertTrue(
                 len(is_valid) == len(test_values) + 1,
-                "Not enough values/value_valid items logged to file",
+                f"Not enough values/value_valid items logged to run {run_number}",
             )
             self.assertTrue(
                 len(alarm_severity) == len(test_values) + 1,
-                "Not enough alarm status/severity items logged to file",
+                f"Not enough alarm status/severity items logged to run {run_number}",
             )
 
             self.assertListEqual(is_valid, [True, True, True, False])
@@ -322,7 +322,7 @@ class TestDae(unittest.TestCase):
 
             def test_func(f: Any, run_number: int) -> None:
                 saved_title = f["/raw_data_1/title"][0].decode()
-                self.assertEqual(expected_title, saved_title)
+                self.assertEqual(expected_title, saved_title, f"title not same as run {run_number}")
 
             nexus_file_with_retry(inst, runnumber, test_func)
 
