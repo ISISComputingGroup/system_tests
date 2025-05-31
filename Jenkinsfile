@@ -102,12 +102,11 @@ pipeline {
             IF %errorlevel% NEQ 0 (
                 @echo ERROR: unable to install ibex - error code %errorlevel%
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
-                rd /s /q C:\\Instrument\\Apps\\EPICS >NUL 2>&1
                 exit /b 1
             )
             call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
-                @echo ERROR: Unable to find config_env.bat in linked EPICS directory
+                @echo ERROR: Unable to find config_env.bat in EPICS directory
                 exit /b 1
             )
             @echo Running system tests on node ${env.NODE_NAME}
@@ -186,9 +185,6 @@ pipeline {
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             )
-            REM call non-recursve before recursive in case it is a junction
-            rmdir C:\\Instrument\\Apps\\EPICS >NUL 2>&1
-            rd /s /q C:\\Instrument\\Apps\\EPICS >NUL 2>&1
             rd /q /s %WORKSPACE:/=\\%\\my_venv>NUL 2>&1
             REM close any isisicp error windows from system tests of changing simulation mode
             REM this window may affect squish GUI tests
