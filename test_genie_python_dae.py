@@ -186,13 +186,17 @@ class TestDae(unittest.TestCase):
                 def test_function(f: Any, run_number: int) -> None:
                     # if no values are logged this will fail with a
                     # "Unable to synchronously open object (component not found)" exception
-                    values = [val for val in f[nexus_path + r"/value"][:]]
+                    try:
+                        values = [val for val in f[nexus_path + r"/value"][:]]
+                    except Exception as e:
+                        print(e)
+                        values = []
                     print(
                         f"Found {len(values)} value(s) for block {test_block_name} run {run_number}"
                     )
                     self.assertTrue(
                         len(values) > 0,
-                        f"Not enough values logged to run {run_number}",
+                        f"Not enough values logged to run {run_number} for delay {delay}",
                     )
 
                 nexus_file_with_retry(g.adv.get_instrument(), run_number, test_function)
