@@ -158,6 +158,7 @@ class TestBluesky(unittest.TestCase):
             fit=Linear().fit(),
             human_readable_file_output_dir=Path(LOG_FOLDER) / "output_files",
             live_fit_logger_output_dir=Path(LOG_FOLDER) / "fitting",
+            plot_png_output_dir=Path(LOG_FOLDER) / "pngs",
         )
 
         @icc
