@@ -72,6 +72,11 @@ pipeline {
                 rmdir C:\\Instrument\\Apps\\EPICS
             )
             REM or a full checkout
+            REM isisicp_extMC.dll can get locked in windows event log
+            del /f /q %TEMP%\\isisicp_extMC*.dlltmp
+            set "EXTMCDIR=C:\\Instrument\\Apps\\EPICS\\ICP_Binaries\\isisdae\\x64\\Release"
+            if exist "%EXTMCDIR%\\isisicp_extMC.dll" del /f %EXTMCDIR%\\isisicp_extMC.dll
+            if exist "%EXTMCDIR%\\isisicp_extMC.dll" move /y %EXTMCDIR%\\isisicp_extMC.dll %TEMP%\\isisicp_extMC%RANDOM%.dlltmp
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 rd /s /q C:\\Instrument\\Apps\\EPICS
             )
