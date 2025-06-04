@@ -31,6 +31,7 @@ from ophyd_async.plan_stubs import ensure_connected
 from utilities.utilities import (
     load_config_if_not_already_loaded,
     set_genie_python_raises_exceptions,
+    setup_simulated_wiring_tables,
 )
 
 matplotlib.use("qtagg")
@@ -49,6 +50,7 @@ class TestBluesky(unittest.TestCase):
     def setUp(self) -> None:
         g.set_instrument(None)
         load_config_if_not_already_loaded("bluesky_sys_test")
+        setup_simulated_wiring_tables()
         set_genie_python_raises_exceptions(True)
         g.cset("p3", P3_INIT_VALUE)
         g.cset("p5", P5_INIT_VALUE)
