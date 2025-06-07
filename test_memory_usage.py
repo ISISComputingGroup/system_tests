@@ -2,7 +2,7 @@ import os
 import unittest
 
 from hamcrest import assert_that, is_, less_than
-from psutil import AccessDenied, process_iter, virtual_memory
+from psutil import AccessDenied, NoSuchProcess, process_iter, virtual_memory
 
 from utilities.utilities import (
     BASE_MEMORY_USAGE,
@@ -107,6 +107,8 @@ class TestMemoryUsage(unittest.TestCase):
                     commit_size_kb = process.memory_info().private / 1000
                     commit_sizes_kb[process_cmdline_found] = commit_size_kb
             except AccessDenied:
+                continue
+            except NoSuchProcess:
                 continue
         return commit_sizes_kb
 
