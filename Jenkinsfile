@@ -67,6 +67,7 @@ pipeline {
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             )
+            taskkill /f /im ibex-client.exe 2>NUL
             REM do we have a junction from an EPICS build
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 rmdir C:\\Instrument\\Apps\\EPICS
