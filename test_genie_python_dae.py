@@ -909,12 +909,12 @@ class TestDae(unittest.TestCase):
         set_genie_python_raises_exceptions(True)
 
         g.set_pv("DAE:AUTOSAVE:FREQ:SP", 20, is_local=True)
-        self.assertEqual(g.get_autosave_freq(), 20)
+        self.assertEqual(g.get_dae_autosave_freq(), 20)
 
     def test_GIVEN_set_autosave_freq_called_THEN_get_autosave_freq_correct(self) -> None:
         set_genie_python_raises_exceptions(True)
 
-        g.set_autosave_freq(30)
+        g.set_dae_autosave_freq(30)
 
         freq = g.get_pv("DAE:AUTOSAVE:FREQ", is_local=True)
         self.assertEqual(freq, 30)
