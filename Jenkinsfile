@@ -148,11 +148,6 @@ pipeline {
             @echo SECOND PART OF TESTS FINISHED WITH CODE %errcode2%
             call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             @echo Finished running tests on node ${env.NODE_NAME}
-            @echo Saving test output on node ${env.NODE_NAME}
-            robocopy "C:\\Instrument\\Var\\logs" "%WORKSPACE%\\var-logs" /S /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\data" "%WORKSPACE%\\icp-logs" "*.log" "*.txt" "journal*.xml" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\data\\log" "%WORKSPACE%\\icp-logs" "*.log" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\Instrument\\Apps\\EPICS" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             if %errcode1% NEQ 0 (
                 @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
                 exit /b %errcode1%
@@ -172,6 +167,16 @@ pipeline {
 
   post {
     always {
+        bat """
+            setlocal
+            set \"MYJOB=${env.JOB_NAME}\"
+            @echo Saving test output on node ${env.NODE_NAME}
+            robocopy "C:\\Instrument\\Var\\logs" "%WORKSPACE%\\var-logs" /S /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\data" "%WORKSPACE%\\icp-logs" "*.log" "*.txt" "journal*.xml" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\data\\log" "%WORKSPACE%\\icp-logs" "*.log" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Apps\\EPICS" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            exit /b 0
+        """
         archiveArtifacts artifacts: 'var-logs/**/*.*, icp-logs/*.*', caseSensitive: false
         junit "test-reports/**/*.xml,**/test-reports/**/*.xml"
         logParser ([
