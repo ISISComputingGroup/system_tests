@@ -6,8 +6,9 @@ import unittest
 
 import requests
 from genie_python import genie as g
+from genie_python.channel_access_exceptions import UnableToConnectToPVException
 from genie_python.utilities import compress_and_hex
-from hamcrest import *
+from hamcrest import assert_that, contains_string, ends_with, is_
 from parameterized import parameterized
 
 from utilities import utilities
@@ -27,13 +28,41 @@ def wait_for_server():
         time.sleep(1)
 
 
+def test_pv_with_macro_value(macro_value, pv, test_case):
+    if macro_value == "":
+        test_case.assertRaises(UnableToConnectToPVException, g.get_pv, pv, is_local=True)
+    else:
+        test_case.assertEqual(
+            g.get_pv(
+                pv,
+                is_local=True,
+            ),
+            macro_value,
+        )
+
+
+def test_config_macros(
+    use_default, config_macro, default_value, macro_value, macro_name, test_case
+):
+    if use_default:
+        test_case.assertNotIn(macro_name, config_macro)
+        return default_value
+    else:
+        test_case.assertIn(macro_name, config_macro)
+        test_case.assertEqual(macro_value, config_macro[macro_name]["value"])
+        test_case.assertNotIn("useDefault", config_macro[macro_name])
+        if macro_value == "":
+            return default_value
+        return macro_value
+
+
 class TestBlockserver(unittest.TestCase):
     """
     Tests for top-level functionality of block server
     """
 
     def setUp(self) -> None:
-        g.set_instrument(None, import_instrument_init=False)
+        g.set_instrument("", import_instrument_init=False)
         self.pvlist_file = os.path.join(r"C:\Instrument", "Settings", "gwblock.pvlist")
         self.rc_settings_file = os.path.join(
             r"C:\Instrument",
@@ -84,7 +113,7 @@ class TestBlockserver(unittest.TestCase):
         details["desc"] = "some_edited_description"
         g.set_pv(
             "CS:BLOCKSERVER:SET_CURR_CONFIG_DETAILS",
-            compress_and_hex(json.dumps(details)),
+            str(compress_and_hex(json.dumps(details))),
             is_local=True,
         )
 
@@ -114,7 +143,8 @@ class TestBlockserver(unittest.TestCase):
                 err = e
                 time.sleep(1)
         else:
-            raise err
+            if err is not None:
+                raise err
 
     @parameterized.expand(
         parameterized_list(
@@ -333,9 +363,10 @@ class TestBlockserver(unittest.TestCase):
         utilities.load_config_if_not_already_loaded(config)
 
         config_rc_settings_file = os.path.join(self.config_dir, config, "rc_settings.cmd")
-        with open(self.rc_settings_file, "r") as rc_settings, open(
-            config_rc_settings_file, "r"
-        ) as config_rc_settings:
+        with (
+            open(self.rc_settings_file, "r") as rc_settings,
+            open(config_rc_settings_file, "r") as config_rc_settings,
+        ):
             assert_that(rc_settings.read(), is_(config_rc_settings.read()))
 
     def test_GIVEN_config_claims_but_does_not_contain_rc_settings_THEN_rc_settings_generated(self):
@@ -353,24 +384,114 @@ class TestBlockserver(unittest.TestCase):
             assert_that(file_content, contains_string("$(MYPVPREFIX)CS:SB:A"))
 
     def test_WHEN_block_is_added_to_active_config_via_save_new_config_pv_THEN_block_added(self):
-        CONFIGURATION_NAME = "test_blockserver_save_active_config"
-        BLOCK_NAME = "TEST_BLOCK"
-        utilities.load_config_if_not_already_loaded(CONFIGURATION_NAME)
+        configuration_name = "test_blockserver_save_active_config"
+        block_name = "TEST_BLOCK"
+        utilities.load_config_if_not_already_loaded(configuration_name)
 
         data = {}
-        data["name"] = CONFIGURATION_NAME
+        data["name"] = configuration_name
         data["blocks"] = [
             {
-                "name": BLOCK_NAME,
+                "name": block_name,
                 "pv": "TEST_PV",
             }
         ]
 
         g.set_pv(
             "CS:BLOCKSERVER:SAVE_NEW_CONFIG",
-            compress_and_hex(json.dumps(data)),
+            str(compress_and_hex(json.dumps(data))),
             wait=True,
             is_local=True,
         )
         wait_for_server()
-        self.assertTrue(utilities.check_block_exists(BLOCK_NAME))
+        self.assertTrue(utilities.check_block_exists(block_name))
+
+    @parameterized.expand(
+        parameterized_list(
+            [
+                ("_No_Vals_All_Default", "", True, "", True, "", True),
+                ("_No_Vals_No_Default", "", False, "", False, "", False),
+                ("_Required_Vals_Else_Default", "1", False, "", True, "3", False),
+                ("_set_Vals_All_Default", "1", True, "2", True, "3", True),
+                ("_set_Vals_No_Default", "1", False, "2", False, "3", False),
+            ]
+        )
+    )
+    def test_WHEN_ioc_has_macros_THEN_defaults_handled_correctly(
+        self,
+        _,
+        name,
+        macro_1_val,
+        macro_1_use_default,
+        macro_2_val,
+        macro_2_use_default,
+        macro_3_val,
+        macro_3_use_default,
+    ):
+        configuration_name = "test_blockserver_save_active_config"
+        utilities.load_config_if_not_already_loaded(configuration_name)
+        data = {}
+        data["name"] = configuration_name
+        data["iocs"] = [
+            {
+                "name": "SIMPLE",
+                "autostart": "true",
+                "restart": "true",
+                "macros": [
+                    {
+                        "name": "MACRO1",
+                        "value": f"{macro_1_val}",
+                        "description": "A macro without a default",
+                        "pattern": "",
+                        "defaultValue": "",
+                        "useDefault": f"{macro_1_use_default}",
+                        "hasDefault": "NO",
+                    },
+                    {
+                        "name": "MACRO2",
+                        "value": f"{macro_2_val}",
+                        "description": "A macro with a default of 5",
+                        "pattern": "",
+                        "defaultValue": "",
+                        "useDefault": f"{macro_2_use_default}",
+                        "hasDefault": "YES",
+                    },
+                    {
+                        "name": "MACRO3",
+                        "value": f"{macro_3_val}",
+                        "description": "A macro with a default of ''",
+                        "pattern": "",
+                        "defaultValue": "",
+                        "useDefault": f"{macro_3_use_default}",
+                        "hasDefault": "YES",
+                    },
+                ],
+            }
+        ]
+
+        g.set_pv(
+            "CS:BLOCKSERVER:SAVE_NEW_CONFIG",
+            str(compress_and_hex(json.dumps(data))),
+            wait=True,
+            is_local=True,
+        )
+        wait_for_server()
+        macros_in_config = utilities.get_config_details()["iocs"][0]["macros"]
+        macros_in_config = {macro["name"]: macro for macro in macros_in_config}
+        expected_1 = test_config_macros(
+            macro_1_use_default, macros_in_config, "", macro_1_val, "MACRO1", self
+        )
+        expected_2 = test_config_macros(
+            macro_2_use_default, macros_in_config, "5", macro_2_val, "MACRO2", self
+        )
+        expected_3 = test_config_macros(
+            macro_3_use_default, macros_in_config, "", macro_3_val, "MACRO3", self
+        )
+
+        assert_with_timeout(
+            lambda: self.assertTrue(utilities.is_ioc_up("SIMPLE")),
+            timeout=SECONDS_TO_WAIT_FOR_IOC_STARTS,
+        )
+        test_pv_with_macro_value(expected_1, "SIMPLE:MACROTEST1", self)
+        test_pv_with_macro_value(expected_2, "SIMPLE:MACROTEST2", self)
+        test_pv_with_macro_value(expected_3, "SIMPLE:MACROTEST3", self)
