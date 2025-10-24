@@ -59,7 +59,7 @@ pipeline {
     stage("Install IBEX and run tests") {
       steps {
        lock(resource: ELOCK, inversePrecedence: false) {
-         timeout(time: 18, unit: 'HOURS') {
+         timeout(time: 22, unit: 'HOURS') {
           bat """
             setlocal
             set \"MYJOB=${env.JOB_NAME}\"
