@@ -79,6 +79,10 @@ pipeline {
             if exist "%EXTMCDIR%\\isisicp_extMC.dll" del /f %EXTMCDIR%\\isisicp_extMC.dll
             if exist "%EXTMCDIR%\\isisicp_extMC.dll" move /y %EXTMCDIR%\\isisicp_extMC.dll %TEMP%\\isisicp_extMC%RANDOM%.dlltmp
             if exist "C:\\Instrument\\Apps\\EPICS" (
+                REM have occasionally had delete fail with file in use, use robocopy
+                REM with retries to try and overcome this
+                mkdir "%WORKSPACE%\\empty_dir"
+                robocopy "%WORKSPACE%\\empty_dir" "C:\\Instrument\\Apps\\EPICS" /PURGE /R:5 /NFL /NDL /NP
                 rd /s /q C:\\Instrument\\Apps\\EPICS
             )
             REM clear logs early to stop reporting previous errors
