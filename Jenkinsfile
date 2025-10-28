@@ -93,7 +93,7 @@ pipeline {
             )
             REM clear logs early to stop reporting previous errors
             REM in case install aborts
-            call %WORKSPACE%\\clear_logs.bat
+            call "%WORKSPACE%\\clear_logs.bat"
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 echo ERROR: Unable to remove EPICS
                 exit /b 1
