@@ -59,7 +59,7 @@ pipeline {
     stage("Install IBEX and run tests") {
       steps {
        lock(resource: ELOCK, inversePrecedence: false) {
-         timeout(time: 22, unit: 'HOURS') {
+         retry(3) {
           bat """
             setlocal
             set \"MYJOB=${env.JOB_NAME}\"
@@ -98,6 +98,13 @@ pipeline {
                 echo ERROR: Unable to remove EPICS
                 exit /b 1
             )
+            exit /b 0
+          """
+         }
+         timeout(time: 22, unit: 'HOURS') {
+          bat """
+            setlocal
+            set \"MYJOB=${env.JOB_NAME}\"
             if \"%MYJOB%\" == \"System_Tests_debug\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_static\" (
