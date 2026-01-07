@@ -59,7 +59,7 @@ pipeline {
     stage("Install IBEX and run tests") {
       steps {
        lock(resource: ELOCK, inversePrecedence: false) {
-         timeout(time: 18, unit: 'HOURS') {
+         retry(3) {
           bat """
             setlocal
             set \"MYJOB=${env.JOB_NAME}\"
@@ -78,16 +78,33 @@ pipeline {
             set "EXTMCDIR=C:\\Instrument\\Apps\\EPICS\\ICP_Binaries\\isisdae\\x64\\Release"
             if exist "%EXTMCDIR%\\isisicp_extMC.dll" del /f %EXTMCDIR%\\isisicp_extMC.dll
             if exist "%EXTMCDIR%\\isisicp_extMC.dll" move /y %EXTMCDIR%\\isisicp_extMC.dll %TEMP%\\isisicp_extMC%RANDOM%.dlltmp
+            if not exist "%WORKSPACE%\\empty_dir" mkdir "%WORKSPACE%\\empty_dir"
             if exist "C:\\Instrument\\Apps\\EPICS" (
+                REM have occasionally had delete fail with file in use, use robocopy
+                REM with retries to try and overcome this
+                robocopy "%WORKSPACE%\\empty_dir" "C:\\Instrument\\Apps\\EPICS" /PURGE /R:5 /NFL /NDL /NP /LOG:NUL
                 rd /s /q C:\\Instrument\\Apps\\EPICS
+            )
+            if exist "C:\\Instrument\\Apps\\Client_E4" (
+                REM have occasionally had delete fail with file in use, use robocopy
+                REM with retries to try and overcome this
+                robocopy "%WORKSPACE%\\empty_dir" "C:\\Instrument\\Apps\\Client_E4" /PURGE /R:5 /NFL /NDL /NP /LOG:NUL
+                rd /s /q C:\\Instrument\\Apps\\Client_E4
             )
             REM clear logs early to stop reporting previous errors
             REM in case install aborts
-            call %WORKSPACE%\\clear_logs.bat
+            call "%WORKSPACE%\\clear_logs.bat"
             if exist "C:\\Instrument\\Apps\\EPICS" (
                 echo ERROR: Unable to remove EPICS
                 exit /b 1
             )
+            exit /b 0
+          """
+         }
+         timeout(time: 22, unit: 'HOURS') {
+          bat """
+            setlocal
+            set \"MYJOB=${env.JOB_NAME}\"
             if \"%MYJOB%\" == \"System_Tests_debug\" (
                 call ibex_utils/installation_and_upgrade/instrument_install_latest_build_only.bat CLEAN EPICS_DEBUG
             ) else if \"%MYJOB%\" == \"System_Tests_static\" (
@@ -148,11 +165,6 @@ pipeline {
             @echo SECOND PART OF TESTS FINISHED WITH CODE %errcode2%
             call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             @echo Finished running tests on node ${env.NODE_NAME}
-            @echo Saving test output on node ${env.NODE_NAME}
-            robocopy "C:\\Instrument\\Var\\logs" "%WORKSPACE%\\var-logs" /S /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\data" "%WORKSPACE%\\icp-logs" "*.log" "*.txt" "journal*.xml" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\data\\log" "%WORKSPACE%\\icp-logs" "*.log" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
-            robocopy "C:\\Instrument\\Apps\\EPICS" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             if %errcode1% NEQ 0 (
                 @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%, SECOND PART CODE WAS %errcode2%
                 exit /b %errcode1%
@@ -172,6 +184,16 @@ pipeline {
 
   post {
     always {
+        bat """
+            setlocal
+            set \"MYJOB=${env.JOB_NAME}\"
+            @echo Saving test output on node ${env.NODE_NAME}
+            robocopy "C:\\Instrument\\Var\\logs" "%WORKSPACE%\\var-logs" /S /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\data" "%WORKSPACE%\\icp-logs" "*.log" "*.txt" "journal*.xml" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\data\\log" "%WORKSPACE%\\icp-logs" "*.log" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Apps\\EPICS" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            exit /b 0
+        """
         archiveArtifacts artifacts: 'var-logs/**/*.*, icp-logs/*.*', caseSensitive: false
         junit "test-reports/**/*.xml,**/test-reports/**/*.xml"
         logParser ([
