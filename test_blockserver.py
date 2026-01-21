@@ -62,7 +62,7 @@ class TestBlockserver(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-        g.set_instrument("", import_instrument_init=False)
+        g.set_instrument(None, import_instrument_init=False)
         self.pvlist_file = os.path.join(r"C:\Instrument", "Settings", "gwblock.pvlist")
         self.rc_settings_file = os.path.join(
             r"C:\Instrument",
@@ -77,7 +77,9 @@ class TestBlockserver(unittest.TestCase):
         )
         self.block_archive_blocks_url = "http://localhost:4813/group?name=BLOCKS&format=json"
 
-    def test_GIVEN_config_changes_THEN_dae_and_instetc_come_back_with_autorestart_reapplied(self):
+    def test_GIVEN_config_changes_THEN_dae_and_instetc_come_back_with_autorestart_reapplied(
+        self,
+    ):
         g.reload_current_config()
         iocs_to_check = ["ISISDAE_01", "INSTETC_01"]
         utilities.wait_for_iocs_to_be_up(iocs_to_check, SECONDS_TO_WAIT_FOR_IOC_STARTS)
@@ -91,7 +93,9 @@ class TestBlockserver(unittest.TestCase):
             self.assertEqual(status.lower(), "running")
             self.assertEqual(autorestart.lower(), "on")
 
-    def test_GIVEN_config_changes_by_block_THEN_iocs_do_not_restart_except_for_caenv895(self):
+    def test_GIVEN_config_changes_by_block_THEN_iocs_do_not_restart_except_for_caenv895(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("test_blockserver")
 
         utilities.wait_for_iocs_to_be_up(["SIMPLE", "CAENV895_01"], SECONDS_TO_WAIT_FOR_IOC_STARTS)
@@ -113,7 +117,7 @@ class TestBlockserver(unittest.TestCase):
         details["desc"] = "some_edited_description"
         g.set_pv(
             "CS:BLOCKSERVER:SET_CURR_CONFIG_DETAILS",
-            str(compress_and_hex(json.dumps(details))),
+            compress_and_hex(json.dumps(details)),
             is_local=True,
         )
 
@@ -150,7 +154,10 @@ class TestBlockserver(unittest.TestCase):
         parameterized_list(
             [
                 ("simple1", "simple2"),  # Move IOC between 2 configs
-                ("simple_comp_macros", "simple_comp_macros_2"),  # Move IOC between two components
+                (
+                    "simple_comp_macros",
+                    "simple_comp_macros_2",
+                ),  # Move IOC between two components
                 (
                     "simple_with_macros",
                     "simple_comp_macros",
@@ -187,7 +194,10 @@ class TestBlockserver(unittest.TestCase):
         parameterized_list(
             [
                 ("simple1", "simple_with_macros"),  # Config -> config
-                ("simple_comp_no_macros", "simple_comp_macros"),  # Component -> component
+                (
+                    "simple_comp_no_macros",
+                    "simple_comp_macros",
+                ),  # Component -> component
                 ("simple1", "simple_comp_macros"),  # Config -> Component
                 ("simple_comp_macros", "simple1"),  # Component -> Config
             ]
@@ -333,12 +343,17 @@ class TestBlockserver(unittest.TestCase):
         assert_that(len(response["Channels"]), is_(1))
         assert_that(response["Channels"][0]["Channel"], ends_with("a"))
 
-    def test_GIVEN_config_contains_gw_and_archiver_files_THEN_configuration_pvlist_used(self):
+    def test_GIVEN_config_contains_gw_and_archiver_files_THEN_configuration_pvlist_used(
+        self,
+    ):
         config = "test_blockserver_with_gw_archiver"
         utilities.load_config_if_not_already_loaded(config)
 
         config_pvlist_file = os.path.join(self.config_dir, config, "gwblock.pvlist")
-        with open(self.pvlist_file, "r") as pvlist, open(config_pvlist_file, "r") as config_pvlist:
+        with (
+            open(self.pvlist_file, "r") as pvlist,
+            open(config_pvlist_file, "r") as config_pvlist,
+        ):
             assert_that(pvlist.read(), is_(config_pvlist.read()))
 
     def test_GIVEN_config_claims_but_does_not_contain_gw_and_archiver_files_THEN_pvlist_generated(
@@ -351,14 +366,18 @@ class TestBlockserver(unittest.TestCase):
             assert_that(file_content, contains_string("TIZRWARNING"))
             assert_that(file_content, contains_string("TIZROUTOFRANGE"))
 
-    def test_GIVEN_config_does_not_contain_gw_and_archiver_files_THEN_pvlist_generated(self):
+    def test_GIVEN_config_does_not_contain_gw_and_archiver_files_THEN_pvlist_generated(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("test_blockserver")
 
         with open(self.pvlist_file, "r") as pvlist:
             file_content = pvlist.read()
             assert_that(file_content, contains_string(g.prefix_pv_name("CS:SB:a")))
 
-    def test_GIVEN_config_contains_rc_settings_THEN_configuration_rc_settings_used(self):
+    def test_GIVEN_config_contains_rc_settings_THEN_configuration_rc_settings_used(
+        self,
+    ):
         config = "test_blockserver_with_gw_archiver"
         utilities.load_config_if_not_already_loaded(config)
 
@@ -369,7 +388,9 @@ class TestBlockserver(unittest.TestCase):
         ):
             assert_that(rc_settings.read(), is_(config_rc_settings.read()))
 
-    def test_GIVEN_config_claims_but_does_not_contain_rc_settings_THEN_rc_settings_generated(self):
+    def test_GIVEN_config_claims_but_does_not_contain_rc_settings_THEN_rc_settings_generated(
+        self,
+    ):
         utilities.load_config_if_not_already_loaded("test_blockserver_without_gw_archiver")
 
         with open(self.rc_settings_file, "r") as rc_settings:
@@ -383,7 +404,9 @@ class TestBlockserver(unittest.TestCase):
             file_content = rc_settings.read()
             assert_that(file_content, contains_string("$(MYPVPREFIX)CS:SB:A"))
 
-    def test_WHEN_block_is_added_to_active_config_via_save_new_config_pv_THEN_block_added(self):
+    def test_WHEN_block_is_added_to_active_config_via_save_new_config_pv_THEN_block_added(
+        self,
+    ):
         configuration_name = "test_blockserver_save_active_config"
         block_name = "TEST_BLOCK"
         utilities.load_config_if_not_already_loaded(configuration_name)
@@ -399,7 +422,7 @@ class TestBlockserver(unittest.TestCase):
 
         g.set_pv(
             "CS:BLOCKSERVER:SAVE_NEW_CONFIG",
-            str(compress_and_hex(json.dumps(data))),
+            compress_and_hex(json.dumps(data)),
             wait=True,
             is_local=True,
         )
@@ -471,7 +494,7 @@ class TestBlockserver(unittest.TestCase):
 
         g.set_pv(
             "CS:BLOCKSERVER:SAVE_NEW_CONFIG",
-            str(compress_and_hex(json.dumps(data))),
+            compress_and_hex(json.dumps(data)),
             wait=True,
             is_local=True,
         )
