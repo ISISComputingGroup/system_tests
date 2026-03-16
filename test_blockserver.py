@@ -51,8 +51,6 @@ def test_config_macros(
         test_case.assertIn(macro_name, config_macro)
         test_case.assertEqual(macro_value, config_macro[macro_name]["value"])
         test_case.assertNotIn("useDefault", config_macro[macro_name])
-        if macro_value == "":
-            return default_value
         return macro_value
 
 
