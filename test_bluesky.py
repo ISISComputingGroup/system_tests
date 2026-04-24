@@ -29,9 +29,12 @@ from ibex_bluesky_core.utils import get_pv_prefix
 from ophyd_async.plan_stubs import ensure_connected
 
 from utilities.utilities import (
+    assert_with_timeout,
+    check_block_exists,
     load_config_if_not_already_loaded,
     set_genie_python_raises_exceptions,
     setup_simulated_wiring_tables,
+    wait_for_iocs_to_be_up,
 )
 
 matplotlib.use("qtagg")
@@ -50,8 +53,10 @@ class TestBluesky(unittest.TestCase):
     def setUp(self) -> None:
         g.set_instrument(None)
         load_config_if_not_already_loaded("bluesky_sys_test")
+        wait_for_iocs_to_be_up(["SIMPLE", "ISISDAE_01"], 300)
         setup_simulated_wiring_tables()
         set_genie_python_raises_exceptions(True)
+        assert_with_timeout(lambda: self.assertTrue(check_block_exists("p3", True)), 60)
         g.cset("p3", P3_INIT_VALUE)
         g.cset("p5", P5_INIT_VALUE)
         set_bluesky_log_levels("DEBUG")

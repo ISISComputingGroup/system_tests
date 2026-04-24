@@ -510,18 +510,24 @@ def retry_on_failure(max_times: int) -> Callable[[Callable[P, T]], Callable[P, N
     return decorator
 
 
-def check_block_exists(block_name: str) -> bool:
+def check_block_exists(block_name: str, check_pv: bool = False) -> bool:
     """
-    Check that the given block name is in the current blocks.
+    Check that the given block name is in the current blockserver/configuration
+    blocks list. Optionally check if the PV for the block also currently exists
 
     Args:
         block_name (str): The name of the block to check for
+        check_pv (bool): Additionally check PV related to block exists
 
     Returns:
-        bool: true if block is in current blocks, false if not.
+        bool: true if block exists as per criteria, false if not.
     """
-    blocks = g.get_blocks()
-    return block_name in blocks
+    block_in_list = block_name in g.get_blocks()
+    return (
+        block_in_list and genie_api_setup.__api.block_exists(block_name)
+        if check_pv
+        else block_in_list
+    )
 
 
 def retry_assert(retry_limit: int, func: Callable[[], None], retry_time: float = 1.0) -> None:
