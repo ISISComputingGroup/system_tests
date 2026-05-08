@@ -129,6 +129,12 @@ pipeline {
                 call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
                 exit /b 1
             )
+            call \\\isis.cclrc.ac.uk\\inst$\\Kits$\\CompGroup\\ICP\\genie_python_3\\branches\\PR-30\\BUILD-4\\genie_python_install.bat
+            IF %errorlevel% NEQ 0 (
+                @echo ERROR: unable to update python - error code %errorlevel%
+                call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
+                exit /b 1
+            )
             call C:\\Instrument\\Apps\\EPICS\\stop_ibex_server.bat
             if not exist "C:\\Instrument\\Apps\\EPICS\\config_env.bat" (
                 @echo ERROR: Unable to find config_env.bat in EPICS directory
