@@ -1,5 +1,5 @@
 setlocal
-REM ignore errors as del may attempt to delete a directory
+REM ignore errors - possibly antivirus related?
 for /d %%i in ( C:\Instrument\Var\logs C:\Instrument\Var\autosave C:\Instrument\Var\logs ) do (
     @echo Cleaning %%i
     if exist "%%i" (
