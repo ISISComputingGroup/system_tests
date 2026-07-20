@@ -3,7 +3,7 @@
 	<ioc name="GALIL_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
 		<macros>
 			<macro name="ENCAVNSAMP" value=""/>
-			<macro name="GALILADDR" value="0.0.0.0"/>
+			<macro name="GALILADDR" value="127.0.0.1"/>
 			<macro name="MTRCTRL" value="1"/>
 		</macros>
 		<pvs/>
