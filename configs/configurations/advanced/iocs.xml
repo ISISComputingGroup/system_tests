@@ -5,6 +5,7 @@
 			<macro name="ENCAVNSAMP" value=""/>
 			<macro name="GALILADDR" value="127.0.0.1"/>
 			<macro name="MTRCTRL" value="1"/>
+			<macro name="GALILCONFIGDIR" value="C:/Instrument/Apps/EPICS/support/motorExtensions/master/settings/settings_for_system_tests/default/galil"/>
 		</macros>
 		<pvs/>
 		<pvsets/>

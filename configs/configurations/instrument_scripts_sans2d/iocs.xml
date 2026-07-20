@@ -38,10 +38,21 @@
 	</ioc>
 	<ioc name="GALILMUL_02" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
 		<macros>
-			<macro name="GALILADDR1" value="" description="IP address of Galil controller 1" pattern="^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" hasDefault="no"/>
-			<macro name="GALILADDR2" value="" description="IP address of Galil controller 2" pattern="^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" hasDefault="no"/>
-			<macro name="MTRCTRL1" value="" description="Controller number 1 used in motor address assignment" pattern="^[0-9]{1,2}$" hasDefault="no"/>
-			<macro name="MTRCTRL2" value="" description="Controller number 2 used in motor address assignment" pattern="^[0-9]{1,2}$" hasDefault="no"/>
+			<macro name="GALILADDR1" value="127.0.0.11" description="IP address of Galil controller 1" pattern="^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" hasDefault="no"/>
+			<macro name="GALILADDR2" value="127.0.0.12" description="IP address of Galil controller 2" pattern="^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" hasDefault="no"/>
+			<macro name="MTRCTRL1" value="4" description="Controller number 1 used in motor address assignment" pattern="^[0-9]{1,2}$" hasDefault="no"/>
+			<macro name="MTRCTRL2" value="5" description="Controller number 2 used in motor address assignment" pattern="^[0-9]{1,2}$" hasDefault="no"/>
+			<macro name="GALILCONFIGDIR" value="C:/Instrument/Apps/EPICS/support/motionSetPoints/master/settings/setting_for_system_tests/instrument_scripts/sans2d" />
+		</macros>
+		<pvs/>
+		<pvsets/>
+	</ioc>
+	<ioc name="GALILMUL_01" autostart="true" restart="true" remotePvPrefix="" simlevel="recsim">
+		<macros>
+			<macro name="GALILADDR1" value="127.0.0.13" description="IP address of Galil controller 1" pattern="^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" hasDefault="no"/>
+			<macro name="GALILADDR2" value="127.0.0.14" description="IP address of Galil controller 2" pattern="^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" hasDefault="no"/>
+			<macro name="MTRCTRL1" value="1" description="Controller number 1 used in motor address assignment" pattern="^[0-9]{1,2}$" hasDefault="no"/>
+			<macro name="MTRCTRL2" value="2" description="Controller number 2 used in motor address assignment" pattern="^[0-9]{1,2}$" hasDefault="no"/>
 			<macro name="GALILCONFIGDIR" value="C:/Instrument/Apps/EPICS/support/motionSetPoints/master/settings/setting_for_system_tests/instrument_scripts/sans2d" />
 		</macros>
 		<pvs/>
