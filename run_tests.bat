@@ -18,6 +18,9 @@ if "%EPICS_HOST_ARCH:~0,9%" == "win32-x86" (
     @echo Skipping first part as 32bit system %EPICS_HOST_ARCH%
     goto finish
 )
+REM we use this dir for all ioc startup diag logs in testing mode
+if not exist "c:\Instrument\var\logs\IOCTestFramework" mkdir "c:\Instrument\var\logs\IOCTestFramework"
+
 call %EPICS_ROOT%\start_ibex_server.bat
 set "PYTHONUNBUFFERED=1"
 python -u "%~dp0run_tests.py" %*
