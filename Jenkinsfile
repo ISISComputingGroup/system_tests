@@ -155,6 +155,7 @@ pipeline {
             @echo Running IOC tests on node ${env.NODE_NAME}
             pushd "C:\\Instrument\\Apps\\EPICS"
             call config_env.bat
+            python -m pip install git+https://github.com/ISISComputingGroup/lewis@c79836a93d62b93a5a43a3398d664b246e975b31
             REM make will usually stop on first test failure as python will return an error. We can pass -i to make to ignore
             REM this and we will still usually see a problem as the python unittest XML output will list it, but we miss
             REM the case when python crashes with no XML output. So we will try using -k which looks to "keep going"
