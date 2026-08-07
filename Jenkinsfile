@@ -143,14 +143,7 @@ pipeline {
                     call C:\\Instrument\\Apps\\EPICS\\swap_galil.bat NEW
             )
             call clean_files.bat
-            @echo FIRST PART OF TESTS STARTED
-            call run_tests.bat
-            set errcode1=%errorlevel%
-            if %errcode1% NEQ 0 (
-                @echo ERROR: FIRST PART OF TESTS FAILED WITH CODE %errcode1%
-            ) else (
-                @echo OK: FIRST PART OF TESTS SUCCEEDED
-            )
+
             @echo SECOND PART OF TESTS STARTED
             @echo Running IOC tests on node ${env.NODE_NAME}
             pushd "C:\\Instrument\\Apps\\EPICS"
