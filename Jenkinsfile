@@ -192,6 +192,7 @@ pipeline {
             robocopy "C:\\data" "%WORKSPACE%\\icp-logs" "*.log" "*.txt" "journal*.xml" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\data\\log" "%WORKSPACE%\\icp-logs" "*.log" /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             robocopy "C:\\Instrument\\Apps\\EPICS" "%WORKSPACE%\\ioctest-output" "*.xml" /S /PURGE /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
+            robocopy "C:\\Instrument\\Apps\\EPICS" "%WORKSPACE%\\versions\\EPICS" VERSION.txt git-commit.txt build-id.txt /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             exit /b 0
         """
         archiveArtifacts artifacts: 'var-logs/**/*.*, icp-logs/*.*', caseSensitive: false
