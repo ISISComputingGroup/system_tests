@@ -195,7 +195,7 @@ pipeline {
             robocopy "C:\\Instrument\\Apps\\EPICS" "%WORKSPACE%\\versions\\EPICS" VERSION.txt git-commit.txt build-id.txt /R:2 /MT /NFL /NDL /NP /NC /NS /LOG:NUL
             exit /b 0
         """
-        archiveArtifacts artifacts: 'var-logs/**/*.*, icp-logs/*.*', caseSensitive: false
+        archiveArtifacts artifacts: 'var-logs/**/*.*, icp-logs/*.*, versions/**/*.*', caseSensitive: false
         junit "test-reports/**/*.xml,**/test-reports/**/*.xml"
         logParser ([
             projectRulePath: 'log_parse_rules.txt',
