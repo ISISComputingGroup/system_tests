@@ -220,7 +220,7 @@ pipeline {
             REM close any isisicp error windows from system tests of changing simulation mode
             REM this window may affect squish GUI tests
             close_isisicp_error_window.exe
-            powershell -Command \"Get-WmiObject Win32_Process -Filter \\\"name = 'python.exe'\\\" | where {$_.CommandLine -Match 'run_tests.py'} | ForEach-Object { Invoke-WmiMethod -Path $_.__Path –Name Terminate }\"
+            powershell -Command \"Get-WmiObject Win32_Process -Filter \\\"name = 'python.exe'\\\" | where {\$_.CommandLine -Match 'run_tests.py'} | ForEach-Object { Invoke-WmiMethod -Path \$_.__Path –Name Terminate }\"
             @echo Finished cleanup on node ${env.NODE_NAME}
             @echo ***
             @echo *** Any Office365connector Matched status FAILURE message below means
