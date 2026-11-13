@@ -3,6 +3,7 @@ import os
 import socket
 import time
 import unittest
+from itertools import product
 
 import requests
 from genie_python import genie as g
@@ -141,7 +142,7 @@ class TestBlockserver(unittest.TestCase):
                     "CAENV895 ioc should have restarted",
                 )
                 break
-            except (Exception, AssertionError) as e:
+            except AssertionError as e:
                 err = e
                 time.sleep(1)
         else:
@@ -516,3 +517,56 @@ class TestBlockserver(unittest.TestCase):
         test_pv_with_macro_value(expected_1, "SIMPLE:MACROTEST1", self)
         test_pv_with_macro_value(expected_2, "SIMPLE:MACROTEST2", self)
         test_pv_with_macro_value(expected_3, "SIMPLE:MACROTEST3", self)
+
+    @parameterized.expand(
+        parameterized_list(
+            list(
+                product(
+                    [
+                        "RUNCTRL_01",
+                        "BLOCKSVR",
+                        "GWBLOCK",
+                        "ISISDAE_01",
+                        "INSTETC_01",
+                        "DBSVR",
+                        "ALARM",
+                        "ARINST",
+                        "ARBLOCK",
+                    ],
+                    [True, False],
+                )
+            )
+        )
+    )
+    def test_WHEN_restart_service_ioc_pv_written_THEN_restarts_service(self, _, iocname, manager):
+        utilities.wait_for_iocs_to_be_up([iocname], SECONDS_TO_WAIT_FOR_IOC_STARTS)
+        start_time_pv = f"CS:IOC:{iocname}:DEVIOS:STARTTOD"
+        start_time_before = utilities.wait_for_string_pvs_to_not_be_empty(
+            [start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+        )[start_time_pv]
+
+        g.set_pv("CS:MANAGER", "Yes" if manager else "No", wait=True, is_local=True)
+        g.set_pv(
+            "CS:BLOCKSERVER:RESTART_SERVICE_IOC",
+            compress_and_hex(json.dumps([iocname])),
+            wait=True,
+            is_local=True,
+        )
+        wait_for_server()
+
+        def _restarted():
+            utilities.wait_for_iocs_to_be_up([iocname], SECONDS_TO_WAIT_FOR_IOC_STARTS)
+            start_time_after = utilities.wait_for_string_pvs_to_not_be_empty(
+                [start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
+            )[start_time_pv]
+
+            if manager:
+                self.assertNotEqual(
+                    start_time_before, start_time_after, f"{iocname} should have restarted"
+                )
+            else:
+                self.assertEqual(
+                    start_time_before, start_time_after, f"{iocname} should not have restarted"
+                )
+
+        assert_with_timeout(_restarted, timeout=SECONDS_TO_WAIT_FOR_IOC_STARTS)
