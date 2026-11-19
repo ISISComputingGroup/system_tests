@@ -3,12 +3,14 @@ import os
 import socket
 import time
 import unittest
+import zlib
 from itertools import product
 
 import requests
 from genie_python import genie as g
 from genie_python.channel_access_exceptions import UnableToConnectToPVException
-from genie_python.utilities import compress_and_hex
+from genie_python.genie_cachannel_wrapper import CaChannelWrapper, AlarmCondition
+from genie_python.utilities import compress_and_hex, dehex_and_decompress
 from hamcrest import assert_that, contains_string, ends_with, is_
 from parameterized import parameterized
 
@@ -16,7 +18,8 @@ from utilities import utilities
 from utilities.utilities import assert_with_timeout, parameterized_list
 
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
-
+SERVICE_RESTART_TIMEOUT = 180
+NO_RESTART_GRACE_PERIOD = 15
 
 def wait_for_server():
     status_was_busy = False
@@ -523,50 +526,100 @@ class TestBlockserver(unittest.TestCase):
             list(
                 product(
                     [
-                        "RUNCTRL_01",
-                        "BLOCKSVR",
-                        "GWBLOCK",
-                        "ISISDAE_01",
-                        "INSTETC_01",
-                        "DBSVR",
-                        "ALARM",
-                        "ARINST",
-                        "ARBLOCK",
+                        # (PV to monitor, service IOC to restart, values which indicate a restart)
+                        # A CA disconnect on the monitored PV always counts as a restart.
+                        ("CS:PS:RUNCTRL_01:STATUS", "RUNCTRL_01", ("Shutdown",)),
+                        # The blockserver serves this PV itself, so it disconnects on restart
+                        ("CS:BLOCKSERVER:SERVER_STATUS", "BLOCKSVR", ()),
+                        ("CS:PS:ISISDAE_01:STATUS", "ISISDAE_01", ("Shutdown",)),
+                        ("CS:PS:INSTETC_01:STATUS", "INSTETC_01", ("Shutdown",)),
+                        ("CS:PS:ALARM:STATUS", "ALARM", ("Shutdown",)),
+                        ("CS:PS:ARINST:STATUS", "ARINST", ("Shutdown",)),
+                        ("CS:PS:ARBLOCK:STATUS", "ARBLOCK", ("Shutdown",)),
+                        # No blockgateway as this is not restarted in the typical sense, just "reloaded"
                     ],
                     [True, False],
                 )
             )
         )
     )
-    def test_WHEN_restart_service_ioc_pv_written_THEN_restarts_service(self, _, iocname, manager):
-        utilities.wait_for_iocs_to_be_up([iocname], SECONDS_TO_WAIT_FOR_IOC_STARTS)
-        start_time_pv = f"CS:IOC:{iocname}:DEVIOS:STARTTOD"
-        start_time_before = utilities.wait_for_string_pvs_to_not_be_empty(
-            [start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
-        )[start_time_pv]
+    def test_WHEN_restart_service_ioc_pv_written_THEN_restarts_service(
+        self, _, pv_ioc_markers, manager
+    ):
+        restarted = "RESTARTED"
+        events = []
+        pv, ioc, restart_markers = pv_ioc_markers
+        full_pv = g.prefix_pv_name(pv)
 
-        g.set_pv("CS:MANAGER", "Yes" if manager else "No", wait=True, is_local=True)
+        def _on_change(value, severity, status):
+            if status == AlarmCondition.Link:
+                events.append(restarted)
+                return
+            text = str(value)
+            try:
+                text = dehex_and_decompress(text)
+            except (ValueError, zlib.error):
+                pass
+            events.append(restarted if text in restart_markers else text)
+
+        def _restarted_and_came_back() -> bool:
+            # Need a value before the restart and at least one after it (i.e. it came back)
+            return restarted in events and 0 < events.index(restarted) < len(events) - 1
+
+        # Make sure a previous test's restart has fully finished before we start monitoring
+        self._wait_for_service_ready(ioc)
+
+        unsubscribe = CaChannelWrapper.add_monitor(
+            full_pv, _on_change, to_string=True, use_numpy=False
+        )
+        self.addCleanup(unsubscribe)
+        self._set_manager_mode(manager)
+
         g.set_pv(
             "CS:BLOCKSERVER:RESTART_SERVICE_IOC",
-            compress_and_hex(json.dumps([iocname])),
-            wait=True,
+            compress_and_hex(json.dumps([ioc])),
             is_local=True,
         )
-        wait_for_server()
 
-        def _restarted():
-            utilities.wait_for_iocs_to_be_up([iocname], SECONDS_TO_WAIT_FOR_IOC_STARTS)
-            start_time_after = utilities.wait_for_string_pvs_to_not_be_empty(
-                [start_time_pv], SECONDS_TO_WAIT_FOR_IOC_STARTS, is_local=True
-            )[start_time_pv]
+        if manager:
+            end_time = time.time() + SERVICE_RESTART_TIMEOUT
+            while time.time() < end_time and not _restarted_and_came_back():
+                time.sleep(0.5)
+            self.assertTrue(
+                _restarted_and_came_back(),
+                f"{ioc} did not restart and come back, events seen on {pv}: {events}",
+            )
+            # procServ reports "Running" as soon as the process is launched, but the service
+            # may not be serving PVs yet (e.g. INSTETC serves CS:MANAGER, which cleanup resets)
+            self._wait_for_service_ready(ioc)
+        else:
+            time.sleep(NO_RESTART_GRACE_PERIOD)
+            self.assertNotIn(
+                restarted, events, f"{ioc} restarted without manager mode, events: {events}"
+            )
 
-            if manager:
-                self.assertNotEqual(
-                    start_time_before, start_time_after, f"{iocname} should have restarted"
-                )
-            else:
-                self.assertEqual(
-                    start_time_before, start_time_after, f"{iocname} should not have restarted"
-                )
+    @staticmethod
+    def _service_is_ready(ioc: str) -> bool:
+        try:
+            if ioc == "BLOCKSVR":
+                return utilities.get_server_status() == ""
+            if ioc in ("RUNCTRL_01", "ISISDAE_01", "INSTETC_01"):
+                # EPICS IOCs: heartbeat only exists once iocInit has completed
+                return utilities.is_ioc_up(ioc)
+            # Non-EPICS services (java processes) have no heartbeat, procServ status is all we have
+            return g.get_pv(f"CS:PS:{ioc}:STATUS", is_local=True) == "Running"
+        except UnableToConnectToPVException:
+            return False
 
-        assert_with_timeout(_restarted, timeout=SECONDS_TO_WAIT_FOR_IOC_STARTS)
+    def _wait_for_service_ready(self, ioc: str) -> None:
+        end_time = time.time() + SERVICE_RESTART_TIMEOUT
+        while time.time() < end_time:
+            if self._service_is_ready(ioc):
+                return
+            time.sleep(1)
+        self.fail(f"{ioc} was not ready after {SERVICE_RESTART_TIMEOUT}s")
+
+    def _set_manager_mode(self, manager: bool) -> None:
+        previous = g.get_pv("CS:MANAGER", is_local=True)
+        self.addCleanup(g.set_pv, "CS:MANAGER", previous, wait=True, is_local=True)
+        g.set_pv("CS:MANAGER", "Yes" if manager else "No", wait=True, is_local=True)
