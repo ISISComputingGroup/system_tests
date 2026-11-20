@@ -9,7 +9,7 @@ from itertools import product
 import requests
 from genie_python import genie as g
 from genie_python.channel_access_exceptions import UnableToConnectToPVException
-from genie_python.genie_cachannel_wrapper import CaChannelWrapper, AlarmCondition
+from genie_python.genie_cachannel_wrapper import AlarmCondition, CaChannelWrapper
 from genie_python.utilities import compress_and_hex, dehex_and_decompress
 from hamcrest import assert_that, contains_string, ends_with, is_
 from parameterized import parameterized
@@ -20,6 +20,7 @@ from utilities.utilities import assert_with_timeout, parameterized_list
 SECONDS_TO_WAIT_FOR_IOC_STARTS = 120
 SERVICE_RESTART_TIMEOUT = 180
 NO_RESTART_GRACE_PERIOD = 15
+
 
 def wait_for_server():
     status_was_busy = False
