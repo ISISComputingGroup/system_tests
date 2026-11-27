@@ -156,6 +156,7 @@ pipeline {
             pushd "C:\\Instrument\\Apps\\EPICS"
             call config_env.bat
             pushd "C:\\Instrument\\Apps\\EPICS\\ioctestframework\\master\\"
+            git fetch --all 
             git checkout pva_skip
             popd
             REM make will usually stop on first test failure as python will return an error. We can pass -i to make to ignore
